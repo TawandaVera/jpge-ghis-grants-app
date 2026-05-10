@@ -1,18 +1,19 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { 
-  LayoutDashboard, Search, Target, FileText, 
-  Kanban, Building2, Menu, X
+  LayoutDashboard, Search, BarChart3, 
+  Kanban, Bot, Package, LogOut, Menu, X
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { base44 } from "@/api/base44Client";
 
 const NAV = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/discovery", label: "Discovery", icon: Search },
-  { to: "/matches", label: "Matches", icon: Target },
-  { to: "/applications", label: "Applications", icon: FileText },
-  { to: "/pipeline", label: "Pipeline", icon: Kanban },
-  { to: "/org-profile", label: "Org Profile", icon: Building2 },
+  { to: "/", label: "Overview", icon: LayoutDashboard },
+  { to: "/discovery", label: "1. Discovery", icon: Search },
+  { to: "/assessment", label: "2. Assessment", icon: BarChart3 },
+  { to: "/pipeline", label: "3. Grant Pipeline", icon: Kanban },
+  { to: "/copilot", label: "4. Co-Pilot", icon: Bot },
+  { to: "/pack", label: "5. Pack & Export", icon: Package },
 ];
 
 export default function Layout() {
@@ -29,8 +30,8 @@ export default function Layout() {
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
             pathname === to
-              ? "bg-emerald-600 text-white"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+              : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
           )}
         >
           <Icon className="w-4 h-4" />
@@ -43,43 +44,38 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-56 bg-white border-r border-slate-200 p-4 shrink-0">
-        <div className="mb-6">
-          <div className="flex items-center gap-2 px-1">
-            <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">GP</span>
-            </div>
-            <div>
-              <p className="font-bold text-slate-900 text-sm">GrantPath AI</p>
-              <p className="text-xs text-slate-400">GHIS LLC</p>
-            </div>
-          </div>
+      <aside className="hidden md:flex flex-col w-48 bg-slate-900 shrink-0">
+        <div className="p-4 border-b border-slate-800">
+          <p className="font-bold text-white text-sm">
+            <span className="text-emerald-400">GHIS</span> Grants
+          </p>
+          <p className="text-xs text-slate-500 mt-0.5">INTELLIGENCE PLATFORM</p>
         </div>
-        <nav className="space-y-1 flex-1">
+        <nav className="flex-1 p-3 space-y-1">
           <NavItems />
         </nav>
-        <div className="mt-4 p-3 bg-emerald-50 rounded-lg">
-          <p className="text-xs text-emerald-700 font-medium">GHIS LLC</p>
-          <p className="text-xs text-emerald-600">$3.2M deployed · 14 states</p>
+        <div className="p-3 border-t border-slate-800">
+          <button
+            onClick={() => base44.auth.logout()}
+            className="flex items-center gap-2 px-3 py-2 w-full text-left text-sm text-slate-400 hover:text-slate-200 hover:bg-white/5 rounded-lg transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
         </div>
       </aside>
 
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xs">GP</span>
-          </div>
-          <p className="font-bold text-slate-900 text-sm">GrantPath AI</p>
-        </div>
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+        <p className="font-bold text-white text-sm"><span className="text-emerald-400">GHIS</span> Grants</p>
         <button onClick={() => setMobileOpen(!mobileOpen)}>
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {mobileOpen ? <X className="w-5 h-5 text-slate-300" /> : <Menu className="w-5 h-5 text-slate-300" />}
         </button>
       </div>
 
       {/* Mobile Nav */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-white pt-14">
+        <div className="md:hidden fixed inset-0 z-40 bg-slate-900 pt-14">
           <nav className="p-4 space-y-1">
             <NavItems />
           </nav>

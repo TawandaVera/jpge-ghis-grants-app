@@ -1,0 +1,252 @@
+import { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import { Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Database, Target, CheckCircle2, AlertTriangle, Download, ArrowRight } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { differenceInDays, format } from "date-fns";
+import { toast } from "sonner";
+
+export default function Overview() {
+  const [grants, setGrants] = useState([]);
+  const [matches, setMatches] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [hilItems, setHilItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      base44.entities.Grant.list("-created_date", 200),
+      base44.entities.GrantMatch.list("-total_score", 200),
+      base44.entities.GrantApplication.list("-created_date", 100),
+      base44.entities.HILCheckpoint.filter({ decision: "pending" }),
+    ]).then(([g, m, a, h]) => {
+      setGrants(g);
+      setMatches(m);
+      setApplications(a);
+      setHilItems(h);
+      setLoading(false);
+    });
+  }, []);
+
+  const goCount = matches.filter(m => m.recommendation === "GO").length;
+  const prepCount = matches.filter(m => m.recommendation === "PREP").length;
+  const deferCount = matches.filter(m => m.recommendation === "DEF").length;
+  const declineCount = matches.filter(m => m.recommendation === "DECLINE").length;
+  const assessed = matches.length;
+
+  // Deadline distribution
+  const now = new Date();
+  const lt30 = grants.filter(g => g.deadline && differenceInDays(new Date(g.deadline), now) < 30 && differenceInDays(new Date(g.deadline), now) >= 0).length;
+  const d30to60 = grants.filter(g => g.deadline && differenceInDays(new Date(g.deadline), now) >= 30 && differenceInDays(new Date(g.deadline), now) < 60).length;
+  const d60to90 = grants.filter(g => g.deadline && differenceInDays(new Date(g.deadline), now) >= 60 && differenceInDays(new Date(g.deadline), now) < 90).length;
+  const gt90 = grants.filter(g => g.deadline && differenceInDays(new Date(g.deadline), now) >= 90).length;
+
+  // Grants by category
+  const catMap = {};
+  grants.forEach(g => {
+    const c = g.category || "other";
+    catMap[c] = (catMap[c] || 0) + 1;
+  });
+  const catLabels = {
+    health_equity: "Health Equity", digital_health: "Digital Health",
+    workforce_development: "Workforce Dev", community_engagement: "Community",
+    research: "Research", other: "Other"
+  };
+  const chartData = Object.entries(catMap).map(([k, v]) => ({ name: catLabels[k] || k, count: v }));
+
+  const recentGrants = grants.slice(0, 6);
+
+  const exportCSV = () => {
+    const rows = [["Title", "Funder", "Category", "Deadline", "Score", "Recommendation"]];
+    matches.forEach(m => {
+      rows.push([m.grant_title, m.funder, "", m.deadline || "", m.total_score || "", m.recommendation || ""]);
+    });
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "ghis-grants.csv"; a.click();
+    toast.success("CSV exported");
+  };
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-96">
+      <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+    </div>
+  );
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Grant Intelligence Overview</h1>
+          <p className="text-slate-500 text-sm">Real-time pipeline health across all {grants.length} grants</p>
+        </div>
+        <Button variant="outline" onClick={exportCSV} className="gap-2">
+          <Download className="w-4 h-4" /> Export CSV
+        </Button>
+      </div>
+
+      {/* HIL Alert */}
+      {hilItems.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            <div>
+              <p className="font-semibold text-amber-800">{hilItems.length} HIL Checkpoint{hilItems.length > 1 ? "s" : ""} Awaiting Review</p>
+              <p className="text-sm text-amber-600">Pipeline paused — human decision required</p>
+            </div>
+          </div>
+          <Link to="/copilot">
+            <Button variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100 gap-2">
+              Review Now <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {/* Pipeline Flow */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Grant Lifecycle Pipeline</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
+            { label: "Discovery", to: "/discovery", color: "bg-slate-100 text-slate-700 border-slate-200" },
+            { label: "Assessment", to: "/assessment", color: "bg-blue-50 text-blue-700 border-blue-200" },
+            { label: "Pipeline", to: "/pipeline", color: "bg-purple-50 text-purple-700 border-purple-200" },
+            { label: "Co-Pilot", to: "/copilot", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+            { label: "Pack & Export", to: "/pack", color: "bg-amber-50 text-amber-700 border-amber-200" },
+          ].map((step, i) => (
+            <div key={step.label} className="flex items-center gap-2">
+              <Link to={step.to}>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer hover:opacity-80 ${step.color}`}>
+                  {step.label}
+                </span>
+              </Link>
+              {i < 4 && <span className="text-slate-300">→</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Top Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Total Raw" value={grants.length} sub={`${grants.length} unique`} icon={<Database className="w-5 h-5" />} color="slate" />
+        <StatCard label="Assessed" value={assessed} sub={`of ${grants.length} total`} icon={<Target className="w-5 h-5" />} color="blue" />
+        <StatCard label="GO" value={goCount} sub={`${grants.length ? Math.round(goCount/grants.length*100) : 0}% of unique`} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
+        <StatCard label="PREP" value={prepCount} sub={`${grants.length ? Math.round(prepCount/grants.length*100) : 0}% of unique`} icon={<AlertTriangle className="w-5 h-5" />} color="amber" />
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Grants by Category */}
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Grants by Class</CardTitle></CardHeader>
+          <CardContent>
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={chartData}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No data yet</div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Deadline Distribution */}
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Deadline Distribution</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              {[
+                { label: "< 30d", count: lt30, color: "bg-red-500" },
+                { label: "30-60d", count: d30to60, color: "bg-amber-500" },
+                { label: "60-90d", count: d60to90, color: "bg-emerald-500" },
+                { label: "90d+", count: gt90, color: "bg-blue-400" },
+              ].map(d => (
+                <div key={d.label} className={`${d.color} rounded-xl p-4 text-white text-center`}>
+                  <p className="text-3xl font-bold">{d.count}</p>
+                  <p className="text-sm opacity-90">{d.label}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Assessment States */}
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Assessment States</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {[
+              { label: "GO", count: goCount, color: "bg-emerald-500" },
+              { label: "PREP", count: prepCount, color: "bg-amber-500" },
+              { label: "DEFER", count: deferCount, color: "bg-slate-400" },
+              { label: "DECLINE", count: declineCount, color: "bg-red-400" },
+            ].map(s => (
+              <div key={s.label}>
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="font-medium text-slate-700">{s.label}</span>
+                  <span className="text-slate-500">{s.count} ({assessed ? Math.round(s.count/assessed*100) : 0}%)</span>
+                </div>
+                <div className="h-2 bg-slate-100 rounded-full">
+                  <div className={`h-2 ${s.color} rounded-full transition-all`} style={{ width: `${assessed ? (s.count/assessed*100) : 0}%` }} />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center justify-between">
+              Recent Activity
+              <Link to="/discovery"><span className="text-xs text-emerald-600 font-normal hover:underline">View all →</span></Link>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {recentGrants.map(g => (
+              <div key={g.id} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
+                <div className="min-w-0">
+                  <p className="text-sm text-slate-800 truncate">{g.title}</p>
+                </div>
+                <span className="text-xs text-slate-400 ml-3 shrink-0">{g.funder?.split(" ").slice(-1)[0]}</span>
+              </div>
+            ))}
+            {recentGrants.length === 0 && <p className="text-sm text-slate-400 text-center py-4">No grants yet. Run discovery.</p>}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, sub, icon, color }) {
+  const colors = {
+    slate: "bg-slate-50 text-slate-500",
+    blue: "bg-blue-50 text-blue-500",
+    emerald: "bg-emerald-50 text-emerald-500",
+    amber: "bg-amber-50 text-amber-500",
+  };
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">{label}</p>
+            <p className="text-3xl font-bold text-slate-900 mt-1">{value}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
+          </div>
+          <div className={`p-2 rounded-lg ${colors[color]}`}>{icon}</div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

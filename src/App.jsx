@@ -6,11 +6,12 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from '@/components/Layout';
-import Dashboard from '@/pages/Dashboard';
+import Overview from '@/pages/Overview';
 import GrantDiscovery from '@/pages/GrantDiscovery';
-import GrantMatches from '@/pages/GrantMatches';
-import Applications from '@/pages/Applications';
+import Assessment from '@/pages/Assessment';
 import Pipeline from '@/pages/Pipeline';
+import CoPilot from '@/pages/CoPilot';
+import PackExport from '@/pages/PackExport';
 import OrgProfile from '@/pages/OrgProfile';
 
 const AuthenticatedApp = () => {
@@ -36,11 +37,12 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<Overview />} />
         <Route path="/discovery" element={<GrantDiscovery />} />
-        <Route path="/matches" element={<GrantMatches />} />
-        <Route path="/applications" element={<Applications />} />
+        <Route path="/assessment" element={<Assessment />} />
         <Route path="/pipeline" element={<Pipeline />} />
+        <Route path="/copilot" element={<CoPilot />} />
+        <Route path="/pack" element={<PackExport />} />
         <Route path="/org-profile" element={<OrgProfile />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
