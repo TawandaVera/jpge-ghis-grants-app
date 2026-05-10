@@ -14,6 +14,7 @@ export default function Overview() {
   const [matches, setMatches] = useState([]);
   const [applications, setApplications] = useState([]);
   const [hilItems, setHilItems] = useState([]);
+  const [outcomes, setOutcomes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,11 +23,13 @@ export default function Overview() {
       base44.entities.GrantMatch.list("-total_score", 200),
       base44.entities.GrantApplication.list("-created_date", 100),
       base44.entities.HILCheckpoint.filter({ decision: "pending" }),
-    ]).then(([g, m, a, h]) => {
+      base44.entities.GrantOutcome.list("-created_date", 50),
+    ]).then(([g, m, a, h, o]) => {
       setGrants(g);
       setMatches(m);
       setApplications(a);
       setHilItems(h);
+      setOutcomes(o);
       setLoading(false);
     });
   }, []);
@@ -36,6 +39,12 @@ export default function Overview() {
   const deferCount = matches.filter(m => m.recommendation === "DEF").length;
   const declineCount = matches.filter(m => m.recommendation === "DECLINE").length;
   const assessed = matches.length;
+
+  // ROI & submission tracking (GHIS-008)
+  const submitted = applications.filter(a => ["submitted", "awarded", "declined"].includes(a.stage));
+  const awarded = outcomes.filter(o => o.outcome === "awarded");
+  const totalAwarded = awarded.reduce((s, o) => s + (o.award_amount || 0), 0);
+  const successRate = submitted.length > 0 ? Math.round((awarded.length / submitted.length) * 100) : 0;
 
   // Deadline distribution
   const now = new Date();
@@ -136,9 +145,19 @@ export default function Overview() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total Raw" value={grants.length} sub={`${grants.length} unique`} icon={<Database className="w-5 h-5" />} color="slate" />
         <StatCard label="Assessed" value={assessed} sub={`of ${grants.length} total`} icon={<Target className="w-5 h-5" />} color="blue" />
-        <StatCard label="GO" value={goCount} sub={`${grants.length ? Math.round(goCount/grants.length*100) : 0}% of unique`} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
-        <StatCard label="PREP" value={prepCount} sub={`${grants.length ? Math.round(prepCount/grants.length*100) : 0}% of unique`} icon={<AlertTriangle className="w-5 h-5" />} color="amber" />
+        <StatCard label="GO" value={goCount} sub={`${assessed ? Math.round(goCount/assessed*100) : 0}% of assessed`} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
+        <StatCard label="PREP" value={prepCount} sub={`${assessed ? Math.round(prepCount/assessed*100) : 0}% of assessed`} icon={<AlertTriangle className="w-5 h-5" />} color="amber" />
       </div>
+
+      {/* ROI & Financial Summary (GHIS-008) */}
+      {(submitted.length > 0 || awarded.length > 0) && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard label="Submitted" value={submitted.length} sub="applications" icon={<ArrowRight className="w-5 h-5" />} color="blue" />
+          <StatCard label="Awarded" value={awarded.length} sub={`${successRate}% success rate`} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
+          <StatCard label="Total Funded" value={`$${(totalAwarded/1000).toFixed(0)}K`} sub="awarded to date" icon={<Target className="w-5 h-5" />} color="amber" />
+          <StatCard label="HIL Pending" value={hilItems.length} sub="require decision" icon={<AlertTriangle className="w-5 h-5" />} color={hilItems.length > 0 ? "amber" : "slate"} />
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Grants by Category */}

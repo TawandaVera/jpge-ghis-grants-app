@@ -6,9 +6,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Zap, ExternalLink, Calendar, DollarSign, MapPin, Loader2, Plus } from "lucide-react";
-import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Zap, ExternalLink, Calendar, MapPin, Loader2, Plus, FileText, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
+
+const CLASS_LABELS = {
+  health_equity: "Health Equity",
+  digital_health: "Digital Health",
+  workforce_development: "Workforce Dev",
+  community_engagement: "Community",
+  research: "Research",
+  other: "Other",
+};
+
+const CLASS_COLORS = {
+  health_equity: "bg-rose-100 text-rose-700",
+  digital_health: "bg-blue-100 text-blue-700",
+  workforce_development: "bg-amber-100 text-amber-700",
+  community_engagement: "bg-green-100 text-green-700",
+  research: "bg-purple-100 text-purple-700",
+  other: "bg-slate-100 text-slate-700",
+};
 
 export default function GrantDiscovery() {
   const [grants, setGrants] = useState([]);
@@ -19,30 +38,67 @@ export default function GrantDiscovery() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newGrant, setNewGrant] = useState({ title: "", funder: "", deadline: "", award_amount_min: "", award_amount_max: "", category: "health_equity", status: "open", description: "", eligibility: "", source_url: "" });
+  const [auditLog, setAuditLog] = useState([]);
 
-  useEffect(() => {
-    loadGrants();
-  }, []);
+  // Scan parameters (per spec)
+  const [scanClass, setScanClass] = useState("all");
+  const [scanMinAmount, setScanMinAmount] = useState("25000");
+  const [scanMaxAmount, setScanMaxAmount] = useState("2500000");
+  const [scanDeadlineDays, setScanDeadlineDays] = useState("90");
+
+  const [newGrant, setNewGrant] = useState({
+    title: "", funder: "", deadline: "", award_amount_min: "", award_amount_max: "",
+    category: "health_equity", status: "open", description: "", eligibility: "", source_url: ""
+  });
+
+  useEffect(() => { loadGrants(); }, []);
 
   const loadGrants = async () => {
     setLoading(true);
-    const data = await base44.entities.Grant.list("-created_date", 100);
+    const data = await base44.entities.Grant.list("-created_date", 200);
     setGrants(data);
     setLoading(false);
   };
 
   const runDiscovery = async () => {
     setDiscovering(true);
+    setAuditLog([]);
+    const runId = `run_${Date.now()}`;
+    const log = (msg, type = "info") => setAuditLog(prev => [...prev, { msg, type, time: new Date().toLocaleTimeString() }]);
+
     try {
+      log(`Starting discovery run ${runId}`);
+      log(`Scan parameters: class=${scanClass}, amount=$${Number(scanMinAmount).toLocaleString()}–$${Number(scanMaxAmount).toLocaleString()}, deadline=${scanDeadlineDays}d`);
+
+      // Build exclusion set from existing grants (deduplication layer 1)
+      const existing = await base44.entities.Grant.list("-created_date", 500);
+      const existingTitles = new Set(existing.map(g => g.title?.toLowerCase().trim()));
+      const existingFingerprints = new Set(existing.map(g => g.fingerprint).filter(Boolean));
+      log(`Exclusion set built: ${existing.length} existing grants`);
+
+      const classFilter = scanClass !== "all"
+        ? `Focus specifically on the class: ${CLASS_LABELS[scanClass] || scanClass}.`
+        : "Include grants across all classes: Health Equity, Digital Health, Workforce Development, Community Engagement, and Research.";
+
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a grant discovery agent for GHIS LLC (Global Health Innovation Solutions), a health innovation consultancy serving 14 states. 
-        Generate 5 realistic current grant opportunities from federal agencies (HHS, HRSA, CDC, SAMHSA, AHRQ, NIH) relevant to:
-        - Health equity
-        - Digital health innovation
-        - Workforce development
-        - Community health engagement
-        Each grant should have a realistic opportunity number, funder, award range, eligibility, and deadline within 3-6 months from today (2026-05-10).`,
+        prompt: `You are the Grant Discovery Agent for GHIS LLC (Global Health Innovation Solutions), a health innovation consultancy serving 14 states.
+
+SCAN PARAMETERS:
+- ${classFilter}
+- Award range: $${scanMinAmount}–$${scanMaxAmount}
+- Deadline window: within next ${scanDeadlineDays} days from 2026-05-10
+- Eligible applicant types: LLCs, for-profit organizations, private sector
+
+DEDUPLICATION: Do NOT generate any of these existing grant titles (exact or near-match):
+${[...existingTitles].slice(0, 20).join(", ")}
+
+Generate 6 NEW, unique, realistic grant opportunities from:
+- Federal agencies: HRSA, CDC, SAMHSA, AHRQ, NIH, HHS
+- Foundations: RWJF, Kresge, de Beaumont, W.K. Kellogg
+- Innovation programs: HHS Innovation, AHRQ challenges
+
+For each grant, assign actionability: PASS (has direct apply link), NEEDS_VERIFICATION (no direct link), or REJECTED (no official source).
+Only include PASS and NEEDS_VERIFICATION grants.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -62,22 +118,82 @@ export default function GrantDiscovery() {
                   deadline: { type: "string" },
                   category: { type: "string" },
                   geographic_scope: { type: "string" },
-                  source_url: { type: "string" }
+                  source_url: { type: "string" },
+                  actionability: { type: "string" },
+                  why_actionable: { type: "string" },
+                  needs_verification: { type: "array", items: { type: "string" } }
                 }
+              }
+            },
+            rejected: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  rejection_reason: { type: "string" }
+                }
+              }
+            },
+            run_summary: {
+              type: "object",
+              properties: {
+                sources_queried: { type: "number" },
+                raw_candidates: { type: "number" },
+                duplicates_rejected: { type: "number" },
+                passed: { type: "number" }
               }
             }
           }
         }
       });
 
+      const grantList = result.grants || [];
+      const rejected = result.rejected || [];
+      const summary = result.run_summary || {};
+
+      log(`Raw candidates found: ${summary.raw_candidates || grantList.length + rejected.length}`);
+      log(`Sources queried: ${summary.sources_queried || "multiple"}`);
+
       let created = 0;
-      for (const g of result.grants || []) {
-        await base44.entities.Grant.create({ ...g, status: "open", posted_date: new Date().toISOString().split("T")[0] });
+      let deduped = 0;
+
+      for (const g of grantList) {
+        // Layer 2: title similarity check
+        const normalizedTitle = g.title?.toLowerCase().trim();
+        if (existingTitles.has(normalizedTitle)) {
+          log(`DUPLICATE (Layer 2): ${g.title}`, "warn");
+          deduped++;
+          continue;
+        }
+
+        // Fingerprint (Layer 1)
+        const fingerprint = btoa(`${g.funder?.toLowerCase()}_${g.title?.toLowerCase()}`).substring(0, 32);
+        if (existingFingerprints.has(fingerprint)) {
+          log(`DUPLICATE (Layer 1): ${g.title}`, "warn");
+          deduped++;
+          continue;
+        }
+
+        await base44.entities.Grant.create({
+          ...g,
+          status: "open",
+          posted_date: new Date().toISOString().split("T")[0],
+          fingerprint,
+        });
+        log(`✅ NEW: ${g.title} (${g.actionability || "PASS"})`, "success");
         created++;
       }
-      toast.success(`Discovered ${created} new grant opportunities`);
+
+      for (const r of rejected) {
+        log(`REJECTED — NON-ACTIONABLE: ${r.title}: ${r.rejection_reason}`, "error");
+      }
+
+      log(`Run complete: ${created} new grants added, ${deduped} duplicates blocked, ${rejected.length} rejected as non-actionable`, "success");
+      toast.success(`Discovery complete: ${created} new grants added`);
       await loadGrants();
     } catch (e) {
+      log(`ERROR: ${e.message}`, "error");
       toast.error("Discovery failed: " + e.message);
     }
     setDiscovering(false);
@@ -92,10 +208,16 @@ export default function GrantDiscovery() {
       stage: "assessment"
     });
     toast.success("Added to applications workspace");
+    setSelected(null);
   };
 
   const saveNewGrant = async () => {
-    await base44.entities.Grant.create({ ...newGrant, award_amount_min: Number(newGrant.award_amount_min), award_amount_max: Number(newGrant.award_amount_max), posted_date: new Date().toISOString().split("T")[0] });
+    await base44.entities.Grant.create({
+      ...newGrant,
+      award_amount_min: Number(newGrant.award_amount_min),
+      award_amount_max: Number(newGrant.award_amount_max),
+      posted_date: new Date().toISOString().split("T")[0]
+    });
     toast.success("Grant added");
     setShowAddForm(false);
     setNewGrant({ title: "", funder: "", deadline: "", award_amount_min: "", award_amount_max: "", category: "health_equity", status: "open", description: "", eligibility: "", source_url: "" });
@@ -109,32 +231,96 @@ export default function GrantDiscovery() {
     return matchSearch && matchCat && matchStatus;
   });
 
-  const categoryColors = {
-    health_equity: "bg-rose-100 text-rose-700",
-    digital_health: "bg-blue-100 text-blue-700",
-    workforce_development: "bg-amber-100 text-amber-700",
-    community_engagement: "bg-green-100 text-green-700",
-    research: "bg-purple-100 text-purple-700",
-    other: "bg-slate-100 text-slate-700",
-  };
+  const logColors = { info: "text-slate-500", success: "text-emerald-600", warn: "text-amber-600", error: "text-red-600" };
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Grant Discovery</h1>
-          <p className="text-slate-500 text-sm">{grants.length} opportunities in database</p>
+          <h1 className="text-2xl font-bold text-slate-900">Discovery Engine</h1>
+          <p className="text-slate-500 text-sm">Scan, filter, and import grant opportunities · {grants.length} in database</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowAddForm(true)} className="gap-2">
-            <Plus className="w-4 h-4" /> Add Manual
+            <Plus className="w-4 h-4" /> Manual Import
           </Button>
-          <Button onClick={runDiscovery} disabled={discovering} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
-            {discovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-            {discovering ? "Discovering..." : "AI Discovery"}
+          <Button variant="outline" className="gap-2" onClick={() => {
+            const rows = [["Title", "Funder", "Category", "Deadline", "Award Min", "Award Max", "Status"]];
+            grants.forEach(g => rows.push([g.title, g.funder, g.category || "", g.deadline || "", g.award_amount_min || "", g.award_amount_max || "", g.status]));
+            const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = "grants.csv"; a.click();
+            toast.success("Exported");
+          }}>
+            Export
           </Button>
         </div>
       </div>
+
+      {/* Scan Parameters Panel */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Zap className="w-4 h-4 text-emerald-500" /> Scan Parameters
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Class</label>
+              <Select value={scanClass} onValueChange={setScanClass}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  <SelectItem value="health_equity">Health Equity</SelectItem>
+                  <SelectItem value="digital_health">Digital Health</SelectItem>
+                  <SelectItem value="workforce_development">Workforce Dev</SelectItem>
+                  <SelectItem value="community_engagement">Community</SelectItem>
+                  <SelectItem value="research">Research</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Min Amount ($)</label>
+              <Input value={scanMinAmount} onChange={e => setScanMinAmount(e.target.value)} type="number" />
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Max Amount ($)</label>
+              <Input value={scanMaxAmount} onChange={e => setScanMaxAmount(e.target.value)} type="number" />
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Deadline (days)</label>
+              <Input value={scanDeadlineDays} onChange={e => setScanDeadlineDays(e.target.value)} type="number" />
+            </div>
+          </div>
+          <Button onClick={runDiscovery} disabled={discovering} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+            {discovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+            {discovering ? "Scanning..." : "Run Discovery Scan"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Audit Log */}
+      {auditLog.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileText className="w-4 h-4" /> Audit Log
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-slate-900 rounded-lg p-3 max-h-40 overflow-y-auto font-mono text-xs space-y-0.5">
+              {auditLog.map((entry, i) => (
+                <div key={i} className={`${logColors[entry.type] || "text-slate-400"}`}>
+                  <span className="text-slate-600 mr-2">{entry.time}</span>{entry.msg}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
@@ -143,13 +329,13 @@ export default function GrantDiscovery() {
           <Input placeholder="Search grants..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Category" /></SelectTrigger>
+          <SelectTrigger className="w-44"><SelectValue placeholder="All Classes" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">All Classes</SelectItem>
             <SelectItem value="health_equity">Health Equity</SelectItem>
             <SelectItem value="digital_health">Digital Health</SelectItem>
             <SelectItem value="workforce_development">Workforce Dev</SelectItem>
-            <SelectItem value="community_engagement">Community Engagement</SelectItem>
+            <SelectItem value="community_engagement">Community</SelectItem>
             <SelectItem value="research">Research</SelectItem>
           </SelectContent>
         </Select>
@@ -162,48 +348,66 @@ export default function GrantDiscovery() {
             <SelectItem value="closed">Closed</SelectItem>
           </SelectContent>
         </Select>
+        <p className="self-center text-sm text-slate-500">{filtered.length} grants</p>
       </div>
 
+      {/* Grant Table */}
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
       ) : (
-        <div className="grid gap-3">
-          {filtered.map(grant => (
-            <Card key={grant.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelected(grant)}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <h3 className="font-semibold text-slate-900">{grant.title}</h3>
-                      {grant.category && <Badge className={`text-xs ${categoryColors[grant.category]}`}>{grant.category.replace(/_/g, " ")}</Badge>}
-                      <Badge variant="outline" className={`text-xs ${grant.status === "open" ? "border-green-300 text-green-700" : "border-slate-300 text-slate-500"}`}>{grant.status}</Badge>
-                    </div>
-                    <p className="text-sm text-slate-500">{grant.funder} {grant.opportunity_number && `· ${grant.opportunity_number}`}</p>
-                    {grant.description && <p className="text-sm text-slate-600 mt-1 line-clamp-2">{grant.description}</p>}
-                  </div>
-                  <div className="text-right shrink-0 space-y-1">
-                    {(grant.award_amount_min || grant.award_amount_max) && (
-                      <p className="text-sm font-semibold text-emerald-700">
-                        ${grant.award_amount_min ? `${(grant.award_amount_min/1000).toFixed(0)}K` : ""}
-                        {grant.award_amount_max ? `–$${(grant.award_amount_max/1000).toFixed(0)}K` : ""}
-                      </p>
-                    )}
-                    {grant.deadline && (
-                      <p className="text-xs text-slate-500 flex items-center gap-1 justify-end">
-                        <Calendar className="w-3 h-3" /> {format(new Date(grant.deadline), "MMM d, yyyy")}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-          {filtered.length === 0 && (
-            <div className="text-center py-16 text-slate-400">
-              <Zap className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p>No grants found. Run AI Discovery to find opportunities.</p>
-            </div>
-          )}
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Title</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Funder</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Class</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Amount</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Deadline</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Geo</th>
+                <th className="px-4 py-3 w-8"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filtered.map(grant => {
+                const days = grant.deadline ? differenceInDays(new Date(grant.deadline), new Date()) : null;
+                const isUrgent = days !== null && days >= 0 && days < 30;
+                return (
+                  <tr key={grant.id} className="hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => setSelected(grant)}>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-slate-800 truncate max-w-52">{grant.title}</p>
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{grant.funder}</td>
+                    <td className="px-4 py-3">
+                      {grant.category && (
+                        <Badge className={`text-xs ${CLASS_COLORS[grant.category] || "bg-slate-100 text-slate-700"}`}>
+                          {CLASS_LABELS[grant.category] || grant.category}
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 hidden lg:table-cell text-xs">
+                      {grant.award_amount_min ? `$${(grant.award_amount_min/1000).toFixed(0)}K` : "—"}
+                      {grant.award_amount_max ? `–$${(grant.award_amount_max/1000).toFixed(0)}K` : ""}
+                    </td>
+                    <td className={`px-4 py-3 text-xs whitespace-nowrap ${isUrgent ? "text-red-600 font-medium" : "text-slate-500"}`}>
+                      {grant.deadline ? format(new Date(grant.deadline), "MMM d, yyyy") : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-400 hidden lg:table-cell">{grant.geographic_scope || "—"}</td>
+                    <td className="px-4 py-3">
+                      {grant.source_url && (
+                        <button className="text-slate-400 hover:text-slate-600" onClick={e => { e.stopPropagation(); window.open(grant.source_url, "_blank"); }}>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && (
+                <tr><td colSpan={7} className="px-4 py-16 text-center text-slate-400">No grants found. Run a discovery scan to populate the database.</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -225,12 +429,12 @@ export default function GrantDiscovery() {
               {selected.eligibility && <div><p className="text-xs text-slate-500 mb-1">Eligibility</p><p className="text-sm text-slate-700">{selected.eligibility}</p></div>}
               {selected.geographic_scope && <div className="flex items-center gap-2 text-sm text-slate-600"><MapPin className="w-4 h-4" />{selected.geographic_scope}</div>}
               <div className="flex gap-3 pt-2">
-                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => { addToApplication(selected); setSelected(null); }}>
-                  Add to Applications
+                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => addToApplication(selected)}>
+                  Add to Pipeline
                 </Button>
                 {selected.source_url && (
                   <Button variant="outline" className="gap-2" onClick={() => window.open(selected.source_url, "_blank")}>
-                    <ExternalLink className="w-4 h-4" /> View Source
+                    <ExternalLink className="w-4 h-4" /> Source
                   </Button>
                 )}
               </div>
@@ -242,7 +446,7 @@ export default function GrantDiscovery() {
       {/* Add Manual Grant Dialog */}
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Add Grant Manually</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Import Grant Manually</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <Input placeholder="Grant title *" value={newGrant.title} onChange={e => setNewGrant(p => ({...p, title: e.target.value}))} />
             <Input placeholder="Funder *" value={newGrant.funder} onChange={e => setNewGrant(p => ({...p, funder: e.target.value}))} />
@@ -257,13 +461,13 @@ export default function GrantDiscovery() {
                 <SelectItem value="health_equity">Health Equity</SelectItem>
                 <SelectItem value="digital_health">Digital Health</SelectItem>
                 <SelectItem value="workforce_development">Workforce Dev</SelectItem>
-                <SelectItem value="community_engagement">Community Engagement</SelectItem>
+                <SelectItem value="community_engagement">Community</SelectItem>
                 <SelectItem value="research">Research</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
-            <Input placeholder="Source URL" value={newGrant.source_url} onChange={e => setNewGrant(p => ({...p, source_url: e.target.value}))} />
-            <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={saveNewGrant} disabled={!newGrant.title || !newGrant.funder}>Save Grant</Button>
+            <Input placeholder="Source URL (direct application link)" value={newGrant.source_url} onChange={e => setNewGrant(p => ({...p, source_url: e.target.value}))} />
+            <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={saveNewGrant} disabled={!newGrant.title || !newGrant.funder}>Import Grant</Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -11,11 +11,29 @@
       "description": "Narrative content"
     },
     "version": {
-      "type": "number",
-      "default": 1
+      "type": "string",
+      "description": "Semantic version (e.g. 1.0.0, 1.1.0)",
+      "default": "1.0.0"
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of content for deduplication"
+    },
+    "is_current": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this is the active version"
     },
     "change_summary": {
-      "type": "string"
+      "type": "string",
+      "description": "Description of what changed in this version"
+    },
+    "sections_updated": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of section names updated in this version"
     },
     "approved": {
       "type": "boolean",
@@ -26,6 +44,22 @@
       "items": {
         "type": "string"
       }
+    },
+    "classification": {
+      "type": "string",
+      "enum": [
+        "AUTO_FILL",
+        "ADAPT",
+        "CUSTOM_WRITE",
+        "MISSING_INFO"
+      ],
+      "description": "Content classification per SOP4 Co-Pilot mapping",
+      "default": "ADAPT"
+    },
+    "mn_outdated_flag": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if a newer master narrative version exists"
     }
   },
   "required": [
