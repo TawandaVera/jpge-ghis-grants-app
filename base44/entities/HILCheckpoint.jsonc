@@ -1,0 +1,65 @@
+{
+  "name": "HILCheckpoint",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string"
+    },
+    "grant_title": {
+      "type": "string"
+    },
+    "stage": {
+      "type": "string"
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "tier1",
+        "tier2",
+        "tier3"
+      ],
+      "description": "Tier 1=blocking, Tier 2=48h, Tier 3=auto-approve"
+    },
+    "action_required": {
+      "type": "string"
+    },
+    "context": {
+      "type": "string",
+      "description": "Agent-generated context for reviewer"
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "edited",
+        "regenerated",
+        "flagged",
+        "paused",
+        "blocked"
+      ],
+      "default": "pending"
+    },
+    "decision_by": {
+      "type": "string"
+    },
+    "decision_notes": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "auto_escalated": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "application_id",
+    "grant_title",
+    "stage",
+    "tier",
+    "action_required"
+  ]
+}

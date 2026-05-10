@@ -1,0 +1,80 @@
+{
+  "name": "OrgProfile",
+  "type": "object",
+  "properties": {
+    "org_name": {
+      "type": "string",
+      "description": "Organization name"
+    },
+    "mission": {
+      "type": "string",
+      "description": "Mission statement"
+    },
+    "focus_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Primary focus areas"
+    },
+    "geographic_coverage": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "States/regions served"
+    },
+    "annual_budget": {
+      "type": "number",
+      "description": "Annual operating budget"
+    },
+    "staff_count": {
+      "type": "number",
+      "description": "Number of staff"
+    },
+    "ein": {
+      "type": "string",
+      "description": "EIN / Tax ID"
+    },
+    "duns_uei": {
+      "type": "string",
+      "description": "SAM.gov UEI"
+    },
+    "indirect_cost_rate": {
+      "type": "number",
+      "description": "Indirect cost rate %"
+    },
+    "fringe_rate": {
+      "type": "number",
+      "description": "Fringe benefit rate %"
+    },
+    "compliance_certifications": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Certifications held"
+    },
+    "past_performance": {
+      "type": "string",
+      "description": "Summary of past grant performance"
+    },
+    "capacity_notes": {
+      "type": "string",
+      "description": "Current capacity and constraints"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "org_name",
+    "mission"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "MasterNarrative",
+  "type": "object",
+  "properties": {
+    "section": {
+      "type": "string",
+      "description": "Narrative section name (e.g. org_history, mission, capacity)"
+    },
+    "content": {
+      "type": "string",
+      "description": "Narrative content"
+    },
+    "version": {
+      "type": "number",
+      "default": 1
+    },
+    "change_summary": {
+      "type": "string"
+    },
+    "approved": {
+      "type": "boolean",
+      "default": false
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "section",
+    "content"
+  ]
+}

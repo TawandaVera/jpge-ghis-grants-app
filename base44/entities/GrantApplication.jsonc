@@ -1,0 +1,114 @@
+{
+  "name": "GrantApplication",
+  "type": "object",
+  "properties": {
+    "grant_id": {
+      "type": "string"
+    },
+    "grant_title": {
+      "type": "string"
+    },
+    "funder": {
+      "type": "string"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "discovery",
+        "assessment",
+        "matching",
+        "writing",
+        "compliance_check",
+        "budget",
+        "review",
+        "hil_review",
+        "submission_ready",
+        "submitted",
+        "awarded",
+        "declined"
+      ],
+      "default": "discovery"
+    },
+    "sections": {
+      "type": "object",
+      "description": "Application sections keyed by name",
+      "properties": {
+        "executive_summary": {
+          "type": "string"
+        },
+        "needs_statement": {
+          "type": "string"
+        },
+        "goals_objectives": {
+          "type": "string"
+        },
+        "methodology": {
+          "type": "string"
+        },
+        "evaluation_plan": {
+          "type": "string"
+        },
+        "organizational_capacity": {
+          "type": "string"
+        },
+        "budget_narrative": {
+          "type": "string"
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "personnel": {
+          "type": "number"
+        },
+        "fringe": {
+          "type": "number"
+        },
+        "indirect": {
+          "type": "number"
+        },
+        "supplies": {
+          "type": "number"
+        },
+        "travel": {
+          "type": "number"
+        },
+        "other": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        }
+      }
+    },
+    "compliance_score": {
+      "type": "number"
+    },
+    "compliance_issues": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assigned_to": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "award_amount": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "grant_title",
+    "funder",
+    "deadline",
+    "stage"
+  ]
+}

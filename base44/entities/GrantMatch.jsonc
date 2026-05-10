@@ -1,0 +1,86 @@
+{
+  "name": "GrantMatch",
+  "type": "object",
+  "properties": {
+    "grant_id": {
+      "type": "string",
+      "description": "Reference to Grant entity"
+    },
+    "grant_title": {
+      "type": "string"
+    },
+    "funder": {
+      "type": "string"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date"
+    },
+    "total_score": {
+      "type": "number",
+      "description": "0-100 composite score"
+    },
+    "mandate_alignment": {
+      "type": "number",
+      "description": "Mandate alignment score (40% weight)"
+    },
+    "eligibility_fit": {
+      "type": "number",
+      "description": "Eligibility fit score (30% weight)"
+    },
+    "deadline_feasibility": {
+      "type": "number",
+      "description": "Deadline feasibility score (20% weight)"
+    },
+    "geographic_match": {
+      "type": "number",
+      "description": "Geographic match score (10% weight)"
+    },
+    "recommendation": {
+      "type": "string",
+      "enum": [
+        "GO",
+        "PREP",
+        "DEF",
+        "DECLINE"
+      ],
+      "description": "GO>=80, PREP>=60, DEF>=40, DECLINE<40"
+    },
+    "rationale": {
+      "type": "string",
+      "description": "AI scoring rationale"
+    },
+    "strengths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "concerns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "human_feedback": {
+      "type": "string",
+      "description": "Human reviewer feedback"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "approved",
+        "rejected",
+        "watchlist"
+      ],
+      "default": "pending_review"
+    }
+  },
+  "required": [
+    "grant_id",
+    "grant_title",
+    "total_score",
+    "recommendation"
+  ]
+}

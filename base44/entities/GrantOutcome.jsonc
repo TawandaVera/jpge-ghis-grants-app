@@ -1,0 +1,60 @@
+{
+  "name": "GrantOutcome",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string"
+    },
+    "grant_title": {
+      "type": "string"
+    },
+    "funder": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "awarded",
+        "declined",
+        "withdrawn",
+        "pending"
+      ]
+    },
+    "award_amount": {
+      "type": "number"
+    },
+    "requested_amount": {
+      "type": "number"
+    },
+    "submission_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "decision_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "decline_reason": {
+      "type": "string"
+    },
+    "lessons_learned": {
+      "type": "string"
+    },
+    "prep_hours": {
+      "type": "number",
+      "description": "Hours spent preparing application"
+    },
+    "cost_to_prepare": {
+      "type": "number"
+    },
+    "roi": {
+      "type": "number",
+      "description": "ROI calculated from award vs prep cost"
+    }
+  },
+  "required": [
+    "grant_title",
+    "funder",
+    "outcome"
+  ]
+}
