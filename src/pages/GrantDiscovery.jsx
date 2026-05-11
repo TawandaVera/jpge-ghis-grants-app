@@ -83,22 +83,34 @@ export default function GrantDiscovery() {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `You are the Grant Discovery Agent for GHIS LLC (Global Health Innovation Solutions), a health innovation consultancy serving 14 states.
 
+TODAY'S DATE: 2026-05-11
+
+TASK: Search the web RIGHT NOW for REAL, currently open grant opportunities. Do NOT invent or hallucinate grants. Only return grants you can confirm exist on grants.gov, agency websites, or foundation portals.
+
 SCAN PARAMETERS:
 - ${classFilter}
 - Award range: $${scanMinAmount}–$${scanMaxAmount}
-- Deadline window: within next ${scanDeadlineDays} days from 2026-05-10
-- Eligible applicant types: LLCs, for-profit organizations, private sector
+- Deadline: MUST be between 2026-05-11 and ${new Date(Date.now() + Number(scanDeadlineDays) * 86400000).toISOString().split("T")[0]} (within ${scanDeadlineDays} days)
+- Eligible applicant types: LLCs, for-profit organizations, private sector entities
 
-DEDUPLICATION: Do NOT generate any of these existing grant titles (exact or near-match):
-${[...existingTitles].slice(0, 20).join(", ")}
+CRITICAL RULES:
+1. REAL GRANTS ONLY — Search grants.gov, HRSA.gov, CDC.gov, SAMHSA.gov, RWJF.org, etc. right now.
+2. SOURCE URL — Must be the actual direct URL to the grant announcement (e.g. https://grants.gov/search-results-detail/XXXX or https://www.hrsa.gov/grants/find-funding/...). Generic homepage URLs are NOT acceptable.
+3. DEADLINE MUST BE REAL — The deadline field must be the actual published deadline. If you cannot confirm the deadline, mark needs_verification=true.
+4. OPPORTUNITY NUMBER — Include the real Grants.gov opportunity number (e.g. HHS-2026-ACF-OPRE-YE-0123) when available.
+5. LLC ELIGIBILITY — Verify the funder accepts LLCs / for-profit / private sector applicants. Many federal grants require nonprofits — flag those clearly in eligibility field.
 
-Generate 6 NEW, unique, realistic grant opportunities from:
-- Federal agencies: HRSA, CDC, SAMHSA, AHRQ, NIH, HHS
-- Foundations: RWJF, Kresge, de Beaumont, W.K. Kellogg
-- Innovation programs: HHS Innovation, AHRQ challenges
+DEDUPLICATION: Do NOT return any of these (already in our database):
+${[...existingTitles].slice(0, 25).join(" | ")}
 
-For each grant, assign actionability: PASS (has direct apply link), NEEDS_VERIFICATION (no direct link), or REJECTED (no official source).
-Only include PASS and NEEDS_VERIFICATION grants.`,
+Return 5–8 confirmed real opportunities. If you cannot find enough REAL grants matching these criteria, return fewer — do NOT pad with invented ones.
+
+For each, classify actionability:
+- PASS: Real grant, direct URL confirmed, deadline within window, LLC-eligible
+- NEEDS_VERIFICATION: Real grant found but URL or LLC eligibility needs manual confirmation
+- REJECTED: Cannot confirm real source — DO NOT include these in the output`,
+        add_context_from_internet: true,
+        model: "gemini_3_flash",
         response_json_schema: {
           type: "object",
           properties: {
@@ -157,12 +169,15 @@ Only include PASS and NEEDS_VERIFICATION grants.`,
 
       let created = 0;
       let deduped = 0;
+      let qualityRejected = 0;
+      const today = new Date("2026-05-11");
+      const maxDeadline = new Date(today.getTime() + Number(scanDeadlineDays) * 86400000);
 
       for (const g of grantList) {
         // Layer 2: title similarity check
         const normalizedTitle = g.title?.toLowerCase().trim();
         if (existingTitles.has(normalizedTitle)) {
-          log(`DUPLICATE (Layer 2): ${g.title}`, "warn");
+          log(`DUPLICATE (L2 title): ${g.title}`, "warn");
           deduped++;
           continue;
         }
@@ -170,9 +185,44 @@ Only include PASS and NEEDS_VERIFICATION grants.`,
         // Fingerprint (Layer 1)
         const fingerprint = btoa(`${g.funder?.toLowerCase()}_${g.title?.toLowerCase()}`).substring(0, 32);
         if (existingFingerprints.has(fingerprint)) {
-          log(`DUPLICATE (Layer 1): ${g.title}`, "warn");
+          log(`DUPLICATE (L1 fingerprint): ${g.title}`, "warn");
           deduped++;
           continue;
+        }
+
+        // Layer 3: Quality checks — URL and deadline validation
+        const url = g.source_url || "";
+        const hasRealUrl = url.length > 10 && (
+          url.includes("grants.gov") || url.includes(".gov") || url.includes(".org") || url.includes("https://")
+        ) && !url.includes("example.com") && !url.endsWith(".gov") && !url.endsWith(".org");
+
+        if (!hasRealUrl) {
+          log(`⚠️ QUALITY FLAG (no direct URL): ${g.title} — URL: "${url}"`, "warn");
+          // Still save but flag as needs_verification
+          g.actionability = "NEEDS_VERIFICATION";
+        }
+
+        // Deadline validation
+        if (g.deadline) {
+          const deadline = new Date(g.deadline);
+          if (isNaN(deadline.getTime())) {
+            log(`❌ QUALITY REJECT (invalid date): ${g.title}`, "error");
+            qualityRejected++;
+            continue;
+          }
+          if (deadline < today) {
+            log(`❌ QUALITY REJECT (past deadline ${g.deadline}): ${g.title}`, "error");
+            qualityRejected++;
+            continue;
+          }
+          if (deadline > maxDeadline) {
+            log(`❌ QUALITY REJECT (deadline too far: ${g.deadline}, max: ${maxDeadline.toISOString().split("T")[0]}): ${g.title}`, "error");
+            qualityRejected++;
+            continue;
+          }
+        } else {
+          log(`⚠️ QUALITY FLAG (no deadline): ${g.title}`, "warn");
+          g.actionability = "NEEDS_VERIFICATION";
         }
 
         await base44.entities.Grant.create({
@@ -181,8 +231,12 @@ Only include PASS and NEEDS_VERIFICATION grants.`,
           posted_date: new Date().toISOString().split("T")[0],
           fingerprint,
         });
-        log(`✅ NEW: ${g.title} (${g.actionability || "PASS"})`, "success");
+        log(`✅ SAVED: ${g.title} | ${g.deadline} | ${g.actionability || "PASS"}`, "success");
         created++;
+      }
+
+      if (qualityRejected > 0) {
+        log(`🚫 Quality filter blocked ${qualityRejected} grants (bad URL / invalid deadline)`, "warn");
       }
 
       for (const r of rejected) {
