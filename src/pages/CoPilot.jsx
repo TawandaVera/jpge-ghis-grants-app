@@ -1,30 +1,14 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, CheckCircle2, AlertTriangle, Loader2, Wand2, RefreshCw, Edit3, Save, ChevronRight } from "lucide-react";
+import { Upload, CheckCircle2, AlertTriangle, Loader2, Wand2, RefreshCw, Save, ChevronRight, ExternalLink, Package } from "lucide-react";
 import { toast } from "sonner";
-
-const STAGES = [
-  { id: 1, label: "Master Narrative", desc: "Upload and parse your organization's master narrative" },
-  { id: 2, label: "Org Profile", desc: "Review and update organization profile" },
-  { id: 3, label: "Opportunity Intake", desc: "Select grant opportunity and intake requirements" },
-  { id: 4, label: "Pipeline Board", desc: "Assign to pipeline and set priorities" },
-  { id: 5, label: "Content Mapping", desc: "Map master narrative blocks to grant sections" },
-  { id: 6, label: "Draft Generation", desc: "AI generates tailored grant narrative sections" },
-  { id: 7, label: "Edit Guidance", desc: "Review AI edit recommendations" },
-  { id: 8, label: "Final Pack", desc: "Compile and export final application package" },
-];
-
-const SECTION_KEYS = [
-  "executive_summary", "needs_statement", "goals_objectives",
-  "methodology", "evaluation_plan", "organizational_capacity", "budget_narrative"
-];
+import { SECTION_KEYS, COPILOT_STAGES as STAGES } from "@/lib/grantConstants";
 
 export default function CoPilot() {
   const [currentStage, setCurrentStage] = useState(1);
@@ -314,45 +298,37 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
           </div>
         )}
 
-        {/* Stage 2: Org Profile */}
+        {/* Stage 2: Org Profile — managed in the dedicated Org Profile page */}
         {currentStage === 2 && (
-          <div className="p-6 max-w-4xl mx-auto space-y-5">
+          <div className="p-6 max-w-2xl mx-auto space-y-5">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 2: Org Profile</h2>
-              <p className="text-slate-500 text-sm">Review and confirm organizational profile used in applications</p>
+              <p className="text-slate-500 text-sm">Review and update your organizational profile before drafting</p>
             </div>
-            {orgProfile ? (
-              <div className="grid md:grid-cols-2 gap-4">
-                {[
-                  { label: "Organization", value: orgProfile.org_name },
-                  { label: "EIN", value: orgProfile.ein || "—" },
-                  { label: "SAM UEI", value: orgProfile.duns_uei || "—" },
-                  { label: "Annual Budget", value: orgProfile.annual_budget ? `$${orgProfile.annual_budget.toLocaleString()}` : "—" },
-                  { label: "Indirect Cost Rate", value: orgProfile.indirect_cost_rate ? `${orgProfile.indirect_cost_rate}%` : "—" },
-                  { label: "Fringe Rate", value: orgProfile.fringe_rate ? `${orgProfile.fringe_rate}%` : "—" },
-                ].map(f => (
-                  <div key={f.label} className="bg-white rounded-lg border p-3">
-                    <p className="text-xs text-slate-400 uppercase font-medium">{f.label}</p>
-                    <p className="font-semibold text-slate-800 mt-1">{f.value}</p>
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="p-5 space-y-3">
+                <p className="text-blue-800 font-medium text-sm">Your Org Profile is managed in the dedicated Org Profile section.</p>
+                {orgProfile ? (
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-slate-500">Org:</span> <span className="font-medium text-slate-800">{orgProfile.org_name}</span></div>
+                    <div><span className="text-slate-500">EIN:</span> <span className="font-medium text-slate-800">{orgProfile.ein || "—"}</span></div>
+                    <div><span className="text-slate-500">Indirect:</span> <span className="font-medium text-slate-800">{orgProfile.indirect_cost_rate ? `${orgProfile.indirect_cost_rate}%` : "—"}</span></div>
+                    <div><span className="text-slate-500">Budget:</span> <span className="font-medium text-slate-800">{orgProfile.annual_budget ? `$${orgProfile.annual_budget.toLocaleString()}` : "—"}</span></div>
+                    <div className="col-span-2 text-slate-600 text-xs mt-1 line-clamp-2">{orgProfile.mission}</div>
                   </div>
-                ))}
-                <div className="md:col-span-2 bg-white rounded-lg border p-3">
-                  <p className="text-xs text-slate-400 uppercase font-medium">Mission</p>
-                  <p className="text-slate-700 mt-1 text-sm">{orgProfile.mission}</p>
-                </div>
-                <div className="md:col-span-2 bg-white rounded-lg border p-3">
-                  <p className="text-xs text-slate-400 uppercase font-medium">Focus Areas</p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {(orgProfile.focus_areas || []).map(f => (
-                      <Badge key={f} variant="outline" className="text-xs">{f.replace(/_/g, " ")}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-slate-500">No org profile found. Please set up your Org Profile first.</p>
-            )}
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(3)}>Confirmed — Continue to Stage 3 <ChevronRight className="w-4 h-4 ml-1" /></Button>
+                ) : (
+                  <p className="text-slate-500 text-sm">No org profile set up yet.</p>
+                )}
+                <Link to="/org-profile" target="_blank">
+                  <Button variant="outline" size="sm" className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-100">
+                    <ExternalLink className="w-3.5 h-3.5" /> Open Org Profile
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(3)}>
+              Profile Confirmed — Continue to Stage 3 <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
         )}
 
@@ -408,36 +384,35 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
           </div>
         )}
 
-        {/* Stage 4: Pipeline Board */}
+        {/* Stage 4: Pipeline Board — managed in the dedicated Pipeline page */}
         {currentStage === 4 && (
-          <div className="p-6 max-w-4xl mx-auto space-y-5">
+          <div className="p-6 max-w-2xl mx-auto space-y-5">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 4: Pipeline Board</h2>
-              <p className="text-slate-500 text-sm">Active applications in the writing pipeline</p>
+              <p className="text-slate-500 text-sm">Track and manage your applications in the pipeline</p>
             </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              {applications.filter(a => !["awarded", "declined"].includes(a.stage)).map(app => (
-                <Card key={app.id} className="cursor-pointer hover:shadow-md" onClick={() => { setSelectedApp(app); setSections(app.sections || {}); }}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold text-slate-800 text-sm">{app.grant_title}</p>
-                        <p className="text-xs text-slate-500">{app.funder}</p>
-                      </div>
-                      <Badge className="text-xs bg-slate-100 text-slate-700">{app.stage?.replace(/_/g, " ")}</Badge>
+            <Card className="border-purple-200 bg-purple-50">
+              <CardContent className="p-5 space-y-3">
+                <p className="text-purple-800 font-medium text-sm">Application pipeline management lives in the dedicated Pipeline page.</p>
+                <div className="space-y-2">
+                  {applications.filter(a => !["awarded", "declined"].includes(a.stage)).slice(0, 4).map(app => (
+                    <div key={app.id} className="flex items-center justify-between bg-white rounded-lg border px-3 py-2 text-sm">
+                      <span className="text-slate-700 truncate flex-1 mr-2">{app.grant_title}</span>
+                      <Badge variant="outline" className="text-xs shrink-0">{app.stage?.replace(/_/g, " ")}</Badge>
                     </div>
-                    <div className="mt-3">
-                      <p className="text-xs text-slate-400">{Object.keys(app.sections || {}).length}/{SECTION_KEYS.length} sections complete</p>
-                      <div className="h-1.5 bg-slate-100 rounded-full mt-1">
-                        <div className="h-1.5 bg-emerald-500 rounded-full" style={{ width: `${(Object.keys(app.sections || {}).length / SECTION_KEYS.length) * 100}%` }} />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              {applications.length === 0 && <p className="text-slate-400 text-sm col-span-2 py-8 text-center">No applications in pipeline. Complete Stage 3 first.</p>}
-            </div>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(5)}>Continue to Content Mapping <ChevronRight className="w-4 h-4 ml-1" /></Button>
+                  ))}
+                  {applications.length === 0 && <p className="text-slate-500 text-sm">No applications yet. Complete Stage 3 to create one.</p>}
+                </div>
+                <Link to="/pipeline" target="_blank">
+                  <Button variant="outline" size="sm" className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-100">
+                    <ExternalLink className="w-3.5 h-3.5" /> Open Full Pipeline
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(5)}>
+              Continue to Content Mapping <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
         )}
 
@@ -541,39 +516,39 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
           </div>
         )}
 
-        {/* Stage 8: Final Pack */}
+        {/* Stage 8: Final Pack — managed in the dedicated Pack & Export page */}
         {currentStage === 8 && (
-          <div className="p-6 max-w-4xl mx-auto space-y-5">
+          <div className="p-6 max-w-2xl mx-auto space-y-5">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Stage 8: Final Pack</h2>
-              <p className="text-slate-500 text-sm">Review and export your completed application package</p>
+              <h2 className="text-xl font-bold text-slate-900">Stage 8: Final Pack & Export</h2>
+              <p className="text-slate-500 text-sm">Review readiness checklist and generate your submission package</p>
             </div>
-            <div className="space-y-3">
-              {SECTION_KEYS.map(key => (
-                <Card key={key} className={sections[key] ? "border-emerald-200" : "border-slate-200 opacity-60"}>
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {sections[key] ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <AlertTriangle className="w-5 h-5 text-slate-300" />}
-                      <span className="text-sm font-medium text-slate-800 capitalize">{key.replace(/_/g, " ")}</span>
+            <Card className="border-emerald-200 bg-emerald-50">
+              <CardContent className="p-5 space-y-3">
+                <p className="text-emerald-800 font-medium text-sm">Package generation and export is handled in the Pack & Export section.</p>
+                <div className="space-y-2">
+                  {SECTION_KEYS.map(key => (
+                    <div key={key} className="flex items-center gap-2 text-sm">
+                      {sections[key]
+                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                        : <AlertTriangle className="w-4 h-4 text-slate-300 shrink-0" />}
+                      <span className={sections[key] ? "text-slate-700" : "text-slate-400"}>
+                        {key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+                      </span>
+                      {sections[key] && <span className="text-xs text-slate-400 ml-auto">{sections[key].length} chars</span>}
                     </div>
-                    <span className="text-xs text-slate-400">{sections[key] ? `${sections[key].length} chars` : "Not written"}</span>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <Button
-              className="bg-emerald-600 hover:bg-emerald-700 gap-2 w-full"
-              onClick={() => {
-                const content = SECTION_KEYS.map(k => `## ${k.replace(/_/g, " ").toUpperCase()}\n\n${sections[k] || "[Not written]"}`).join("\n\n---\n\n");
-                const blob = new Blob([content], { type: "text/plain" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url; a.download = `${selectedGrant?.title || "grant"}-application.txt`; a.click();
-                toast.success("Application package exported");
-              }}
-            >
-              Export Final Application Package
-            </Button>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500">
+                  {SECTION_KEYS.filter(k => sections[k]).length}/{SECTION_KEYS.length} sections complete
+                </p>
+                <Link to="/pack">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 w-full">
+                    <ExternalLink className="w-4 h-4" /> Go to Pack & Export
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

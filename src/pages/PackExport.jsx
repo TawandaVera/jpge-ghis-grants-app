@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle2, AlertCircle, ExternalLink, Package, Loader2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { SECTION_KEYS } from "@/lib/grantConstants";
 
 const READINESS_ITEMS = [
   "SAM.gov Registration Active",
@@ -15,11 +16,6 @@ const READINESS_ITEMS = [
   "Professional Liability Insurance",
   "Financial Statements (2 yr)",
   "Capability Statement Updated",
-];
-
-const SECTION_KEYS = [
-  "executive_summary", "needs_statement", "goals_objectives",
-  "methodology", "evaluation_plan", "organizational_capacity", "budget_narrative"
 ];
 
 export default function PackExport() {
