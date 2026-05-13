@@ -13,6 +13,7 @@ import Pipeline from '@/pages/Pipeline';
 import CoPilot from '@/pages/CoPilot';
 import PackExport from '@/pages/PackExport';
 import OrgProfile from '@/pages/OrgProfile';
+import GrantDossier from '@/pages/GrantDossier';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -44,6 +45,7 @@ const AuthenticatedApp = () => {
         <Route path="/copilot" element={<CoPilot />} />
         <Route path="/pack" element={<PackExport />} />
         <Route path="/org-profile" element={<OrgProfile />} />
+        <Route path="/dossier" element={<GrantDossier />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

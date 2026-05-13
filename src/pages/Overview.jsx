@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Database, Target, CheckCircle2, AlertTriangle, Download, ArrowRight } from "lucide-react";
+import { Database, Target, CheckCircle2, AlertTriangle, Download, ArrowRight, ShieldCheck } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { differenceInDays, format } from "date-fns";
 import { toast } from "sonner";
@@ -93,7 +93,7 @@ export default function Overview() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Grant Intelligence Overview</h1>
-          <p className="text-slate-500 text-sm">Real-time pipeline health across all {grants.length} grants</p>
+          <p className="text-slate-500 text-sm">Real-time pipeline health across all 5 classes</p>
         </div>
         <Button variant="outline" onClick={exportCSV} className="gap-2">
           <Download className="w-4 h-4" /> Export CSV
@@ -128,6 +128,7 @@ export default function Overview() {
             { label: "Pipeline", to: "/pipeline", color: "bg-purple-50 text-purple-700 border-purple-200" },
             { label: "Co-Pilot", to: "/copilot", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
             { label: "Pack & Export", to: "/pack", color: "bg-amber-50 text-amber-700 border-amber-200" },
+            { label: "Grant Dossier", to: "/dossier", color: "bg-slate-100 text-slate-700 border-slate-200" },
           ].map((step, i) => (
             <div key={step.label} className="flex items-center gap-2">
               <Link to={step.to}>
@@ -135,7 +136,7 @@ export default function Overview() {
                   {step.label}
                 </span>
               </Link>
-              {i < 4 && <span className="text-slate-300">→</span>}
+              {i < 5 && <span className="text-slate-300">→</span>}
             </div>
           ))}
         </div>
@@ -232,11 +233,20 @@ export default function Overview() {
           </CardHeader>
           <CardContent className="space-y-2">
             {recentGrants.map(g => (
-              <div key={g.id} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
+              <div key={g.id} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0 gap-2">
                 <div className="min-w-0">
                   <p className="text-sm text-slate-800 truncate">{g.title}</p>
                 </div>
-                <span className="text-xs text-slate-400 ml-3 shrink-0">{g.funder?.split(" ").slice(-1)[0]}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-slate-400">{g.funder?.split(" ").slice(-1)[0]}</span>
+                  <button
+                    onClick={() => window.open(`https://grantedai.com/grants?q=${encodeURIComponent(g.title)}`, "_blank")}
+                    className="text-amber-500 hover:text-amber-700 transition-colors"
+                    title="Verify on GrantedAI"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             ))}
             {recentGrants.length === 0 && <p className="text-sm text-slate-400 text-center py-4">No grants yet. Run discovery.</p>}

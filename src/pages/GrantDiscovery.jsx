@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Zap, ExternalLink, Calendar, MapPin, Loader2, Plus, FileText, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { Search, Zap, ExternalLink, Calendar, MapPin, Loader2, Plus, FileText, AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -482,7 +482,7 @@ For each, classify actionability:
               {selected.description && <div><p className="text-xs text-slate-500 mb-1">Description</p><p className="text-sm text-slate-700">{selected.description}</p></div>}
               {selected.eligibility && <div><p className="text-xs text-slate-500 mb-1">Eligibility</p><p className="text-sm text-slate-700">{selected.eligibility}</p></div>}
               {selected.geographic_scope && <div className="flex items-center gap-2 text-sm text-slate-600"><MapPin className="w-4 h-4" />{selected.geographic_scope}</div>}
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-2 flex-wrap">
                 <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => addToApplication(selected)}>
                   Add to Pipeline
                 </Button>
@@ -491,6 +491,13 @@ For each, classify actionability:
                     <ExternalLink className="w-4 h-4" /> Source
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
+                  onClick={() => window.open(`https://grantedai.com/grants?q=${encodeURIComponent(selected.title)}`, "_blank")}
+                >
+                  <ShieldCheck className="w-4 h-4" /> Verify on GrantedAI
+                </Button>
               </div>
             </div>
           )}
