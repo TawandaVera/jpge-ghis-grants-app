@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Search, BarChart3, 
-  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2
+  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ const NAV = [
   { to: "/copilot", label: "4. Co-Pilot", icon: Bot },
   { to: "/pack", label: "5. Pack & Export", icon: Package },
   { to: "/dossier", label: "Grant Dossier", icon: BookOpen },
+  { to: "/tracker", label: "App Tracker", icon: ClipboardList },
   { to: "/org-profile", label: "Org Profile", icon: Building2 },
 ];
 

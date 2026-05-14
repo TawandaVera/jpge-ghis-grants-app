@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Search, ExternalLink, ShieldCheck, Loader2, TrendingUp, Calendar, DollarSign, MapPin, CheckCircle2, AlertTriangle } from "lucide-react";
+import { BookOpen, Search, ExternalLink, ShieldCheck, Loader2, TrendingUp, Calendar, DollarSign, CheckCircle2, AlertTriangle, ClipboardList } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Textarea } from "@/components/ui/textarea";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -18,6 +20,7 @@ const REC_BADGE = {
 };
 
 export default function GrantDossier() {
+  const navigate = useNavigate();
   const [grants, setGrants] = useState([]);
   const [matches, setMatches] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -27,8 +30,10 @@ export default function GrantDossier() {
   const [selected, setSelected] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [dossier, setDossier] = useState(null);
+  const [logNote, setLogNote] = useState("");
+  const [loggingStatus, setLoggingStatus] = useState(false);
 
-  useEffect(() => {
+  const loadData = () =>
     Promise.all([
       base44.entities.Grant.list("-created_date", 300),
       base44.entities.GrantMatch.list("-total_score", 300),
@@ -39,9 +44,24 @@ export default function GrantDossier() {
       setApplications(a);
       setLoading(false);
     });
-  }, []);
+
+  useEffect(() => { loadData(); }, []);
 
   const getMatch = (grantId) => matches.find(m => m.grant_id === grantId);
+
+  const logStatusUpdate = async () => {
+    if (!logNote.trim() || !selected?.app) return;
+    setLoggingStatus(true);
+    const timestamp = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const existing = selected.app.notes || "";
+    await base44.entities.GrantApplication.update(selected.app.id, {
+      notes: `[${timestamp}] ${logNote.trim()}\n${existing}`.trim(),
+    });
+    toast.success("Status logged");
+    setLogNote("");
+    setLoggingStatus(false);
+    loadData();
+  };
   const getApp = (grantId) => applications.find(a => a.grant_id === grantId);
 
   const generateDossier = async (grant) => {
@@ -356,8 +376,46 @@ Generate a strategic dossier that includes:
                 </div>
               )}
 
+              {/* Quick-action: Log Status */}
+              {selected.app && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+                    <ClipboardList className="w-3.5 h-3.5 text-emerald-600" /> Log Status Update
+                    <Badge className="ml-auto bg-emerald-100 text-emerald-800 border-emerald-300 text-xs border">{selected.app.stage}</Badge>
+                  </p>
+                  <Textarea
+                    value={logNote}
+                    onChange={e => setLogNote(e.target.value)}
+                    placeholder="e.g. Submitted draft narrative, awaiting PI sign-off..."
+                    rows={2}
+                    className="text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-emerald-600 hover:bg-emerald-700 gap-1.5"
+                      onClick={logStatusUpdate}
+                      disabled={!logNote.trim() || loggingStatus}
+                    >
+                      <ClipboardList className="w-3.5 h-3.5" /> Log Update
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => navigate("/tracker")}>
+                      <ExternalLink className="w-3.5 h-3.5" /> Open Tracker
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {!selected.app && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex items-center justify-between">
+                  <p className="text-xs text-slate-500">No application tracked yet for this grant.</p>
+                  <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => navigate("/tracker")}>
+                    <ClipboardList className="w-3.5 h-3.5" /> Add to Tracker
+                  </Button>
+                </div>
+              )}
+
               {/* Action buttons */}
-              <div className="flex gap-3 flex-wrap pt-2">
+              <div className="flex gap-3 flex-wrap pt-1">
                 {selected.grant.source_url && (
                   <Button variant="outline" className="gap-2" onClick={() => window.open(selected.grant.source_url, "_blank")}>
                     <ExternalLink className="w-4 h-4" /> View Source
@@ -370,11 +428,6 @@ Generate a strategic dossier that includes:
                 >
                   <ShieldCheck className="w-4 h-4" /> Verify on GrantedAI
                 </Button>
-                {selected.app && (
-                  <Badge className="self-center bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    Application: {selected.app.stage}
-                  </Badge>
-                )}
               </div>
             </div>
           )}
