@@ -1,23 +1,9 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, Search, BarChart3, 
-  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList
-} from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { base44 } from "@/api/base44Client";
-
-const NAV = [
-  { to: "/", label: "Overview", icon: LayoutDashboard },
-  { to: "/discovery", label: "1. Discovery", icon: Search },
-  { to: "/assessment", label: "2. Assessment", icon: BarChart3 },
-  { to: "/pipeline", label: "3. Grant Pipeline", icon: Kanban },
-  { to: "/copilot", label: "4. Co-Pilot", icon: Bot },
-  { to: "/pack", label: "5. Pack & Export", icon: Package },
-  { to: "/dossier", label: "Grant Dossier", icon: BookOpen },
-  { to: "/tracker", label: "App Tracker", icon: ClipboardList },
-  { to: "/org-profile", label: "Org Profile", icon: Building2 },
-];
+import { APP_ROUTES } from "@/lib/app/routes";
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -25,7 +11,7 @@ export default function Layout() {
 
   const NavItems = () => (
     <>
-      {NAV.map(({ to, label, icon: Icon }) => (
+      {APP_ROUTES.map(({ path: to, label, icon: Icon }) => (
         <Link
           key={to}
           to={to}
