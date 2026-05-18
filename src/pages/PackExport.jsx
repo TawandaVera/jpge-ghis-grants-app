@@ -5,9 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle2, AlertCircle, ExternalLink, Package, Loader2, ArrowRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { CheckCircle2, AlertCircle, Package, Loader2, ArrowRight, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { SECTION_KEYS } from "@/lib/grantConstants";
+import {
+  PACK_GATE_PHRASE,
+  canGeneratePack,
+  getPackBlockReason,
+  isDraftableState,
+  normalizeMatchRecord,
+} from "@/lib/grants/governance";
 
 const READINESS_ITEMS = [
   "SAM.gov Registration Active",
@@ -18,6 +26,13 @@ const READINESS_ITEMS = [
   "Capability Statement Updated",
 ];
 
+const STATE_BADGE = {
+  GO: "bg-emerald-100 text-emerald-800 border-emerald-300",
+  PREPARE: "bg-blue-100 text-blue-800 border-blue-300",
+  DEFER: "bg-amber-100 text-amber-800 border-amber-300",
+  DECLINE: "bg-slate-100 text-slate-600 border-slate-300",
+};
+
 export default function PackExport() {
   const [matches, setMatches] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -25,48 +40,84 @@ export default function PackExport() {
   const [readiness, setReadiness] = useState({});
   const [selectedApp, setSelectedApp] = useState(null);
   const [generating, setGenerating] = useState(false);
+  const [personaConfirmed, setPersonaConfirmed] = useState(false);
+  const [readinessVerified, setReadinessVerified] = useState(false);
+  const [gatePhrase, setGatePhrase] = useState("");
 
   useEffect(() => {
     Promise.all([
       base44.entities.GrantMatch.filter({ recommendation: "GO" }),
       base44.entities.GrantMatch.filter({ recommendation: "PREP" }),
+      base44.entities.GrantMatch.filter({ recommendation: "PREPARE" }),
       base44.entities.GrantApplication.list("-created_date", 100),
-    ]).then(([go, prep, apps]) => {
-      setMatches([...go, ...prep].sort((a, b) => b.total_score - a.total_score));
+    ]).then(([go, prep, prepare, apps]) => {
+      const canonicalMatches = [...go, ...prep, ...prepare]
+        .map(normalizeMatchRecord)
+        .filter((match, index, all) => all.findIndex((item) => item.id === match.id) === index)
+        .filter((match) => isDraftableState(match.advisory_state))
+        .sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
+
+      setMatches(canonicalMatches);
       setApplications(apps);
       setLoading(false);
     });
   }, []);
 
-  const getApp = (matchGrantId) => applications.find(a => a.grant_id === matchGrantId);
+  const getApp = (matchGrantId) => applications.find((app) => app.grant_id === matchGrantId);
 
   const readinessCount = Object.values(readiness).filter(Boolean).length;
   const remaining = READINESS_ITEMS.length - readinessCount;
+  const gateState = {
+    advisory_state: selectedApp
+      ? matches.find((match) => match.grant_id === selectedApp.grant_id)?.advisory_state
+      : matches[0]?.advisory_state,
+    gate_phrase: gatePhrase,
+    persona_confirmed: personaConfirmed,
+    readiness_verified: readinessVerified,
+  };
+  const blockReason = getPackBlockReason(gateState);
 
   const generatePackage = async (match) => {
     const app = getApp(match.grant_id);
+    const gate = {
+      advisory_state: match.advisory_state,
+      gate_phrase: gatePhrase,
+      persona_confirmed: personaConfirmed,
+      readiness_verified: readinessVerified,
+    };
+
+    if (!canGeneratePack(gate)) {
+      toast.error(getPackBlockReason(gate));
+      return;
+    }
+
     if (!app) {
       toast.error("No application found for this grant. Start drafting in Co-Pilot first.");
       return;
     }
+
     setGenerating(true);
     try {
       const sections = app.sections || {};
       const content = [
+        "# ZERO-DRAFT APPLICATION PACK, NOT SUBMISSION READY",
+        "This export is a controlled planning artifact. Final submission authority remains with the human review body.",
         `# ${match.grant_title}`,
         `## Funder: ${match.funder}`,
         `## Deadline: ${match.deadline || "TBD"}`,
-        `## Match Score: ${match.total_score}% (${match.recommendation})`,
-        `\n---\n`,
-        ...SECTION_KEYS.map(k => `## ${k.replace(/_/g, " ").toUpperCase()}\n\n${sections[k] || "[Section not drafted — complete in Co-Pilot]"}`)
+        `## Match Score: ${match.total_score}% (${match.advisory_state})`,
+        "\n---\n",
+        ...SECTION_KEYS.map((key) => (
+          `## ${key.replace(/_/g, " ").toUpperCase()}\n\n${sections[key] || "[Section not drafted — complete in Co-Pilot]"}`
+        )),
       ].join("\n\n");
       const blob = new Blob([content], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${match.grant_title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_package.txt`;
+      a.download = `${match.grant_title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_zero_draft_package.txt`;
       a.click();
-      toast.success("Package exported");
+      toast.success("Zero-draft package exported");
     } catch(e) {
       toast.error("Export failed: " + e.message);
     }
@@ -79,16 +130,22 @@ export default function PackExport() {
     <div className="p-6 max-w-7xl mx-auto space-y-5">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Forms & Packaging</h1>
-        <p className="text-slate-500 text-sm">Prepare and package grant applications for GO/PREP opportunities</p>
+        <p className="text-slate-500 text-sm">Prepare controlled zero-draft packs for GO/PREPARE opportunities after human gate approval</p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
         {/* Grant List */}
         <div className="md:col-span-2 space-y-3">
-          <h2 className="font-semibold text-slate-700 text-sm">GO/PREP Grants ({matches.length})</h2>
-          {matches.map(match => {
+          <h2 className="font-semibold text-slate-700 text-sm">GO/PREPARE Grants ({matches.length})</h2>
+          {matches.map((match) => {
             const app = getApp(match.grant_id);
             const sectionCount = Object.keys(app?.sections || {}).length;
+            const gated = canGeneratePack({
+              advisory_state: match.advisory_state,
+              gate_phrase: gatePhrase,
+              persona_confirmed: personaConfirmed,
+              readiness_verified: readinessVerified,
+            });
             return (
               <Card
                 key={match.id}
@@ -112,8 +169,8 @@ export default function PackExport() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <Badge className={`text-xs border ${match.recommendation === "GO" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-blue-800 border-blue-300"}`}>
-                        {match.recommendation}
+                      <Badge className={`text-xs border ${STATE_BADGE[match.advisory_state] || "bg-slate-100 text-slate-600"}`}>
+                        {match.advisory_state}
                       </Badge>
                       <span className="text-sm font-bold text-slate-600">{match.total_score}%</span>
                       {app ? (
@@ -121,13 +178,13 @@ export default function PackExport() {
                           size="sm"
                           variant="outline"
                           className="h-7 text-xs gap-1"
-                          disabled={generating}
-                          onClick={e => { e.stopPropagation(); generatePackage(match); }}
+                          disabled={generating || !gated}
+                          onClick={(e) => { e.stopPropagation(); generatePackage(match); }}
                         >
-                          <Package className="w-3 h-3" /> Export
+                          {gated ? <Package className="w-3 h-3" /> : <Lock className="w-3 h-3" />} Export
                         </Button>
                       ) : (
-                        <Link to="/copilot" onClick={e => e.stopPropagation()}>
+                        <Link to="/copilot" onClick={(e) => e.stopPropagation()}>
                           <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
                             Co-Pilot <ArrowRight className="w-3 h-3" />
                           </Button>
@@ -142,13 +199,43 @@ export default function PackExport() {
           {matches.length === 0 && (
             <div className="text-center py-16 text-slate-400">
               <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p>No GO/PREP matches yet. Run assessment first.</p>
+              <p>No GO/PREPARE matches yet. Run assessment first.</p>
             </div>
           )}
         </div>
 
         {/* Right Panel */}
         <div className="space-y-4">
+          <Card className="border-amber-200 bg-amber-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Lock className="w-4 h-4 text-amber-500" />
+                Pack Gate
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Checkbox checked={personaConfirmed} onCheckedChange={(value) => setPersonaConfirmed(Boolean(value))} />
+                <span className="text-sm text-slate-700">Organization persona confirmed</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Checkbox checked={readinessVerified} onCheckedChange={(value) => setReadinessVerified(Boolean(value))} />
+                <span className="text-sm text-slate-700">Readiness artifacts verified</span>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Required phrase</p>
+                <Input
+                  value={gatePhrase}
+                  onChange={(event) => setGatePhrase(event.target.value)}
+                  placeholder={PACK_GATE_PHRASE}
+                />
+              </div>
+              <div className={`rounded-lg p-3 text-xs border ${blockReason ? "bg-white border-amber-200 text-amber-700" : "bg-emerald-50 border-emerald-200 text-emerald-700"}`}>
+                {blockReason || "Pack gate satisfied. Export remains a zero-draft only."}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Readiness Checklist */}
           <Card>
             <CardHeader className="pb-2">
@@ -158,11 +245,11 @@ export default function PackExport() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {READINESS_ITEMS.map(item => (
+              {READINESS_ITEMS.map((item) => (
                 <div key={item} className="flex items-center gap-3">
                   <Checkbox
                     checked={!!readiness[item]}
-                    onCheckedChange={v => setReadiness(p => ({ ...p, [item]: v }))}
+                    onCheckedChange={(value) => setReadiness((previous) => ({ ...previous, [item]: value }))}
                   />
                   <span className={`text-sm ${readiness[item] ? "line-through text-slate-400" : "text-slate-700"}`}>{item}</span>
                 </div>
@@ -187,33 +274,33 @@ export default function PackExport() {
                 <div className="space-y-3">
                   <p className="text-sm text-slate-700 font-medium">{selectedApp.grant_title}</p>
                   <div className="space-y-2">
-                    {SECTION_KEYS.map(k => (
-                      <div key={k} className="flex items-center gap-2 text-xs">
-                        {selectedApp.sections?.[k] ? (
+                    {SECTION_KEYS.map((key) => (
+                      <div key={key} className="flex items-center gap-2 text-xs">
+                        {selectedApp.sections?.[key] ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                         ) : (
                           <AlertCircle className="w-3.5 h-3.5 text-slate-300 shrink-0" />
                         )}
-                        <span className={selectedApp.sections?.[k] ? "text-slate-700" : "text-slate-400"}>
-                          {k.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+                        <span className={selectedApp.sections?.[key] ? "text-slate-700" : "text-slate-400"}>
+                          {key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())}
                         </span>
                       </div>
                     ))}
                   </div>
                   <Button
                     className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2 text-sm"
-                    disabled={generating}
+                    disabled={generating || Boolean(blockReason)}
                     onClick={() => {
-                      const match = matches.find(m => m.grant_id === selectedApp.grant_id);
+                      const match = matches.find((item) => item.grant_id === selectedApp.grant_id);
                       if (match) generatePackage(match);
                     }}
                   >
                     {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
-                    {generating ? "Generating..." : "Generate Package"}
+                    {generating ? "Generating..." : "Generate Zero-Draft Package"}
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-slate-400 text-center py-4">Select a grant to generate a package</p>
+                <p className="text-sm text-slate-400 text-center py-4">Select a grant to generate a zero-draft package</p>
               )}
             </CardContent>
           </Card>
