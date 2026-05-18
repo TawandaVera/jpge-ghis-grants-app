@@ -5,10 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Upload, CheckCircle2, AlertTriangle, Loader2, Wand2, RefreshCw, Save, ChevronRight, ExternalLink, Package } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Upload, CheckCircle2, AlertTriangle, Loader2, Wand2, RefreshCw, Save, ChevronRight, ExternalLink, Package, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { SECTION_KEYS, COPILOT_STAGES as STAGES } from "@/lib/grantConstants";
+import { isDraftableState, normalizeMatchRecord } from "@/lib/grants/governance";
+
+const STATE_BADGE = {
+  GO: "bg-emerald-100 text-emerald-800 border-emerald-300",
+  PREPARE: "bg-blue-100 text-blue-800 border-blue-300",
+};
 
 export default function CoPilot() {
   const [currentStage, setCurrentStage] = useState(1);
@@ -16,16 +22,15 @@ export default function CoPilot() {
   const [parsedBlocks, setParsedBlocks] = useState([]);
   const [parsing, setParsing] = useState(false);
   const [hilPending, setHilPending] = useState(true);
+  const [personaConfirmed, setPersonaConfirmed] = useState(false);
   const [orgProfile, setOrgProfile] = useState(null);
-  const [grants, setGrants] = useState([]);
   const [matches, setMatches] = useState([]);
   const [selectedGrant, setSelectedGrant] = useState(null);
+  const [selectedMatch, setSelectedMatch] = useState(null);
   const [applications, setApplications] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
   const [sections, setSections] = useState({});
   const [drafting, setDrafting] = useState(null);
-  const [editingBlock, setEditingBlock] = useState(null);
-  const [editContent, setEditContent] = useState("");
   const [savedNarratives, setSavedNarratives] = useState([]);
   const [loading, setLoading] = useState(true);
   const fileRef = useRef();
@@ -36,20 +41,26 @@ export default function CoPilot() {
 
   const loadAll = async () => {
     setLoading(true);
-    const [profiles, g, m, a, narratives] = await Promise.all([
+    const [profiles, goMatches, prepMatches, prepareMatches, applicationsData, narratives] = await Promise.all([
       base44.entities.OrgProfile.list(),
-      base44.entities.Grant.list("-created_date", 100),
       base44.entities.GrantMatch.filter({ recommendation: "GO" }),
+      base44.entities.GrantMatch.filter({ recommendation: "PREP" }),
+      base44.entities.GrantMatch.filter({ recommendation: "PREPARE" }),
       base44.entities.GrantApplication.list("-created_date", 50),
       base44.entities.MasterNarrative.list(),
     ]);
+
+    const canonicalMatches = [...goMatches, ...prepMatches, ...prepareMatches]
+      .map(normalizeMatchRecord)
+      .filter((match, index, all) => all.findIndex((item) => item.id === match.id) === index)
+      .filter((match) => isDraftableState(match.advisory_state));
+
     setOrgProfile(profiles[0] || null);
-    setGrants(g);
-    setMatches(m);
-    setApplications(a);
+    setMatches(canonicalMatches);
+    setApplications(applicationsData);
     setSavedNarratives(narratives);
     if (narratives.length > 0) {
-      const blocks = narratives.map(n => ({ section: n.section, content: n.content, approved: n.approved }));
+      const blocks = narratives.map((n) => ({ section: n.section, content: n.content, approved: n.approved }));
       setParsedBlocks(blocks);
       setHilPending(false);
     }
@@ -70,14 +81,11 @@ export default function CoPilot() {
     try {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Parse this organizational narrative into structured content blocks for grant writing.
-        
+
 NARRATIVE:
 ${narrativeText.substring(0, 4000)}
 
-Extract 8-12 distinct content blocks. Each block should be a specific, reusable piece of organizational content such as:
-- Mission Statement, Org Overview, Capacity Statement, Program Description, 
-- Need Statement, Evaluation Plan, Budget Narrative, Sustainability Plan, 
-- Past Performance, Partnerships, Innovation, Target Population, etc.`,
+Extract 8-12 distinct reusable content blocks. Do not invent organizational facts. Flag uncertain or unsupported claims as needing verification.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -118,44 +126,48 @@ Extract 8-12 distinct content blocks. Each block should be a specific, reusable 
     setCurrentStage(2);
   };
 
-  const saveBlock = async () => {
-    if (editingBlock === null) return;
-    const updated = [...parsedBlocks];
-    updated[editingBlock] = { ...updated[editingBlock], content: editContent };
-    setParsedBlocks(updated);
-    setEditingBlock(null);
-    toast.success("Block updated");
-  };
+  const findSelectedMatch = () => selectedMatch || matches.find((match) => match.grant_id === selectedGrant?.id);
 
   const draftSection = async (sectionKey) => {
+    const activeMatch = findSelectedMatch();
     if (!selectedApp || !selectedGrant) { toast.error("Select an application first"); return; }
+    if (!personaConfirmed) { toast.error("Confirm the organization persona before drafting."); return; }
+    if (!activeMatch || !isDraftableState(activeMatch.advisory_state)) {
+      toast.error("Drafting is blocked because this opportunity is not in GO or PREPARE state.");
+      return;
+    }
+
     setDrafting(sectionKey);
     try {
-      const blockContext = parsedBlocks.map(b => `[${b.section}]: ${b.content?.substring(0, 300)}`).join("\n\n");
+      const blockContext = parsedBlocks.map((b) => `[${b.section}]: ${b.content?.substring(0, 300)}`).join("\n\n");
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a professional grant writer for GHIS LLC.
+        prompt: `You are a governed grant writing assistant for GHIS LLC.
 
-Write the "${sectionKey.replace(/_/g, " ").toUpperCase()}" section for this grant:
+Write a ZERO-DRAFT, NOT SUBMISSION READY "${sectionKey.replace(/_/g, " ").toUpperCase()}" section.
 
 GRANT: ${selectedGrant.title}
 FUNDER: ${selectedGrant.funder}
+ADVISORY STATE: ${activeMatch.advisory_state}
 
-MASTER NARRATIVE BLOCKS (use these as source material):
+MASTER NARRATIVE BLOCKS:
 ${blockContext}
 
 ORG PROFILE: ${orgProfile ? `${orgProfile.org_name}: ${orgProfile.mission}` : "GHIS LLC — health innovation consultancy"}
 
-Write a compelling, specific 300-500 word section. Use evidence from the narrative blocks. Tailor specifically to this funder's priorities.`,
+Rules:
+- Do not invent facts.
+- Use only provided organizational context.
+- Mark unsupported facts as [NEEDS VERIFICATION].
+- Produce an editable 300-500 word zero-draft section.`,
         response_json_schema: {
           type: "object",
           properties: { content: { type: "string" } }
         }
       });
-      setSections(prev => ({ ...prev, [sectionKey]: result.content }));
-      await base44.entities.GrantApplication.update(selectedApp.id, {
-        sections: { ...sections, [sectionKey]: result.content }
-      });
-      toast.success(`${sectionKey.replace(/_/g, " ")} drafted`);
+      const nextSections = { ...sections, [sectionKey]: result.content };
+      setSections(nextSections);
+      await base44.entities.GrantApplication.update(selectedApp.id, { sections: nextSections });
+      toast.success(`${sectionKey.replace(/_/g, " ")} zero-draft created`);
     } catch(e) {
       toast.error("Draft failed: " + e.message);
     }
@@ -168,25 +180,24 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Stage Sidebar */}
       <div className="w-64 bg-slate-800 text-white flex flex-col shrink-0 overflow-y-auto">
         <div className="p-4 border-b border-slate-700">
           <p className="font-semibold text-sm">Grant Co-Pilot</p>
-          <p className="text-xs text-slate-400 mt-0.5">8-Stage Workflow</p>
+          <p className="text-xs text-slate-400 mt-0.5">8-Stage Governed Workflow</p>
         </div>
         <nav className="p-3 space-y-1 flex-1">
-          {STAGES.map(s => (
+          {STAGES.map((stage) => (
             <button
-              key={s.id}
-              onClick={() => setCurrentStage(s.id)}
+              key={stage.id}
+              onClick={() => setCurrentStage(stage.id)}
               className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${
-                currentStage === s.id ? "bg-emerald-600 text-white" : "text-slate-400 hover:bg-slate-700"
+                currentStage === stage.id ? "bg-emerald-600 text-white" : "text-slate-400 hover:bg-slate-700"
               }`}
             >
               <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center shrink-0 font-bold ${
-                currentStage === s.id ? "bg-white text-emerald-600" : "bg-slate-700 text-slate-400"
-              }`}>{s.id}</span>
-              {s.label}
+                currentStage === stage.id ? "bg-white text-emerald-600" : "bg-slate-700 text-slate-400"
+              }`}>{stage.id}</span>
+              {stage.label}
             </button>
           ))}
         </nav>
@@ -201,15 +212,13 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        {/* Stage 1: Master Narrative */}
         {currentStage === 1 && (
           <div className="p-6 max-w-6xl mx-auto space-y-5">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Stage 1: Master Narrative Ingestion</h2>
-                <p className="text-slate-500 text-sm">Upload and parse your organization's master narrative</p>
+                <p className="text-slate-500 text-sm">Upload and parse reusable organizational narrative blocks</p>
               </div>
               {hilPending && parsedBlocks.length > 0 && (
                 <Badge className="bg-red-100 text-red-700 border border-red-200">HIL Required</Badge>
@@ -217,54 +226,43 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-              {/* Upload */}
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader className="pb-2"><CardTitle className="text-sm">Upload Master Narrative</CardTitle></CardHeader>
-                  <CardContent className="space-y-3">
-                    <div
-                      className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors"
-                      onClick={() => fileRef.current?.click()}
-                    >
-                      <Upload className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p className="text-sm font-medium text-slate-600">Drop PDF, DOCX, or TXT</p>
-                      <p className="text-xs text-slate-400">or click to browse</p>
-                      <input ref={fileRef} type="file" accept=".txt,.docx,.pdf" className="hidden" onChange={handleFileUpload} />
-                    </div>
-                    <p className="text-xs text-slate-400 text-center">Or paste text</p>
-                    <Textarea
-                      placeholder="Paste your master narrative here..."
-                      value={narrativeText}
-                      onChange={e => setNarrativeText(e.target.value)}
-                      className="min-h-32 text-sm"
-                    />
-                    <Button className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={parseNarrative} disabled={parsing}>
-                      {parsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                      {parsing ? "Parsing..." : "Parse Narrative"}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Upload Master Narrative</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div
+                    className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    <Upload className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm font-medium text-slate-600">Drop TXT, DOCX, or PDF text extract</p>
+                    <p className="text-xs text-slate-400">or click to browse</p>
+                    <input ref={fileRef} type="file" accept=".txt,.docx,.pdf" className="hidden" onChange={handleFileUpload} />
+                  </div>
+                  <Textarea
+                    placeholder="Paste your master narrative here..."
+                    value={narrativeText}
+                    onChange={(e) => setNarrativeText(e.target.value)}
+                    className="min-h-32 text-sm"
+                  />
+                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={parseNarrative} disabled={parsing}>
+                    {parsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                    {parsing ? "Parsing..." : "Parse Narrative"}
+                  </Button>
+                </CardContent>
+              </Card>
 
-              {/* Parsed Blocks */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-slate-800">Parsed Content Blocks</h3>
                   {parsedBlocks.length > 0 && <Badge variant="outline">{parsedBlocks.length} blocks</Badge>}
                 </div>
                 <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-                  {parsedBlocks.map((block, i) => (
-                    <Card key={i} className="border-slate-200">
+                  {parsedBlocks.map((block, index) => (
+                    <Card key={`${block.section}-${index}`} className="border-slate-200">
                       <CardContent className="p-3">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <p className="font-medium text-sm text-slate-800">{block.section}</p>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {block.verified && <Badge className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">VERIFY</Badge>}
-                            <button
-                              onClick={() => { setEditingBlock(i); setEditContent(block.content); }}
-                              className="text-xs text-emerald-600 hover:underline"
-                            >Edit</button>
-                          </div>
+                          {block.verified && <Badge className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">VERIFY</Badge>}
                         </div>
                         <p className="text-xs text-slate-500 line-clamp-3">{block.content}</p>
                       </CardContent>
@@ -272,22 +270,20 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
                   ))}
                   {parsedBlocks.length === 0 && (
                     <div className="text-center py-12 text-slate-400 text-sm">
-                      Upload or paste narrative and click "Parse Narrative"
+                      Upload or paste narrative and click Parse Narrative
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* HIL Checkpoint */}
             {hilPending && parsedBlocks.length > 0 && (
               <Card className="border-amber-200 bg-amber-50">
                 <CardContent className="p-4">
                   <p className="font-semibold text-amber-800 mb-1">Human-in-the-Loop Checkpoint</p>
-                  <p className="text-sm text-amber-700 mb-3">Review parsed blocks before proceeding to Stage 2</p>
+                  <p className="text-sm text-amber-700 mb-3">Review parsed blocks before proceeding to Stage 2.</p>
                   <div className="flex gap-2">
                     <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={approveAndSave}>Approve & Continue</Button>
-                    <Button variant="outline" onClick={() => setHilPending(false)}>Edit</Button>
                     <Button variant="outline" onClick={parseNarrative} disabled={parsing}>
                       <RefreshCw className="w-4 h-4 mr-2" />Regenerate
                     </Button>
@@ -298,16 +294,14 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
           </div>
         )}
 
-        {/* Stage 2: Org Profile — managed in the dedicated Org Profile page */}
         {currentStage === 2 && (
           <div className="p-6 max-w-2xl mx-auto space-y-5">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Stage 2: Org Profile</h2>
-              <p className="text-slate-500 text-sm">Review and update your organizational profile before drafting</p>
+              <h2 className="text-xl font-bold text-slate-900">Stage 2: Org Profile and Persona Confirmation</h2>
+              <p className="text-slate-500 text-sm">Confirm the organization persona before drafting.</p>
             </div>
             <Card className="border-blue-200 bg-blue-50">
               <CardContent className="p-5 space-y-3">
-                <p className="text-blue-800 font-medium text-sm">Your Org Profile is managed in the dedicated Org Profile section.</p>
                 {orgProfile ? (
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div><span className="text-slate-500">Org:</span> <span className="font-medium text-slate-800">{orgProfile.org_name}</span></div>
@@ -319,6 +313,10 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
                 ) : (
                   <p className="text-slate-500 text-sm">No org profile set up yet.</p>
                 )}
+                <div className="flex items-center gap-3 pt-2">
+                  <Checkbox checked={personaConfirmed} onCheckedChange={(value) => setPersonaConfirmed(Boolean(value))} />
+                  <span className="text-sm text-blue-800 font-medium">I confirm this organization persona for zero-draft generation.</span>
+                </div>
                 <Link to="/org-profile" target="_blank">
                   <Button variant="outline" size="sm" className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-100">
                     <ExternalLink className="w-3.5 h-3.5" /> Open Org Profile
@@ -326,40 +324,40 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
                 </Link>
               </CardContent>
             </Card>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(3)}>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={!personaConfirmed} onClick={() => setCurrentStage(3)}>
               Profile Confirmed — Continue to Stage 3 <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
         )}
 
-        {/* Stage 3: Opportunity Intake */}
         {currentStage === 3 && (
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 3: Opportunity Intake</h2>
-              <p className="text-slate-500 text-sm">Select a GO/PREP grant opportunity to build an application for</p>
+              <p className="text-slate-500 text-sm">Select a GO or PREPARE opportunity to build a zero-draft application.</p>
             </div>
             <div className="space-y-3">
-              {matches.length === 0 && <p className="text-slate-400 text-sm">No GO matches yet. Run assessment first.</p>}
-              {matches.map(m => (
+              {matches.length === 0 && <p className="text-slate-400 text-sm">No GO/PREPARE matches yet. Run assessment first.</p>}
+              {matches.map((match) => (
                 <Card
-                  key={m.id}
-                  className={`cursor-pointer transition-all ${selectedGrant?.id === m.grant_id ? "border-emerald-400 bg-emerald-50" : "hover:shadow-md"}`}
+                  key={match.id}
+                  className={`cursor-pointer transition-all ${selectedGrant?.id === match.grant_id ? "border-emerald-400 bg-emerald-50" : "hover:shadow-md"}`}
                   onClick={() => {
-                    setSelectedGrant({ id: m.grant_id, title: m.grant_title, funder: m.funder });
-                    const existingApp = applications.find(a => a.grant_id === m.grant_id);
+                    setSelectedMatch(match);
+                    setSelectedGrant({ id: match.grant_id, title: match.grant_title, funder: match.funder });
+                    const existingApp = applications.find((app) => app.grant_id === match.grant_id);
                     if (existingApp) { setSelectedApp(existingApp); setSections(existingApp.sections || {}); }
                   }}
                 >
                   <CardContent className="p-4 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-800">{m.grant_title}</p>
-                      <p className="text-sm text-slate-500">{m.funder} · Deadline: {m.deadline}</p>
+                      <p className="font-semibold text-slate-800">{match.grant_title}</p>
+                      <p className="text-sm text-slate-500">{match.funder} · Deadline: {match.deadline}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-emerald-700">{m.total_score}%</span>
-                      <Badge className={`text-xs border ${m.recommendation === "GO" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-blue-800 border-blue-300"}`}>{m.recommendation}</Badge>
-                      {selectedGrant?.id === m.grant_id && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+                      <span className="font-bold text-emerald-700">{match.total_score}%</span>
+                      <Badge className={`text-xs border ${STATE_BADGE[match.advisory_state] || "bg-slate-100 text-slate-700"}`}>{match.advisory_state}</Badge>
+                      {selectedGrant?.id === match.grant_id && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
                     </div>
                   </CardContent>
                 </Card>
@@ -384,59 +382,36 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
           </div>
         )}
 
-        {/* Stage 4: Pipeline Board — managed in the dedicated Pipeline page */}
         {currentStage === 4 && (
-          <div className="p-6 max-w-2xl mx-auto space-y-5">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Stage 4: Pipeline Board</h2>
-              <p className="text-slate-500 text-sm">Track and manage your applications in the pipeline</p>
-            </div>
-            <Card className="border-purple-200 bg-purple-50">
-              <CardContent className="p-5 space-y-3">
-                <p className="text-purple-800 font-medium text-sm">Application pipeline management lives in the dedicated Pipeline page.</p>
-                <div className="space-y-2">
-                  {applications.filter(a => !["awarded", "declined"].includes(a.stage)).slice(0, 4).map(app => (
-                    <div key={app.id} className="flex items-center justify-between bg-white rounded-lg border px-3 py-2 text-sm">
-                      <span className="text-slate-700 truncate flex-1 mr-2">{app.grant_title}</span>
-                      <Badge variant="outline" className="text-xs shrink-0">{app.stage?.replace(/_/g, " ")}</Badge>
-                    </div>
-                  ))}
-                  {applications.length === 0 && <p className="text-slate-500 text-sm">No applications yet. Complete Stage 3 to create one.</p>}
-                </div>
-                <Link to="/pipeline" target="_blank">
-                  <Button variant="outline" size="sm" className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-100">
-                    <ExternalLink className="w-3.5 h-3.5" /> Open Full Pipeline
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(5)}>
-              Continue to Content Mapping <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
+          <SimpleLinkedStage
+            title="Stage 4: Pipeline Board"
+            description="Track and manage applications in the dedicated Pipeline page."
+            link="/pipeline"
+            linkLabel="Open Full Pipeline"
+            onContinue={() => setCurrentStage(5)}
+          />
         )}
 
-        {/* Stage 5: Content Mapping */}
         {currentStage === 5 && (
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 5: Content Mapping</h2>
-              <p className="text-slate-500 text-sm">Map master narrative blocks to grant application sections</p>
+              <p className="text-slate-500 text-sm">Map master narrative blocks to grant application sections.</p>
             </div>
             {parsedBlocks.length === 0 ? (
               <p className="text-slate-400">Complete Stage 1 first to parse your master narrative.</p>
             ) : (
               <div className="space-y-3">
-                {SECTION_KEYS.map(key => (
+                {SECTION_KEYS.map((key) => (
                   <div key={key} className="bg-white rounded-lg border p-4">
-                    <p className="font-medium text-slate-800 mb-2">{key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</p>
+                    <p className="font-medium text-slate-800 mb-2">{key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())}</p>
                     <div className="flex flex-wrap gap-2">
-                      {parsedBlocks.map((b, i) => (
+                      {parsedBlocks.map((block, index) => (
                         <button
-                          key={i}
+                          key={`${block.section}-${index}`}
                           className="text-xs px-2 py-1 rounded border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-600 transition-colors"
                         >
-                          {b.section}
+                          {block.section}
                         </button>
                       ))}
                     </div>
@@ -448,22 +423,24 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
           </div>
         )}
 
-        {/* Stage 6: Draft Generation */}
         {currentStage === 6 && (
           <div className="p-6 max-w-5xl mx-auto space-y-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Stage 6: Draft Generation</h2>
+                <h2 className="text-xl font-bold text-slate-900">Stage 6: Zero-Draft Generation</h2>
                 <p className="text-slate-500 text-sm">{selectedGrant ? `Drafting: ${selectedGrant.title}` : "Select an opportunity in Stage 3 first"}</p>
               </div>
+              {!personaConfirmed && (
+                <Badge className="bg-amber-100 text-amber-800 border border-amber-300"><Lock className="w-3 h-3 mr-1" /> Persona not confirmed</Badge>
+              )}
             </div>
             {!selectedGrant && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-amber-800 text-sm">Please go to Stage 3 and select a grant opportunity first.</p>
+                <p className="text-amber-800 text-sm">Please go to Stage 3 and select a GO or PREPARE grant opportunity first.</p>
               </div>
             )}
             <div className="grid md:grid-cols-2 gap-4">
-              {SECTION_KEYS.map(key => (
+              {SECTION_KEYS.map((key) => (
                 <Card key={key}>
                   <CardHeader className="pb-2 flex-row items-center justify-between">
                     <CardTitle className="text-sm capitalize">{key.replace(/_/g, " ")}</CardTitle>
@@ -472,7 +449,7 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={!selectedGrant || drafting === key}
+                        disabled={!selectedGrant || !personaConfirmed || drafting === key}
                         onClick={() => draftSection(key)}
                         className="h-7 text-xs gap-1"
                       >
@@ -484,7 +461,7 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
                   <CardContent>
                     <Textarea
                       value={sections[key] || ""}
-                      onChange={e => setSections(prev => ({ ...prev, [key]: e.target.value }))}
+                      onChange={(e) => setSections((previous) => ({ ...previous, [key]: e.target.value }))}
                       placeholder="Click AI Draft to generate or write manually..."
                       className="min-h-28 text-xs resize-none"
                     />
@@ -495,7 +472,7 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
             {selectedApp && (
               <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={async () => {
                 await base44.entities.GrantApplication.update(selectedApp.id, { sections });
-                toast.success("All sections saved");
+                toast.success("All sections saved as zero-draft content");
                 setCurrentStage(7);
               }}>
                 <Save className="w-4 h-4" /> Save All & Continue
@@ -504,44 +481,39 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
           </div>
         )}
 
-        {/* Stage 7: Edit Guidance */}
         {currentStage === 7 && (
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 7: Edit Guidance</h2>
-              <p className="text-slate-500 text-sm">AI-generated recommendations to strengthen your application</p>
+              <p className="text-slate-500 text-sm">Review zero-draft recommendations before Pack Gate.</p>
             </div>
-            <EditGuidance sections={sections} grant={selectedGrant} orgProfile={orgProfile} />
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(8)}>Proceed to Final Pack <ChevronRight className="w-4 h-4 ml-1" /></Button>
+            <EditGuidance sections={sections} grant={selectedGrant} />
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(8)}>Proceed to Pack Gate <ChevronRight className="w-4 h-4 ml-1" /></Button>
           </div>
         )}
 
-        {/* Stage 8: Final Pack — managed in the dedicated Pack & Export page */}
         {currentStage === 8 && (
           <div className="p-6 max-w-2xl mx-auto space-y-5">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Stage 8: Final Pack & Export</h2>
-              <p className="text-slate-500 text-sm">Review readiness checklist and generate your submission package</p>
+              <h2 className="text-xl font-bold text-slate-900">Stage 8: Pack Gate</h2>
+              <p className="text-slate-500 text-sm">Export is handled in Pack & Export only after the exact phrase is confirmed.</p>
             </div>
             <Card className="border-emerald-200 bg-emerald-50">
               <CardContent className="p-5 space-y-3">
-                <p className="text-emerald-800 font-medium text-sm">Package generation and export is handled in the Pack & Export section.</p>
+                <p className="text-emerald-800 font-medium text-sm">Generated sections remain zero-draft content and are not submission-ready.</p>
                 <div className="space-y-2">
-                  {SECTION_KEYS.map(key => (
+                  {SECTION_KEYS.map((key) => (
                     <div key={key} className="flex items-center gap-2 text-sm">
                       {sections[key]
                         ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                         : <AlertTriangle className="w-4 h-4 text-slate-300 shrink-0" />}
                       <span className={sections[key] ? "text-slate-700" : "text-slate-400"}>
-                        {key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+                        {key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())}
                       </span>
                       {sections[key] && <span className="text-xs text-slate-400 ml-auto">{sections[key].length} chars</span>}
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-slate-500">
-                  {SECTION_KEYS.filter(k => sections[k]).length}/{SECTION_KEYS.length} sections complete
-                </p>
                 <Link to="/pack">
                   <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 w-full">
                     <ExternalLink className="w-4 h-4" /> Go to Pack & Export
@@ -552,20 +524,34 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
           </div>
         )}
       </div>
-
-      {/* Edit Block Dialog */}
-      <Dialog open={editingBlock !== null} onOpenChange={() => setEditingBlock(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>Edit: {parsedBlocks[editingBlock]?.section}</DialogTitle></DialogHeader>
-          <Textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="min-h-48" />
-          <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={saveBlock}>Save Changes</Button>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
 
-function EditGuidance({ sections, grant, orgProfile }) {
+function SimpleLinkedStage({ title, description, link, linkLabel, onContinue }) {
+  return (
+    <div className="p-6 max-w-2xl mx-auto space-y-5">
+      <div>
+        <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+        <p className="text-slate-500 text-sm">{description}</p>
+      </div>
+      <Card>
+        <CardContent className="p-5 space-y-3">
+          <Link to={link} target="_blank">
+            <Button variant="outline" size="sm" className="gap-2">
+              <ExternalLink className="w-3.5 h-3.5" /> {linkLabel}
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+      <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={onContinue}>
+        Continue <ChevronRight className="w-4 h-4 ml-1" />
+      </Button>
+    </div>
+  );
+}
+
+function EditGuidance({ sections, grant }) {
   const [guidance, setGuidance] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -574,15 +560,15 @@ function EditGuidance({ sections, grant, orgProfile }) {
     setLoading(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Review this grant application and provide specific edit recommendations.
+        prompt: `Review this zero-draft grant application and provide specific edit recommendations.
 
 GRANT: ${grant?.title || "N/A"}
 FUNDER: ${grant?.funder || "N/A"}
 
 SECTIONS DRAFTED:
-${Object.entries(sections).map(([k, v]) => `${k}: ${v?.substring(0, 300)}`).join("\n\n")}
+${Object.entries(sections).map(([key, value]) => `${key}: ${value?.substring(0, 300)}`).join("\n\n")}
 
-Provide 3-5 specific, actionable edit recommendations to strengthen the application. Focus on clarity, specificity, funder alignment, and impact evidence.`,
+Provide 3-5 specific recommendations. Do not mark content as submission-ready.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -617,15 +603,15 @@ Provide 3-5 specific, actionable edit recommendations to strengthen the applicat
         </Button>
       ) : (
         <div className="space-y-3">
-          {guidance.map((g, i) => (
-            <Card key={i} className={`border-l-4 ${g.priority === "high" ? "border-l-red-400" : g.priority === "medium" ? "border-l-amber-400" : "border-l-blue-400"}`}>
+          {guidance.map((item, index) => (
+            <Card key={`${item.section}-${index}`} className={`border-l-4 ${item.priority === "high" ? "border-l-red-400" : item.priority === "medium" ? "border-l-amber-400" : "border-l-blue-400"}`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="outline" className="text-xs">{g.section}</Badge>
-                  <Badge className={`text-xs ${g.priority === "high" ? "bg-red-100 text-red-700" : g.priority === "medium" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>{g.priority}</Badge>
+                  <Badge variant="outline" className="text-xs">{item.section}</Badge>
+                  <Badge className={`text-xs ${item.priority === "high" ? "bg-red-100 text-red-700" : item.priority === "medium" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>{item.priority}</Badge>
                 </div>
-                <p className="font-medium text-slate-800 text-sm mb-1">{g.issue}</p>
-                <p className="text-slate-600 text-sm">{g.recommendation}</p>
+                <p className="font-medium text-slate-800 text-sm mb-1">{item.issue}</p>
+                <p className="text-slate-600 text-sm">{item.recommendation}</p>
               </CardContent>
             </Card>
           ))}
