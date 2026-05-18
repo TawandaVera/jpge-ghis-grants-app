@@ -11,15 +11,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Zap, ThumbsUp, AlertCircle, Download, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { ADVISORY_STATES, normalizeAdvisoryState } from "@/lib/grants/governance";
 
 const REC_BADGE = {
-  GO: "bg-emerald-100 text-emerald-800 border-emerald-300",
-  PREP: "bg-blue-100 text-blue-800 border-blue-300",
-  DEF: "bg-amber-100 text-amber-800 border-amber-300",
-  DECLINE: "bg-slate-100 text-slate-600 border-slate-300",
+  [ADVISORY_STATES.GO]: "bg-emerald-100 text-emerald-800 border-emerald-300",
+  [ADVISORY_STATES.PREPARE]: "bg-blue-100 text-blue-800 border-blue-300",
+  [ADVISORY_STATES.DEFER]: "bg-amber-100 text-amber-800 border-amber-300",
+  [ADVISORY_STATES.DECLINE]: "bg-slate-100 text-slate-600 border-slate-300",
 };
 
-// 5 Mandate Areas per spec
 const MANDATE_AREAS = [
   { key: "health_systems", label: "Health Systems", color: "bg-blue-500" },
   { key: "workforce", label: "Workforce Innovation", color: "bg-amber-500" },
@@ -27,6 +27,16 @@ const MANDATE_AREAS = [
   { key: "technology", label: "Health Technology", color: "bg-purple-500" },
   { key: "prevention_sdoh", label: "Prevention & SDOH", color: "bg-green-500" },
 ];
+
+function normalizeAssessmentMatch(match) {
+  if (!match) return match;
+  const recommendation = normalizeAdvisoryState(match.recommendation);
+  return {
+    ...match,
+    recommendation,
+    advisory_state: normalizeAdvisoryState(match.advisory_state ?? recommendation),
+  };
+}
 
 export default function Assessment() {
   const [grants, setGrants] = useState([]);
@@ -48,7 +58,7 @@ export default function Assessment() {
       base44.entities.GrantMatch.list("-total_score", 200),
     ]);
     setGrants(g);
-    setMatches(m);
+    setMatches(m.map(normalizeAssessmentMatch));
     setLoading(false);
   };
 
@@ -64,16 +74,19 @@ export default function Assessment() {
           const p = profiles[0];
           orgProfile = `${p.org_name}: ${p.mission}. Focus: ${(p.focus_areas||[]).join(", ")}. States: ${(p.geographic_coverage||[]).join(", ")}. Budget: $${p.annual_budget?.toLocaleString()}. Indirect rate: ${p.indirect_cost_rate}%.`;
         }
-      } catch(e) {}
+      } catch(e) {
+        console.warn("Org profile load failed", e);
+      }
 
       const scoredIds = new Set(matches.map(m => m.grant_id));
       const unscored = grants.filter(g => !scoredIds.has(g.id)).slice(0, count);
       if (!unscored.length) { toast.info("All grants already assessed"); setScoring(false); return; }
 
-      const report = { GO: 0, PREP: 0, DEF: 0, DECLINE: 0, total: 0, topFunders: [] };
+      const report = { GO: 0, PREPARE: 0, DEFER: 0, DECLINE: 0, total: 0, topFunders: [] };
 
       for (const grant of unscored) {
-        const today = new Date("2026-05-10");
+        const today = new Date();
+        const todayIso = today.toISOString().slice(0, 10);
         const deadline = grant.deadline ? new Date(grant.deadline) : null;
         const daysLeft = deadline ? Math.round((deadline - today) / (1000 * 60 * 60 * 24)) : 999;
 
@@ -87,7 +100,7 @@ FUNDER: ${grant.funder}
 DESCRIPTION: ${grant.description || "N/A"}
 ELIGIBILITY: ${grant.eligibility || "N/A"}
 AWARD: $${grant.award_amount_min||0}–$${grant.award_amount_max||0}
-DEADLINE: ${grant.deadline} (${daysLeft} days from today 2026-05-10)
+DEADLINE: ${grant.deadline} (${daysLeft} days from today ${todayIso})
 CATEGORY: ${grant.category || "N/A"}
 
 SOP4 SCORING (0-100 total):
@@ -102,8 +115,11 @@ SOP4 SCORING (0-100 total):
 4. GEOGRAPHIC MATCH (10 pts) — US national/14-state focus
 
 AUTO-DECLINE if LLC not eligible.
-AUTO-DEF if <30 days to deadline.
-State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
+AUTO-DEFER if <30 days to deadline.
+State: GO>=80, PREPARE>=60, DEFER>=40, DECLINE<40.
+Return only canonical states: GO, PREPARE, DEFER, DECLINE.
+
+TODO: A future phase will replace this 0-100 model with enforceGovernanceRules() using six 0-4 dimensions and artifact-based score caps.`,
           response_json_schema: {
             type: "object",
             properties: {
@@ -133,23 +149,25 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
           }
         });
 
+        const recommendation = normalizeAdvisoryState(result.recommendation);
         await base44.entities.GrantMatch.create({
           grant_id: grant.id,
           grant_title: grant.title,
           funder: grant.funder,
           deadline: grant.deadline,
           ...result,
+          recommendation,
+          advisory_state: recommendation,
           status: "pending_review"
         });
 
         report.total++;
-        const rec = result.recommendation;
-        if (rec in report) report[rec]++;
+        if (recommendation in report) report[recommendation]++;
         report.topFunders.push(grant.funder);
       }
 
       setBatchReport(report);
-      toast.success(`Assessed ${report.total} grants — GO:${report.GO} PREP:${report.PREP} DEF:${report.DEF} DECLINE:${report.DECLINE}`);
+      toast.success(`Assessed ${report.total} grants — GO:${report.GO} PREPARE:${report.PREPARE} DEFER:${report.DEFER} DECLINE:${report.DECLINE}`);
       await loadData();
     } catch(e) {
       toast.error("Assessment failed: " + e.message);
@@ -165,15 +183,15 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
     await loadData();
   };
 
-  const exportGoPrep = () => {
-    const eligible = matches.filter(m => ["GO", "PREP"].includes(m.recommendation));
-    const rows = [["Grant", "Funder", "Score", "State", "Deadline", "Rationale"]];
-    eligible.forEach(m => rows.push([m.grant_title, m.funder, m.total_score, m.recommendation, m.deadline || "", m.rationale || ""]));
+  const exportGoPrepare = () => {
+    const eligible = matches.filter(m => [ADVISORY_STATES.GO, ADVISORY_STATES.PREPARE].includes(m.advisory_state));
+    const rows = [["Grant", "Funder", "Score", "State", "Advisory State", "Deadline", "Rationale"]];
+    eligible.forEach(m => rows.push([m.grant_title, m.funder, m.total_score, m.recommendation, m.advisory_state, m.deadline || "", m.rationale || ""]));
     const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "go-prep-grants.csv"; a.click();
-    toast.success("Exported GO/PREP grants");
+    const a = document.createElement("a"); a.href = url; a.download = "go-prepare-grants.csv"; a.click();
+    toast.success("Exported GO/PREPARE grants");
   };
 
   const combined = grants.map(g => ({
@@ -184,14 +202,13 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
   const filtered = combined.filter(({ match }) => {
     if (stateFilter === "all") return true;
     if (stateFilter === "pending") return !match;
-    return match?.recommendation === stateFilter;
+    return match?.advisory_state === stateFilter;
   });
 
   const pendingCount = grants.filter(g => !matches.find(m => m.grant_id === g.id)).length;
-  const goCount = matches.filter(m => m.recommendation === "GO").length;
-  const prepCount = matches.filter(m => m.recommendation === "PREP").length;
+  const goCount = matches.filter(m => m.advisory_state === ADVISORY_STATES.GO).length;
+  const prepareCount = matches.filter(m => m.advisory_state === ADVISORY_STATES.PREPARE).length;
 
-  // Mandate heatmap data
   const mandateHeatmap = MANDATE_AREAS.map(area => {
     const scores = matches.filter(m => m.mandate_scores?.[area.key] !== undefined).map(m => m.mandate_scores[area.key] || 0);
     const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
@@ -205,7 +222,7 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Assessment Matrix</h1>
-          <p className="text-slate-500 text-sm">{matches.length} assessed · {pendingCount} pending · GO:{goCount} PREP:{prepCount}</p>
+          <p className="text-slate-500 text-sm">{matches.length} assessed · {pendingCount} pending · GO:{goCount} PREPARE:{prepareCount}</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <Select value={stateFilter} onValueChange={setStateFilter}>
@@ -213,14 +230,14 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
             <SelectContent>
               <SelectItem value="all">All States</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="GO">GO</SelectItem>
-              <SelectItem value="PREP">PREP</SelectItem>
-              <SelectItem value="DEF">DEFER</SelectItem>
-              <SelectItem value="DECLINE">DECLINE</SelectItem>
+              <SelectItem value={ADVISORY_STATES.GO}>GO</SelectItem>
+              <SelectItem value={ADVISORY_STATES.PREPARE}>PREPARE</SelectItem>
+              <SelectItem value={ADVISORY_STATES.DEFER}>DEFER</SelectItem>
+              <SelectItem value={ADVISORY_STATES.DECLINE}>DECLINE</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={exportGoPrep} className="gap-2">
-            <Download className="w-4 h-4" /> Export GO/PREP
+          <Button variant="outline" onClick={exportGoPrepare} className="gap-2">
+            <Download className="w-4 h-4" /> Export GO/PREPARE
           </Button>
           <Button onClick={() => assessNext(20)} disabled={scoring} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
             {scoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
@@ -229,14 +246,13 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
         </div>
       </div>
 
-      {/* Batch Report */}
       {batchReport && (
         <Card className="border-emerald-200 bg-emerald-50">
           <CardContent className="p-4">
             <p className="font-semibold text-emerald-800 mb-2">Batch Assessment Complete — {batchReport.total} grants processed</p>
             <div className="flex gap-4 flex-wrap text-sm">
-              {["GO", "PREP", "DEF", "DECLINE"].map(s => (
-                <span key={s} className={`font-bold ${s === "GO" ? "text-emerald-700" : s === "PREP" ? "text-blue-700" : s === "DEF" ? "text-amber-700" : "text-slate-600"}`}>
+              {[ADVISORY_STATES.GO, ADVISORY_STATES.PREPARE, ADVISORY_STATES.DEFER, ADVISORY_STATES.DECLINE].map(s => (
+                <span key={s} className={`font-bold ${s === ADVISORY_STATES.GO ? "text-emerald-700" : s === ADVISORY_STATES.PREPARE ? "text-blue-700" : s === ADVISORY_STATES.DEFER ? "text-amber-700" : "text-slate-600"}`}>
                   {s}: {batchReport[s]}
                 </span>
               ))}
@@ -287,8 +303,8 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                     </td>
                     <td className="px-4 py-3">
                       {match ? (
-                        <Badge className={`text-xs border ${REC_BADGE[match.recommendation] || "bg-slate-100 text-slate-600"}`}>
-                          {match.recommendation}
+                        <Badge className={`text-xs border ${REC_BADGE[match.advisory_state] || "bg-slate-100 text-slate-600"}`}>
+                          {match.advisory_state}
                         </Badge>
                       ) : <span className="text-xs text-slate-400">Pending</span>}
                     </td>
@@ -335,18 +351,16 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
         </TabsContent>
       </Tabs>
 
-      {/* Detail Dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 flex-wrap">
               {selected?.grant_title}
-              {selected && <Badge className={`text-xs border ${REC_BADGE[selected.recommendation]}`}>{selected.recommendation}</Badge>}
+              {selected && <Badge className={`text-xs border ${REC_BADGE[selected.advisory_state]}`}>{selected.advisory_state}</Badge>}
             </DialogTitle>
           </DialogHeader>
           {selected && (
             <div className="space-y-4">
-              {/* Score Breakdown */}
               <div className="grid grid-cols-4 gap-3">
                 {[
                   { label: "Total Score", val: Math.round(selected.total_score || 0) },
@@ -361,7 +375,6 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                 ))}
               </div>
 
-              {/* Mandate Area Scores */}
               {selected.mandate_scores && (
                 <div>
                   <p className="text-sm font-medium text-slate-700 mb-2">Mandate Area Breakdown</p>
@@ -386,7 +399,6 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                 <div><p className="text-sm font-medium text-slate-700 mb-1">AI Rationale</p><p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">{selected.rationale}</p></div>
               )}
 
-              {/* Strengths */}
               {selected.strengths?.length > 0 && (
                 <div>
                   <p className="text-sm font-medium text-slate-700 mb-1 flex items-center gap-1"><ThumbsUp className="w-4 h-4 text-emerald-500" />Strengths</p>
@@ -394,7 +406,6 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                 </div>
               )}
 
-              {/* Gap Analysis */}
               {selected.gap_analysis?.length > 0 && (
                 <div>
                   <p className="text-sm font-medium text-slate-700 mb-1 flex items-center gap-1"><AlertCircle className="w-4 h-4 text-amber-500" />Gap Analysis</p>
@@ -402,7 +413,6 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                 </div>
               )}
 
-              {/* Recommended Actions */}
               {selected.recommended_actions?.length > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm font-medium text-blue-800 mb-1">Recommended Actions</p>
@@ -411,7 +421,6 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                 </div>
               )}
 
-              {/* Tiered HIL Notice */}
               <div className={`rounded-lg p-3 text-sm border ${selected.total_score >= 80 ? "bg-emerald-50 border-emerald-200 text-emerald-800" : selected.total_score >= 60 ? "bg-blue-50 border-blue-200 text-blue-800" : "bg-slate-50 border-slate-200 text-slate-700"}`}>
                 <span className="font-medium">HIL Tier: </span>
                 {selected.total_score >= 80 ? "Tier 2 — Review recommended (48h window)" : selected.total_score >= 60 ? "Tier 1 — Mandatory human review required" : "Tier 3 — Auto-defer, notification only"}
