@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, CheckCircle2, AlertTriangle, Loader2, Wand2, RefreshCw, Save, ChevronRight, ExternalLink, Package, Lock } from "lucide-react";
+import { Upload, CheckCircle2, AlertTriangle, Loader2, Wand2, RefreshCw, Save, ChevronRight, ChevronLeft, ExternalLink, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { SECTION_KEYS, COPILOT_STAGES as STAGES } from "@/lib/grantConstants";
 import { isDraftableState, normalizeMatchRecord } from "@/lib/grants/governance";
@@ -15,6 +15,14 @@ const STATE_BADGE = {
   GO: "bg-emerald-100 text-emerald-800 border-emerald-300",
   PREPARE: "bg-blue-100 text-blue-800 border-blue-300",
 };
+
+function allSectionsDrafted(sections) {
+  return SECTION_KEYS.every((key) => Boolean(sections[key]?.trim()));
+}
+
+function countDraftedSections(sections) {
+  return SECTION_KEYS.filter((key) => Boolean(sections[key]?.trim())).length;
+}
 
 export default function CoPilot() {
   const [currentStage, setCurrentStage] = useState(1);
@@ -32,6 +40,7 @@ export default function CoPilot() {
   const [sections, setSections] = useState({});
   const [drafting, setDrafting] = useState(null);
   const [savedNarratives, setSavedNarratives] = useState([]);
+  const [editGuidanceComplete, setEditGuidanceComplete] = useState(false);
   const [loading, setLoading] = useState(true);
   const fileRef = useRef();
 
@@ -66,6 +75,51 @@ export default function CoPilot() {
     }
     setLoading(false);
   };
+
+  const stageComplete = {
+    1: parsedBlocks.length > 0 && !hilPending,
+    2: personaConfirmed,
+    3: Boolean(selectedGrant && selectedApp),
+    4: Boolean(selectedApp),
+    5: parsedBlocks.length > 0 && Boolean(selectedApp),
+    6: allSectionsDrafted(sections),
+    7: editGuidanceComplete,
+    8: false,
+  };
+
+  const getFirstIncompleteStage = () => {
+    for (let stage = 1; stage <= 7; stage += 1) {
+      if (!stageComplete[stage]) return stage;
+    }
+    return 8;
+  };
+
+  const maxUnlockedStage = Math.max(currentStage, getFirstIncompleteStage());
+  const draftedCount = countDraftedSections(sections);
+  const progress = Math.round(((Math.min(maxUnlockedStage, 8)) / 8) * 100);
+
+  const getStageBlockReason = (stageId) => {
+    if (stageId <= maxUnlockedStage) return null;
+    if (!stageComplete[1]) return "Stage 1 must be completed by approving the parsed master narrative blocks.";
+    if (!stageComplete[2]) return "Stage 2 must be completed by confirming the organization persona.";
+    if (!stageComplete[3]) return "Stage 3 must be completed by selecting a GO or PREPARE opportunity and creating an application record.";
+    if (!stageComplete[4]) return "Stage 4 must be acknowledged before content mapping.";
+    if (!stageComplete[5]) return "Stage 5 must be completed by confirming content mapping inputs.";
+    if (!stageComplete[6]) return "Stage 6 must be completed by drafting all required sections.";
+    if (!stageComplete[7]) return "Stage 7 must be completed by generating edit guidance.";
+    return "This stage is locked until earlier workflow steps are complete.";
+  };
+
+  const goToStage = (stageId) => {
+    const blockReason = getStageBlockReason(stageId);
+    if (blockReason) {
+      toast.error(blockReason);
+      return;
+    }
+    setCurrentStage(stageId);
+  };
+
+  const goBack = () => setCurrentStage((stage) => Math.max(stage - 1, 1));
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -128,6 +182,32 @@ Extract 8-12 distinct reusable content blocks. Do not invent organizational fact
 
   const findSelectedMatch = () => selectedMatch || matches.find((match) => match.grant_id === selectedGrant?.id);
 
+  const createOrSelectApplication = async () => {
+    if (!selectedGrant) {
+      toast.error("Select a GO or PREPARE opportunity first.");
+      return null;
+    }
+
+    if (selectedApp) return selectedApp;
+
+    const app = await base44.entities.GrantApplication.create({
+      grant_id: selectedGrant.id,
+      grant_title: selectedGrant.title,
+      funder: selectedGrant.funder,
+      deadline: selectedMatch?.deadline,
+      stage: "writing",
+    });
+    setSelectedApp(app);
+    setApplications((previous) => [app, ...previous]);
+    return app;
+  };
+
+  const continueFromStage3 = async () => {
+    const app = await createOrSelectApplication();
+    if (!app) return;
+    setCurrentStage(4);
+  };
+
   const draftSection = async (sectionKey) => {
     const activeMatch = findSelectedMatch();
     if (!selectedApp || !selectedGrant) { toast.error("Select an application first"); return; }
@@ -152,7 +232,7 @@ ADVISORY STATE: ${activeMatch.advisory_state}
 MASTER NARRATIVE BLOCKS:
 ${blockContext}
 
-ORG PROFILE: ${orgProfile ? `${orgProfile.org_name}: ${orgProfile.mission}` : "GHIS LLC — health innovation consultancy"}
+ORG PROFILE: ${orgProfile ? `${orgProfile.org_name}: ${orgProfile.mission}` : "GHIS LLC, health innovation consultancy"}
 
 Rules:
 - Do not invent facts.
@@ -174,8 +254,6 @@ Rules:
     setDrafting(null);
   };
 
-  const progress = Math.round((currentStage / 8) * 100);
-
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
 
   return (
@@ -186,24 +264,39 @@ Rules:
           <p className="text-xs text-slate-400 mt-0.5">8-Stage Governed Workflow</p>
         </div>
         <nav className="p-3 space-y-1 flex-1">
-          {STAGES.map((stage) => (
-            <button
-              key={stage.id}
-              onClick={() => setCurrentStage(stage.id)}
-              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${
-                currentStage === stage.id ? "bg-emerald-600 text-white" : "text-slate-400 hover:bg-slate-700"
-              }`}
-            >
-              <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center shrink-0 font-bold ${
-                currentStage === stage.id ? "bg-white text-emerald-600" : "bg-slate-700 text-slate-400"
-              }`}>{stage.id}</span>
-              {stage.label}
-            </button>
-          ))}
+          {STAGES.map((stage) => {
+            const locked = Boolean(getStageBlockReason(stage.id));
+            const complete = Boolean(stageComplete[stage.id]);
+            return (
+              <button
+                key={stage.id}
+                onClick={() => goToStage(stage.id)}
+                disabled={locked}
+                title={locked ? getStageBlockReason(stage.id) : stage.desc}
+                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${
+                  currentStage === stage.id
+                    ? "bg-emerald-600 text-white"
+                    : locked
+                      ? "text-slate-600 cursor-not-allowed"
+                      : "text-slate-400 hover:bg-slate-700"
+                }`}
+              >
+                <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center shrink-0 font-bold ${
+                  currentStage === stage.id
+                    ? "bg-white text-emerald-600"
+                    : complete
+                      ? "bg-emerald-700 text-white"
+                      : "bg-slate-700 text-slate-400"
+                }`}>{complete ? "✓" : stage.id}</span>
+                <span className="flex-1">{stage.label}</span>
+                {locked && <Lock className="w-3 h-3" />}
+              </button>
+            );
+          })}
         </nav>
         <div className="p-4 border-t border-slate-700">
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
-            <span>Stage {currentStage}/8</span>
+            <span>Unlocked {Math.min(maxUnlockedStage, 8)}/8</span>
             <span>{progress}%</span>
           </div>
           <div className="h-1.5 bg-slate-700 rounded-full">
@@ -218,7 +311,7 @@ Rules:
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Stage 1: Master Narrative Ingestion</h2>
-                <p className="text-slate-500 text-sm">Upload and parse reusable organizational narrative blocks</p>
+                <p className="text-slate-500 text-sm">Upload, parse, and approve reusable organizational narrative blocks before proceeding.</p>
               </div>
               {hilPending && parsedBlocks.length > 0 && (
                 <Badge className="bg-red-100 text-red-700 border border-red-200">HIL Required</Badge>
@@ -298,16 +391,16 @@ Rules:
           <div className="p-6 max-w-2xl mx-auto space-y-5">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 2: Org Profile and Persona Confirmation</h2>
-              <p className="text-slate-500 text-sm">Confirm the organization persona before drafting.</p>
+              <p className="text-slate-500 text-sm">Confirm the organization persona before opportunity intake and zero-draft generation.</p>
             </div>
             <Card className="border-blue-200 bg-blue-50">
               <CardContent className="p-5 space-y-3">
                 {orgProfile ? (
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div><span className="text-slate-500">Org:</span> <span className="font-medium text-slate-800">{orgProfile.org_name}</span></div>
-                    <div><span className="text-slate-500">EIN:</span> <span className="font-medium text-slate-800">{orgProfile.ein || "—"}</span></div>
-                    <div><span className="text-slate-500">Indirect:</span> <span className="font-medium text-slate-800">{orgProfile.indirect_cost_rate ? `${orgProfile.indirect_cost_rate}%` : "—"}</span></div>
-                    <div><span className="text-slate-500">Budget:</span> <span className="font-medium text-slate-800">{orgProfile.annual_budget ? `$${orgProfile.annual_budget.toLocaleString()}` : "—"}</span></div>
+                    <div><span className="text-slate-500">EIN:</span> <span className="font-medium text-slate-800">{orgProfile.ein || "-"}</span></div>
+                    <div><span className="text-slate-500">Indirect:</span> <span className="font-medium text-slate-800">{orgProfile.indirect_cost_rate ? `${orgProfile.indirect_cost_rate}%` : "-"}</span></div>
+                    <div><span className="text-slate-500">Budget:</span> <span className="font-medium text-slate-800">{orgProfile.annual_budget ? `$${orgProfile.annual_budget.toLocaleString()}` : "-"}</span></div>
                     <div className="col-span-2 text-slate-600 text-xs mt-1 line-clamp-2">{orgProfile.mission}</div>
                   </div>
                 ) : (
@@ -324,9 +417,13 @@ Rules:
                 </Link>
               </CardContent>
             </Card>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={!personaConfirmed} onClick={() => setCurrentStage(3)}>
-              Profile Confirmed — Continue to Stage 3 <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
+            <StageActions
+              currentStage={currentStage}
+              onBack={goBack}
+              onContinue={() => setCurrentStage(3)}
+              continueDisabled={!stageComplete[2]}
+              continueLabel="Continue to Opportunity Intake"
+            />
           </div>
         )}
 
@@ -334,7 +431,7 @@ Rules:
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 3: Opportunity Intake</h2>
-              <p className="text-slate-500 text-sm">Select a GO or PREPARE opportunity to build a zero-draft application.</p>
+              <p className="text-slate-500 text-sm">Select one GO or PREPARE opportunity, then create or reuse its application workspace.</p>
             </div>
             <div className="space-y-3">
               {matches.length === 0 && <p className="text-slate-400 text-sm">No GO/PREPARE matches yet. Run assessment first.</p>}
@@ -363,32 +460,27 @@ Rules:
                 </Card>
               ))}
             </div>
-            {selectedGrant && (
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={async () => {
-                if (!selectedApp) {
-                  const app = await base44.entities.GrantApplication.create({
-                    grant_id: selectedGrant.id,
-                    grant_title: selectedGrant.title,
-                    funder: selectedGrant.funder,
-                    stage: "writing",
-                  });
-                  setSelectedApp(app);
-                }
-                setCurrentStage(6);
-              }}>
-                Proceed with {selectedGrant.title} <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            )}
+            <StageActions
+              currentStage={currentStage}
+              onBack={goBack}
+              onContinue={continueFromStage3}
+              continueDisabled={!selectedGrant}
+              continueLabel={selectedApp ? "Continue to Pipeline Board" : "Create Application and Continue"}
+            />
           </div>
         )}
 
         {currentStage === 4 && (
           <SimpleLinkedStage
             title="Stage 4: Pipeline Board"
-            description="Track and manage applications in the dedicated Pipeline page."
+            description="Confirm the selected application is now in the pipeline workspace before content mapping."
             link="/pipeline"
             linkLabel="Open Full Pipeline"
+            currentStage={currentStage}
+            onBack={goBack}
             onContinue={() => setCurrentStage(5)}
+            continueDisabled={!stageComplete[4]}
+            continueLabel="Continue to Content Mapping"
           />
         )}
 
@@ -396,7 +488,7 @@ Rules:
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 5: Content Mapping</h2>
-              <p className="text-slate-500 text-sm">Map master narrative blocks to grant application sections.</p>
+              <p className="text-slate-500 text-sm">Confirm that approved master narrative blocks are available for the selected application.</p>
             </div>
             {parsedBlocks.length === 0 ? (
               <p className="text-slate-400">Complete Stage 1 first to parse your master narrative.</p>
@@ -409,6 +501,7 @@ Rules:
                       {parsedBlocks.map((block, index) => (
                         <button
                           key={`${block.section}-${index}`}
+                          type="button"
                           className="text-xs px-2 py-1 rounded border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-600 transition-colors"
                         >
                           {block.section}
@@ -419,7 +512,13 @@ Rules:
                 ))}
               </div>
             )}
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(6)}>Continue to Draft Generation <ChevronRight className="w-4 h-4 ml-1" /></Button>
+            <StageActions
+              currentStage={currentStage}
+              onBack={goBack}
+              onContinue={() => setCurrentStage(6)}
+              continueDisabled={!stageComplete[5]}
+              continueLabel="Continue to Draft Generation"
+            />
           </div>
         )}
 
@@ -430,9 +529,9 @@ Rules:
                 <h2 className="text-xl font-bold text-slate-900">Stage 6: Zero-Draft Generation</h2>
                 <p className="text-slate-500 text-sm">{selectedGrant ? `Drafting: ${selectedGrant.title}` : "Select an opportunity in Stage 3 first"}</p>
               </div>
-              {!personaConfirmed && (
-                <Badge className="bg-amber-100 text-amber-800 border border-amber-300"><Lock className="w-3 h-3 mr-1" /> Persona not confirmed</Badge>
-              )}
+              <Badge className={allSectionsDrafted(sections) ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-amber-100 text-amber-800 border border-amber-300"}>
+                {draftedCount}/{SECTION_KEYS.length} sections drafted
+              </Badge>
             </div>
             {!selectedGrant && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
@@ -470,13 +569,18 @@ Rules:
               ))}
             </div>
             {selectedApp && (
-              <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={async () => {
-                await base44.entities.GrantApplication.update(selectedApp.id, { sections });
-                toast.success("All sections saved as zero-draft content");
-                setCurrentStage(7);
-              }}>
-                <Save className="w-4 h-4" /> Save All & Continue
-              </Button>
+              <StageActions
+                currentStage={currentStage}
+                onBack={goBack}
+                onContinue={async () => {
+                  await base44.entities.GrantApplication.update(selectedApp.id, { sections });
+                  toast.success("All sections saved as zero-draft content");
+                  setCurrentStage(7);
+                }}
+                continueDisabled={!stageComplete[6]}
+                continueLabel="Save All and Continue to Edit Guidance"
+                continueIcon={<Save className="w-4 h-4" />}
+              />
             )}
           </div>
         )}
@@ -485,10 +589,16 @@ Rules:
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 7: Edit Guidance</h2>
-              <p className="text-slate-500 text-sm">Review zero-draft recommendations before Pack Gate.</p>
+              <p className="text-slate-500 text-sm">Generate and review zero-draft recommendations before Pack Gate.</p>
             </div>
-            <EditGuidance sections={sections} grant={selectedGrant} />
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(8)}>Proceed to Pack Gate <ChevronRight className="w-4 h-4 ml-1" /></Button>
+            <EditGuidance sections={sections} grant={selectedGrant} onGuidanceGenerated={() => setEditGuidanceComplete(true)} />
+            <StageActions
+              currentStage={currentStage}
+              onBack={goBack}
+              onContinue={() => setCurrentStage(8)}
+              continueDisabled={!stageComplete[7]}
+              continueLabel="Proceed to Pack Gate"
+            />
           </div>
         )}
 
@@ -514,11 +624,16 @@ Rules:
                     </div>
                   ))}
                 </div>
-                <Link to="/pack">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 w-full">
-                    <ExternalLink className="w-4 h-4" /> Go to Pack & Export
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={goBack} className="gap-2">
+                    <ChevronLeft className="w-4 h-4" /> Back
                   </Button>
-                </Link>
+                  <Link to="/pack" className="flex-1">
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 w-full">
+                      <ExternalLink className="w-4 h-4" /> Go to Pack & Export
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -528,7 +643,21 @@ Rules:
   );
 }
 
-function SimpleLinkedStage({ title, description, link, linkLabel, onContinue }) {
+function StageActions({ currentStage, onBack, onContinue, continueDisabled, continueLabel, continueIcon }) {
+  return (
+    <div className="flex items-center justify-between gap-3 pt-2">
+      <Button variant="outline" onClick={onBack} disabled={currentStage === 1} className="gap-2">
+        <ChevronLeft className="w-4 h-4" /> Back
+      </Button>
+      <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={onContinue} disabled={continueDisabled}>
+        {continueIcon}
+        {continueLabel} <ChevronRight className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+}
+
+function SimpleLinkedStage({ title, description, link, linkLabel, currentStage, onBack, onContinue, continueDisabled, continueLabel }) {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-5">
       <div>
@@ -544,14 +673,18 @@ function SimpleLinkedStage({ title, description, link, linkLabel, onContinue }) 
           </Link>
         </CardContent>
       </Card>
-      <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={onContinue}>
-        Continue <ChevronRight className="w-4 h-4 ml-1" />
-      </Button>
+      <StageActions
+        currentStage={currentStage}
+        onBack={onBack}
+        onContinue={onContinue}
+        continueDisabled={continueDisabled}
+        continueLabel={continueLabel}
+      />
     </div>
   );
 }
 
-function EditGuidance({ sections, grant }) {
+function EditGuidance({ sections, grant, onGuidanceGenerated }) {
   const [guidance, setGuidance] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -588,6 +721,7 @@ Provide 3-5 specific recommendations. Do not mark content as submission-ready.`,
         }
       });
       setGuidance(result.recommendations || []);
+      onGuidanceGenerated?.();
     } catch(e) {
       toast.error("Failed: " + e.message);
     }
