@@ -46,7 +46,7 @@ class SignalClassifier {
       if (!srcOk) return { status: 'error', error };
 
       // 3. Schema sanity (non-blocking) – logs errors but proceeds
-      const { valid, errors } = schemaValidator.validate(opportunitiesSchema.properties, signal);
+      const { valid, errors } = schemaValidator.validate(opportunitiesSchema, signal);
       if (!valid) {
         // eslint-disable-next-line no-console
         console.warn('Signal schema warnings', errors);
