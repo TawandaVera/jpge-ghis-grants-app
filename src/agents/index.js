@@ -16,6 +16,8 @@ import ComplianceChecker from './layer2_operations/ComplianceChecker';
 import ReviewSimulator from './layer2_operations/ReviewSimulator';
 import DeadlineAgent from './layer2_operations/DeadlineAgent';
 import GrantPackagingAgent from './layer2_operations/GrantPackagingAgent';
+import GrantAssessmentAgent from './layer2_operations/GrantAssessmentAgent';
+import GrantDiscoveryToPackAgent from './layer2_operations/GrantDiscoveryToPackAgent';
 
 import MasterOrchestrator from './MasterOrchestrator';
 
@@ -36,6 +38,8 @@ export const layer2Agents = {
   reviewSimulator: ReviewSimulator,
   deadlineAgent: DeadlineAgent,
   grantPackagingAgent: GrantPackagingAgent,
+  grantAssessmentAgent: GrantAssessmentAgent,
+  grantDiscoveryToPackAgent: GrantDiscoveryToPackAgent,
 };
 
 export { MasterOrchestrator };
@@ -53,4 +57,6 @@ export {
   ReviewSimulator,
   DeadlineAgent,
   GrantPackagingAgent,
+  GrantAssessmentAgent,
+  GrantDiscoveryToPackAgent,
 };
