@@ -1,18 +1,17 @@
-/**
- * Readiness Validator Agent (Layer 1, SOP-3)
- * Executes readiness diagnostic and gap identification
- * 
- * Domains:
- * - Financial Management
- * - Organizational Governance
- * - Project Management
- * - Compliance
- * - Stakeholder Alignment
- * 
- * Output: Gap list with remediation timeline
- * Gate: If gaps closed → SOP-4; If gaps remain → PREPARE state
- */
+import readinessScorer from '../../utils/scoring/readinessScorer.js';
 
+const domains = [
+  'financialManagement',
+  'organizationalGovernance',
+  'projectManagement',
+  'compliance',
+  'stakeholderAlignment',
+];
+
+/**
+ * Readiness Validator Agent (Layer-1, SOP-3)
+ * Checks organisational preparedness and identifies remediation gaps.
+ */
 class ReadinessValidator {
   constructor() {
     this.name = 'ReadinessValidator';
@@ -20,24 +19,36 @@ class ReadinessValidator {
   }
 
   /**
-   * Assess organizational readiness for grant pursuit
-   * @param {Object} readiness - { screeningId, domains }
-   * @returns {Promise<Object>} - { readinessId, gapList, readinessScore, estimatedTimeToResolve }
+   * Assess organisational readiness.
+   * @param {{ screeningId:string, domains:Object<string,{ verified:boolean, artifacts?:string[] }> }} readiness
+   * @returns {Promise<{ readinessId:string, gapList:Array, readinessScore:number, estimatedTimeToResolve:number, nextStep:string }>}
    */
   async assessReadiness(readiness) {
     try {
-      // TODO: Verify artifacts for each domain
-      // TODO: Identify gaps (missing docs, compliance issues)
-      // TODO: Score readiness (0-100)
-      // TODO: Estimate time to close gaps
-      // TODO: Link to gap remediation tasks
-      
+      // 1. Collect gaps
+      const gapList = [];
+      domains.forEach(d => {
+        const info = readiness.domains?.[d];
+        if (!info || !info.verified) {
+          gapList.push({ domain: d, severity: 'high' });
+        }
+      });
+
+      // 2. Score readiness (higher score if fewer gaps)
+      const readinessScore = readinessScorer.score(gapList);
+
+      // 3. Estimate time to resolve gaps (simple: 14 days per gap)
+      const estimatedTimeToResolve = gapList.length * 14;
+
+      // 4. Determine next step
+      const nextStep = 'SOP-4: Decision Review';
+
       return {
         readinessId: `readiness_${Date.now()}`,
-        gapList: [],
-        readinessScore: 0,
-        estimatedTimeToResolve: 0,
-        nextStep: 'SOP-4: Decision Review',
+        gapList,
+        readinessScore,
+        estimatedTimeToResolve,
+        nextStep,
       };
     } catch (error) {
       return { status: 'error', error: error.message };
