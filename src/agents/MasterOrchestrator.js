@@ -1,72 +1,77 @@
-/**
- * Master Orchestrator (System Level)
- * Coordinates Layer 1 → Layer 2 workflow
- * Enforces SOP sequencing and gating
- * 
- * Responsibilities:
- * - Enforce SOP order (1→2→3→4→5)
- * - Gate Layer 2 operations until Layer 1 decision complete
- * - Manage state transitions
- * - Route to appropriate agents
- * - Collect verification tags
- */
+import sopEnforcer from '../utils/governance/sopEnforcer.js';
 
+/**
+ * Master Orchestrator – drives Layer-1 workflow end-to-end.
+ */
 class MasterOrchestrator {
   constructor(layer1Agents, layer2Agents) {
     this.name = 'MasterOrchestrator';
-    this.layer1Agents = layer1Agents;
-    this.layer2Agents = layer2Agents;
-    this.workflowState = {};
+    this.l1 = layer1Agents;
+    this.l2 = layer2Agents;
   }
 
   /**
-   * Route signal through complete workflow
-   * @param {Object} signal - Grant signal
-   * @returns {Promise<Object>} - Final decision + pack structure
+   * Run SOP-1 → SOP-5 in order.
    */
   async processSignal(signal) {
     try {
-      // TODO: SOP-1 Signal Intake (SignalClassifier)
-      // TODO: SOP-2 Screening (Screener)
-      // TODO: if score <= 12, return DECLINE
-      // TODO: SOP-3 Readiness (ReadinessValidator)
-      // TODO: SOP-4 Decision Review (DecisionReviewer)
-      // TODO: if not GO, return advisory state
-      // TODO: SOP-5 Pack Generation (PackArchitect)
-      // TODO: if pack generated, unlock Layer 2
-      // TODO: Manage state transitions
-      
+      // SOP-1
+      const s1 = await new this.l1.signalClassifier().processSignal(signal);
+      if (s1.status === 'error') return s1;
+
+      // SOP-2
+      const screeningPayload = {
+        signalId: s1.signalId,
+        scores: signal.scores, // supplied externally for demo
+        artifacts: signal.artifacts || [],
+      };
+      const s2 = await new this.l1.screener().scoreOpportunity(screeningPayload);
+      if (s2.fatalRuleTriggered || s2.state === 'DECLINE') return s2;
+
+      // SOP-3
+      const readinessPayload = {
+        screeningId: s2.screeningId,
+        domains: signal.domains, // demo input
+      };
+      const s3 = await new this.l1.readinessValidator().assessReadiness(readinessPayload);
+
+      // SOP-4
+      const reviewerInp = {
+        screeningScore: s2.totalScore,
+        readinessScore: s3.readinessScore,
+        gapList: s3.gapList,
+        riskFlags: signal.riskFlags || [],
+      };
+      const s4 = await new this.l1.decisionReviewer().reviewAndDecide(reviewerInp);
+      if (s4.decisionState !== 'GO') return s4; // PREPARE/DEFER/DECLINE stop here
+
+      // SOP-5
+      const pack = await new this.l1.packArchitect().generatePack({
+        decisionId: s4.decisionId,
+        gatePhrase: 'Proceed to pack.',
+      });
+
       return {
         status: 'workflow_complete',
-        layer2Unlocked: false,
+        signal: s1,
+        screening: s2,
+        readiness: s3,
+        decision: s4,
+        pack,
+        layer2Unlocked: pack.layer2Unlocked,
       };
-    } catch (error) {
-      return { status: 'error', error: error.message };
+    } catch (err) {
+      return { status: 'error', error: err.message };
     }
   }
 
-  /**
-   * Enforce SOP sequence (no skipping)
-   * @param {string} currentStep - Current SOP step
-   * @param {string} targetStep - Requested SOP step
-   * @returns {boolean} - True if allowed
-   */
-  isSopTransitionAllowed(currentStep, targetStep) {
-    // TODO: Define SOP sequence: 1→2→3→4→5
-    // TODO: Enforce strict order
-    // TODO: No backtracking
-    return false;
+  /** Validate SOP sequence (simple) */
+  isSopTransitionAllowed(curr, tgt) {
+    return sopEnforcer.validate(curr, tgt).allowed;
   }
 
-  /**
-   * Gate Layer 2 operations until Layer 1 complete
-   * @param {string} decisionId - Decision ID
-   * @returns {boolean} - True if Layer 2 unlocked
-   */
-  isLayer2Unlocked(decisionId) {
-    // TODO: Check if pack generated
-    // TODO: Check gate phrase accepted
-    return false;
+  isLayer2Unlocked(packRecord) {
+    return packRecord?.layer2Unlocked === true;
   }
 }
 
