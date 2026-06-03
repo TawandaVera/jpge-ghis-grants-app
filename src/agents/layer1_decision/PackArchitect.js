@@ -1,14 +1,8 @@
 /**
- * Pack Architect Agent (Layer 1, SOP-5)
- * Generates application pack structure post-CEO approval
- * 
- * Gating:
- * - Requires explicit gate phrase: "Proceed to pack."
- * - Unlocks Layer 2 operations upon pack generation
- * 
- * Output: Application pack template (cover, summary, compliance, narratives, checklists)
+ * Pack Architect Agent (Layer-1, SOP-5)
+ * Validates gate phrase and constructs the initial application-pack skeleton,
+ * unlocking Layer-2 operations.
  */
-
 class PackArchitect {
   constructor() {
     this.name = 'PackArchitect';
@@ -16,22 +10,52 @@ class PackArchitect {
   }
 
   /**
-   * Generate application pack structure
-   * @param {Object} pack - { decisionId, gatePhrase, template? }
-   * @returns {Promise<Object>} - { packId, structure, layer2Unlocked }
+   * Default pack template generator.
    */
-  async generatePack(pack) {
+  #defaultStructure() {
+    return {
+      cover: {
+        title: '',
+        applicant: '',
+        contact: '',
+      },
+      summary: {
+        need: '',
+        objectives: '',
+        outcomes: '',
+      },
+      compliance: {
+        checklists: [],
+      },
+      narratives: {
+        executiveSummary: '',
+        technicalApproach: '',
+        budgetJustification: '',
+      },
+      attachments: [],
+    };
+  }
+
+  /**
+   * Generate application pack structure.
+   * @param {{ decisionId:string, gatePhrase:string, template?:object }} input
+   * @returns {Promise<{ packId:string, structure:object, layer2Unlocked:boolean, nextStep:string, error?:string }>}
+   */
+  async generatePack(input) {
     try {
-      // TODO: Validate gate phrase (must be "Proceed to pack.")
-      // TODO: Create pack structure (cover, summary, compliance, narratives, checklists)
-      // TODO: Set layer2Unlocked = true to enable Layer 2 operations
-      // TODO: Create ApplicationPack record in Base44
-      
+      if (input.gatePhrase !== 'Proceed to pack.') {
+        return { status: 'error', error: 'Gate phrase mismatch' };
+      }
+
+      const structure = input.template || this.#defaultStructure();
+
+      // TODO: Persist ApplicationPack entity via Base44
+
       return {
         packId: `pack_${Date.now()}`,
-        structure: {},
-        layer2Unlocked: false,
-        nextStep: 'Layer 2: Operations (Discovery, Writing, Budget, Compliance, Review)',
+        structure,
+        layer2Unlocked: true,
+        nextStep: 'Layer 2: Discovery',
       };
     } catch (error) {
       return { status: 'error', error: error.message };
