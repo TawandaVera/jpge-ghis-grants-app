@@ -1,0 +1,13 @@
+// Base44 entity schema: deadlines
+{
+  "version": "1.0.0",
+  "description": "Tracked deadlines and urgency flags for each application.",
+  "primary_key": "deadlineId",
+  "fields": [
+    { "name": "deadlineId", "type": "string" },
+    { "name": "applicationId", "type": "string" },
+    { "name": "date", "type": "date" },
+    { "name": "urgencyFlag", "type": "string" },
+    { "name": "daysRemaining", "type": "number" }
+  ]
+}
