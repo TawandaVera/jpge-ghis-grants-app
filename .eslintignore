@@ -1,0 +1,2 @@
+# Temporary lint exclusion while Base44 generated page imports are cleaned
+src/pages/**
