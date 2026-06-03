@@ -1,12 +1,7 @@
 /**
  * Agent Registry & Orchestration
  * Central export for all agents (Layer 1 & Layer 2)
- * 
- * Layer 1 Agents (Decision): SignalClassifier, Screener, ReadinessValidator, DecisionReviewer, PackArchitect
- * Layer 2 Agents (Operations): GrantDiscoveryAgent, DataExtractor, WritingAgent, BudgetBuilder, ComplianceChecker, ReviewSimulator, DeadlineAgent
- * Orchestration: MasterOrchestrator
  */
-
 import SignalClassifier from './layer1_decision/SignalClassifier';
 import Screener from './layer1_decision/Screener';
 import ReadinessValidator from './layer1_decision/ReadinessValidator';
@@ -20,6 +15,7 @@ import BudgetBuilder from './layer2_operations/BudgetBuilder';
 import ComplianceChecker from './layer2_operations/ComplianceChecker';
 import ReviewSimulator from './layer2_operations/ReviewSimulator';
 import DeadlineAgent from './layer2_operations/DeadlineAgent';
+import GrantPackagingAgent from './layer2_operations/GrantPackagingAgent';
 
 import MasterOrchestrator from './MasterOrchestrator';
 
@@ -39,8 +35,22 @@ export const layer2Agents = {
   complianceChecker: ComplianceChecker,
   reviewSimulator: ReviewSimulator,
   deadlineAgent: DeadlineAgent,
+  grantPackagingAgent: GrantPackagingAgent,
 };
 
 export { MasterOrchestrator };
-export { SignalClassifier, Screener, ReadinessValidator, DecisionReviewer, PackArchitect };
-export { GrantDiscoveryAgent, DataExtractor, WritingAgent, BudgetBuilder, ComplianceChecker, ReviewSimulator, DeadlineAgent };
+export {
+  SignalClassifier,
+  Screener,
+  ReadinessValidator,
+  DecisionReviewer,
+  PackArchitect,
+  GrantDiscoveryAgent,
+  DataExtractor,
+  WritingAgent,
+  BudgetBuilder,
+  ComplianceChecker,
+  ReviewSimulator,
+  DeadlineAgent,
+  GrantPackagingAgent,
+};
