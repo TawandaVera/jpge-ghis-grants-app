@@ -1,1 +1,30 @@
-/**\n * Fatal Rule Checker Skill\n * Enforces auto-decline conditions\n */\n\nconst fatalRuleChecker = {\n  checkFatalRules(screening, totalScore, readinessScore) {\n    // TODO: Check Strategic Alignment = 0\n    // TODO: Check Funder Intent Fit = 0\n    // TODO: Check Risk/Liability = 0\n    // TODO: Check totalScore <= 12\n    // If any triggered, return { triggered: true, reason }\n    return { triggered: false, reason: null };\n  },\n};\n\nexport default fatalRuleChecker;
+/**
+ * Fatal Rule Checker Skill
+ * Enforces auto-decline conditions.
+ */
+
+const fatalRuleChecker = {
+  checkFatalRules(screening = {}, totalScore = 0) {
+    const scores = screening.scores || screening;
+
+    if (scores.strategicAlignment === 0) {
+      return { triggered: true, reason: 'Strategic Alignment scored 0' };
+    }
+
+    if (scores.funderIntentFit === 0) {
+      return { triggered: true, reason: 'Funder Intent Fit scored 0' };
+    }
+
+    if (scores.riskLiability === 0) {
+      return { triggered: true, reason: 'Risk/Liability scored 0' };
+    }
+
+    if (Number(totalScore) <= 12) {
+      return { triggered: true, reason: 'Total screening score is 12 or below' };
+    }
+
+    return { triggered: false, reason: null };
+  },
+};
+
+export default fatalRuleChecker;
