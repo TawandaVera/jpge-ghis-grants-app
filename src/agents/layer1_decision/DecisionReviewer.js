@@ -1,16 +1,8 @@
 /**
- * Decision Reviewer Agent (Layer 1, SOP-4)
- * Assigns advisory decision state based on screening & readiness
- * 
- * Advisory States:
- * - GO: >= 80 score, readiness verified, proceed immediately
- * - PREPARE: >= 60 score, gaps identified, remediation timeline
- * - DEFER: >= 40 score, rescreen later
- * - DECLINE: < 40 score, do not pursue
- * 
- * Output: Advisory state (NOT final - requires CEO/Capital Committee approval)
+ * Decision Reviewer Agent (Layer-1, SOP-4)
+ * Combines screening and readiness scores, applies risk modifiers,
+ * and returns an advisory state for leadership approval.
  */
-
 class DecisionReviewer {
   constructor() {
     this.name = 'DecisionReviewer';
@@ -18,24 +10,39 @@ class DecisionReviewer {
   }
 
   /**
-   * Assign advisory decision state
-   * @param {Object} decision - { readinessId, screeningId, riskFlags? }
-   * @returns {Promise<Object>} - { decisionId, state, rationale, ceoApprovalRequired }
+   * Assign advisory decision state.
+   * @param {{ screeningScore:number, readinessScore:number, gapList?:Array, riskFlags?:string[] }} input
    */
-  async reviewAndDecide(decision) {
+  async reviewAndDecide(input) {
     try {
-      // TODO: Fetch screening score & readiness gaps
-      // TODO: Apply decision logic (GO/PREPARE/DEFER/DECLINE)
-      // TODO: Flag risk items
-      // TODO: Generate rationale
-      // TODO: Determine if CEO escalation required
-      
+      const { screeningScore = 0, readinessScore = 0, riskFlags = [], gapList = [] } = input;
+
+      // Simple weighted aggregate (60% screening, 40% readiness)
+      const aggregate = Math.round(screeningScore * 0.6 + readinessScore * 0.4);
+
+      // Baseline state
+      let state = 'DECLINE';
+      if (aggregate >= 80) state = 'GO';
+      else if (aggregate >= 60) state = 'PREPARE';
+      else if (aggregate >= 40) state = 'DEFER';
+
+      // Risk override: any critical risk → at most PREPARE
+      const criticalRisk = riskFlags.includes('critical');
+      if (criticalRisk && state === 'GO') state = 'PREPARE';
+
+      // CEO escalation rules: GO always requires CEO; PREPARE requires if >3 high-severity gaps
+      const ceoApprovalRequired =
+        state === 'GO' || (state === 'PREPARE' && gapList.filter(g => g.severity === 'high').length > 3);
+
+      const rationale = `Aggregate ${aggregate}. Gaps: ${gapList.length}. Risks: ${riskFlags.join(', ') || 'none'}.`;
+
       return {
         decisionId: `decision_${Date.now()}`,
-        decisionState: 'DEFER',
-        rationale: 'Advisory state assigned',
-        ceoApprovalRequired: true,
-        nextStep: 'SOP-5: Pack Generation (if GO approved)',
+        decisionState: state,
+        aggregateScore: aggregate,
+        rationale,
+        ceoApprovalRequired,
+        nextStep: state === 'DECLINE' ? 'END' : 'SOP-5: Pack Generation',
       };
     } catch (error) {
       return { status: 'error', error: error.message };
