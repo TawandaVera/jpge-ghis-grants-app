@@ -1,1 +1,54 @@
-/**\n * Screening Matrix Skill (SOP-2)\n * Implements 0-4 scoring across 6 dimensions\n */\n\nconst screeningMatrix = {\n  dimensions: ['strategicAlignment','funderIntentFit','organizationalCapacity','competitiveness','fundingAmount','riskLiability'],\n  \n  calculateScore(scores, artifacts) {\n    // TODO: Validate each score (0-4)\n    // TODO: Check artifact linkage (score >= 3 requires artifacts)\n    // TODO: Check fatal rules (zero on critical dimensions)\n    // TODO: Sum total score (max 24, scale to 0-100)\n    return { totalScore: 0, fatalRuleTriggered: false };\n  },\n  \n  determineState(totalScore) {\n    // >= 80 -> GO; >= 60 -> PREPARE; >= 40 -> DEFER; < 40 -> DECLINE\n    return 'DECLINE';\n  },\n};\n\nexport default screeningMatrix;
+/**
+ * Screening Matrix Skill (SOP-2)
+ * Implements 0-4 scoring across six dimensions.
+ */
+
+const screeningMatrix = {
+  dimensions: [
+    'strategicAlignment',
+    'funderIntentFit',
+    'organizationalCapacity',
+    'competitiveness',
+    'fundingAmount',
+    'riskLiability',
+  ],
+
+  calculateScore(scores = {}, artifacts = []) {
+    const errors = [];
+    let rawTotal = 0;
+
+    this.dimensions.forEach((dimension) => {
+      const value = Number(scores[dimension] ?? 0);
+
+      if (value < 0 || value > 4) {
+        errors.push(`${dimension} must be between 0 and 4`);
+      }
+
+      if (value >= 3 && (!Array.isArray(artifacts) || artifacts.length === 0)) {
+        errors.push(`Artifacts required for high score dimension ${dimension}`);
+      }
+
+      rawTotal += Math.max(0, Math.min(4, value));
+    });
+
+    const totalScore = Math.round((rawTotal / (this.dimensions.length * 4)) * 100);
+    const fatalRuleTriggered =
+      scores.strategicAlignment === 0 || scores.funderIntentFit === 0 || scores.riskLiability === 0;
+
+    return {
+      totalScore,
+      rawTotal,
+      fatalRuleTriggered,
+      errors,
+    };
+  },
+
+  determineState(totalScore) {
+    if (totalScore >= 80) return 'GO';
+    if (totalScore >= 60) return 'PREPARE';
+    if (totalScore >= 40) return 'DEFER';
+    return 'DECLINE';
+  },
+};
+
+export default screeningMatrix;
