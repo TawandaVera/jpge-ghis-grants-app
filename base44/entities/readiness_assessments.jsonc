@@ -1,0 +1,13 @@
+// Base44 entity schema: readiness_assessments
+{
+  "version": "1.0.0",
+  "description": "SOP-3 readiness diagnostic outputs.",
+  "primary_key": "readinessId",
+  "fields": [
+    { "name": "readinessId", "type": "string" },
+    { "name": "screeningId", "type": "string" },
+    { "name": "readinessScore", "type": "number" },
+    { "name": "gapList", "type": "array", "items": "string" },
+    { "name": "estimatedTimeToResolve", "type": "number" }
+  ]
+}
