@@ -15,11 +15,21 @@ class GrantDiscoveryAgent {
     this.seenFingerprints = new Set();
   }
 
+  // ─── Fingerprinting ────────────────────────────────────────────────────────
+
   #fingerprint(grant) {
     const basis = `${grant.title}|${grant.funder}|${grant.deadline}|${grant.amount}`;
     return crypto.createHash('sha256').update(basis).digest('hex');
   }
 
+  // ─── Source filtering ──────────────────────────────────────────────────────
+
+  /**
+   * Returns true if the given URL is permitted under the active source profile.
+   * @param {string} url
+   * @param {string} sourceMode
+   * @returns {boolean}
+   */
   isAllowedSource(url, sourceMode = 'all') {
     const profile = SOURCE_PROFILES[sourceMode];
     if (!profile) return true;
@@ -35,9 +45,18 @@ class GrantDiscoveryAgent {
     if (blocked) return false;
 
     if (profile.allowedDomains.length === 0) return true;
+
     return profile.allowedDomains.some(domain => host.endsWith(domain));
   }
 
+  // ─── Discovery reset ───────────────────────────────────────────────────────
+
+  /**
+   * Clears the current discovery working set and records an audit event.
+   * Historical auditTrail entries are preserved.
+   * @param {{ sourceMode?: string }} options
+   * @returns {Object} resetEvent
+   */
   resetDiscovery({ sourceMode = 'privateFoundationOnly' } = {}) {
     const profile = SOURCE_PROFILES[sourceMode];
 
@@ -57,9 +76,21 @@ class GrantDiscoveryAgent {
     return resetEvent;
   }
 
+  // ─── Core discovery (mock → replace with live crawlers) ───────────────────
+
+  /**
+   * Core discovery method. Accepts sourceMode to pre-filter candidates.
+   * @param {Object} criteria
+   * @returns {Promise<{ grants: Object[], scores: Object[], matches: Object[] }>}
+   */
   async discoverGrants(criteria = {}) {
     const { sourceMode = 'all', keywords = [], maxAmount } = criteria;
+
+    // TODO: Replace mock feed with live crawlers + Redis fingerprint cache.
+    // Each crawler module should call this.isAllowedSource(url, sourceMode)
+    // before adding a candidate to the pipeline.
     const mockCandidates = [];
+
     const grants = [];
     const duplicatesRejected = [];
     const invalidRejected = [];
@@ -92,8 +123,11 @@ class GrantDiscoveryAgent {
       .sort((a, b) => b.score - a.score);
 
     this.currentResults = grants;
+
     return { grants, scores, matches, duplicatesRejected, invalidRejected };
   }
+
+  // ─── Scoring ───────────────────────────────────────────────────────────────
 
   #scoreGrant(grant, keywords = [], maxAmount) {
     let score = 50;
@@ -105,15 +139,22 @@ class GrantDiscoveryAgent {
     }
 
     if (maxAmount && grant.amount <= maxAmount) score += 10;
-
     if (grant.deadline) {
-      const daysUntil = (new Date(grant.deadline) - Date.now()) / 86400000;
+      const daysUntil = (new Date(grant.deadline) - Date.now()) / 86_400_000;
       if (daysUntil > 30 && daysUntil < 180) score += 10;
     }
 
     return Math.min(100, Math.round(score));
   }
 
+  // ─── Private Foundation Reset (primary public API) ─────────────────────────
+
+  /**
+   * Clears results and runs discovery restricted to private foundation sources.
+   * Government grant sources are explicitly excluded.
+   * @param {Object} criteria - keywords, maxAmount, etc.
+   * @returns {Promise<Object>} Full transparency report + filtered results
+   */
   async discoverPrivateFoundationGrants(criteria = {}) {
     const resetEvent = this.resetDiscovery({ sourceMode: 'privateFoundationOnly' });
 
