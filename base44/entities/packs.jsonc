@@ -1,0 +1,13 @@
+// Base44 entity schema: packs
+{
+  "version": "1.0.0",
+  "description": "SOP-5 application pack templates and gating status.",
+  "primary_key": "packId",
+  "fields": [
+    { "name": "packId", "type": "string" },
+    { "name": "decisionId", "type": "string" },
+    { "name": "gatePhrase", "type": "string" },
+    { "name": "structure", "type": "object" },
+    { "name": "layer2Unlocked", "type": "boolean" }
+  ]
+}
