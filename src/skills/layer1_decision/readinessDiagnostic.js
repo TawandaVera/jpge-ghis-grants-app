@@ -1,1 +1,42 @@
-/**\n * Readiness Diagnostic Skill (SOP-3)\n * Identifies organizational gaps across 5 domains\n */\n\nconst readinessDiagnostic = {\n  domains: ['financialManagement','organizationalGovernance','projectManagement','compliance','stakeholderAlignment'],\n  \n  assessReadiness(domainData) {\n    // TODO: Verify each domain (check artifacts)\n    // TODO: Identify gaps (missing docs, compliance issues)\n    // TODO: Score readiness (0-100)\n    return { readinessScore: 0, gapList: [], estimatedTimeToResolve: 0 };\n  },\n  \n  gapsClosed(gapList) {\n    return gapList.length === 0;\n  },\n};\n\nexport default readinessDiagnostic;
+/**
+ * Readiness Diagnostic Skill (SOP-3)
+ * Identifies organizational gaps across five domains.
+ */
+
+const readinessDiagnostic = {
+  domains: [
+    'financialManagement',
+    'organizationalGovernance',
+    'projectManagement',
+    'compliance',
+    'stakeholderAlignment',
+  ],
+
+  assessReadiness(domainData = {}) {
+    const gapList = [];
+    let verified = 0;
+
+    this.domains.forEach((domain) => {
+      const record = domainData[domain];
+      if (record?.verified) {
+        verified += 1;
+      } else {
+        gapList.push({ domain, severity: 'high' });
+      }
+    });
+
+    const readinessScore = Math.round((verified / this.domains.length) * 100);
+
+    return {
+      readinessScore,
+      gapList,
+      estimatedTimeToResolve: gapList.length * 14,
+    };
+  },
+
+  gapsClosed(gapList = []) {
+    return gapList.length === 0;
+  },
+};
+
+export default readinessDiagnostic;
