@@ -1,0 +1,13 @@
+// Base44 entity schema: decisions
+{
+  "version": "1.0.0",
+  "description": "SOP-4 advisory decision states.",
+  "primary_key": "decisionId",
+  "fields": [
+    { "name": "decisionId", "type": "string" },
+    { "name": "readinessId", "type": "string" },
+    { "name": "decisionState", "type": "string" },
+    { "name": "rationale", "type": "string" },
+    { "name": "ceoApprovalRequired", "type": "boolean" }
+  ]
+}

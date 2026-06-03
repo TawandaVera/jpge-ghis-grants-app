@@ -1,0 +1,15 @@
+// Base44 entity schema: opportunities
+{
+  "version": "1.0.0",
+  "description": "Raw grant intake from discovery agents.",
+  "primary_key": "opportunityId",
+  "fields": [
+    { "name": "opportunityId", "type": "string" },
+    { "name": "title", "type": "string" },
+    { "name": "funder", "type": "string" },
+    { "name": "deadline", "type": "date" },
+    { "name": "fundingAmount", "type": "number" },
+    { "name": "source", "type": "string" },
+    { "name": "url", "type": "string" }
+  ]
+}

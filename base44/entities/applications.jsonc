@@ -1,0 +1,13 @@
+// Base44 entity schema: applications
+{
+  "version": "1.0.0",
+  "description": "Full proposal snapshots ready for submission.",
+  "primary_key": "applicationId",
+  "fields": [
+    { "name": "applicationId", "type": "string" },
+    { "name": "packId", "type": "string" },
+    { "name": "status", "type": "string" },
+    { "name": "submittedDate", "type": "date" },
+    { "name": "attachments", "type": "array", "items": "string" }
+  ]
+}

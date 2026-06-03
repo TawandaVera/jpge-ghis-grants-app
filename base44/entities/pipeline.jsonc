@@ -1,0 +1,13 @@
+// Base44 entity schema: pipeline
+{
+  "version": "1.0.0",
+  "description": "Layer‑2 status tracker across phases (discovery → submission).",
+  "primary_key": "pipelineId",
+  "fields": [
+    { "name": "pipelineId", "type": "string" },
+    { "name": "applicationId", "type": "string" },
+    { "name": "phase", "type": "string" },
+    { "name": "lastUpdated", "type": "date" },
+    { "name": "notes", "type": "string" }
+  ]
+}

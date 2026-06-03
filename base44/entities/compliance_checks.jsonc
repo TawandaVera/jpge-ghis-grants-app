@@ -1,0 +1,12 @@
+// Base44 entity schema: compliance_checks
+{
+  "version": "1.0.0",
+  "description": "Validation findings from ComplianceChecker.",
+  "primary_key": "checkId",
+  "fields": [
+    { "name": "checkId", "type": "string" },
+    { "name": "applicationId", "type": "string" },
+    { "name": "issues", "type": "array", "items": "object" },
+    { "name": "isReady", "type": "boolean" }
+  ]
+}

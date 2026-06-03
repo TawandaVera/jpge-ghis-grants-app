@@ -1,0 +1,13 @@
+// Base44 entity schema: screenings
+{
+  "version": "1.0.0",
+  "description": "SOP-2 screening results for each opportunity.",
+  "primary_key": "screeningId",
+  "fields": [
+    { "name": "screeningId", "type": "string" },
+    { "name": "signalId", "type": "string" },
+    { "name": "totalScore", "type": "number" },
+    { "name": "state", "type": "string" },
+    { "name": "artifacts", "type": "array", "items": "string" }
+  ]
+}

@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ feat/integrate-discovery-engine-and-agents ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund --legacy-peer-deps
+      - run: npm run lint
+      - run: npm run test -- --run

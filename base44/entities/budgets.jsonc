@@ -1,0 +1,13 @@
+// Base44 entity schema: budgets
+{
+  "version": "1.0.0",
+  "description": "Line‑item budgets and narratives for each application.",
+  "primary_key": "budgetId",
+  "fields": [
+    { "name": "budgetId", "type": "string" },
+    { "name": "applicationId", "type": "string" },
+    { "name": "lineItems", "type": "array", "items": "object" },
+    { "name": "justification", "type": "string" },
+    { "name": "total", "type": "number" }
+  ]
+}
