@@ -4,11 +4,10 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  TrendingUp, Clock, AlertTriangle, CheckCircle, 
+import { Clock, AlertTriangle, CheckCircle, 
   DollarSign, Target, FileText, Zap, ArrowRight, Activity
 } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import { differenceInDays } from "date-fns";
 
 export default function Dashboard() {
   const [grants, setGrants] = useState([]);

@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Zap, ExternalLink, Calendar, MapPin, Loader2, Plus, FileText, AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Search, Zap, ExternalLink, MapPin, Loader2, Plus, FileText, ShieldCheck } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 

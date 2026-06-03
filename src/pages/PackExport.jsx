@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle2, AlertCircle, ExternalLink, Package, Loader2, ArrowRight } from "lucide-react";
+import { CheckCircle2, AlertCircle, Package, Loader2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { SECTION_KEYS } from "@/lib/grantConstants";
 

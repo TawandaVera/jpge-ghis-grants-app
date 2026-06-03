@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ClipboardList, Plus, Clock, AlertTriangle, DollarSign, Pencil, X } from "lucide-react";
+import { ClipboardList, Plus, Clock, AlertTriangle, DollarSign, Pencil } from "lucide-react";
 import { differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
