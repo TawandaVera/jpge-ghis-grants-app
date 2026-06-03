@@ -1,0 +1,13 @@
+// Base44 entity schema: narratives
+{
+  "version": "1.0.0",
+  "description": "Version-controlled narrative blocks (executive summary, approach, etc.).",
+  "primary_key": "narrativeId",
+  "fields": [
+    { "name": "narrativeId", "type": "string" },
+    { "name": "applicationId", "type": "string" },
+    { "name": "section", "type": "string" },
+    { "name": "content", "type": "string" },
+    { "name": "version", "type": "number" }
+  ]
+}
