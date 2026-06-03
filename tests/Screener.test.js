@@ -19,7 +19,7 @@ describe('Screener', () => {
     const res = await agent.scoreOpportunity({
       signalId: 'sig1',
       scores,
-      artifacts: [],
+      artifacts: ['doc.pdf'],
     });
 
     expect(res.fatalRuleTriggered).toBe(true);
@@ -27,9 +27,18 @@ describe('Screener', () => {
   });
 
   it('returns GO when total score high and no fatal rules', async () => {
+    const highScores = {
+      strategicAlignment: 4,
+      funderIntentFit: 4,
+      organizationalCapacity: 4,
+      competitiveness: 4,
+      fundingAmount: 4,
+      riskLiability: 4,
+    };
+
     const res = await agent.scoreOpportunity({
       signalId: 'sig2',
-      scores: baseScores,
+      scores: highScores,
       artifacts: ['doc.pdf'],
     });
 
