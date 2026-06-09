@@ -83,7 +83,7 @@ export default function Overview() {
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "jpge-grants.csv"; a.click();
+    a.href = url; a.download = "jpge-cie-funding.csv"; a.click();
     toast.success("CSV exported");
   };
 
@@ -106,7 +106,7 @@ export default function Overview() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">JPGE-GMS Overview</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Capital Intelligence Engine</h1>
           <p className="text-slate-500 text-sm">Real-time pipeline health across all grant classes</p>
         </div>
         <Button variant="outline" onClick={exportCSV} className="gap-2">

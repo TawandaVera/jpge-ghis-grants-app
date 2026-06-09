@@ -61,9 +61,9 @@ export default function Layout() {
       <aside className="hidden md:flex flex-col w-48 bg-slate-900 shrink-0">
         <div className="p-4 border-b border-slate-800">
           <p className="font-bold text-white text-sm">
-            <span className="text-emerald-400">JPGE</span>-GMS
+            <span className="text-emerald-400">JPGE</span> CIE
           </p>
-          <p className="text-xs text-slate-500 mt-0.5">GRANT MANAGEMENT SYSTEM</p>
+          <p className="text-xs text-slate-500 mt-0.5">CAPITAL INTELLIGENCE</p>
         </div>
         <nav className="flex-1 p-3 space-y-1">
           <NavItems />
@@ -81,7 +81,7 @@ export default function Layout() {
 
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-        <p className="font-bold text-white text-sm"><span className="text-emerald-400">JPGE</span>-GMS</p>
+        <p className="font-bold text-white text-sm"><span className="text-emerald-400">JPGE</span> CIE</p>
         <button onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X className="w-5 h-5 text-slate-300" /> : <Menu className="w-5 h-5 text-slate-300" />}
         </button>

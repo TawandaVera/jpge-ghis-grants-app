@@ -201,12 +201,12 @@ export default function Help() {
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-8 text-white">
         <div className="flex items-center gap-3 mb-3">
           <span className="text-emerald-400 font-bold text-xl">JPGE</span>
-          <span className="text-white font-bold text-xl">-GMS</span>
+          <span className="text-white font-bold text-xl">CIE</span>
           <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 ml-2">User Guide</Badge>
         </div>
-        <h1 className="text-2xl font-bold mb-2">Grant Management System — How It Works</h1>
+        <h1 className="text-2xl font-bold mb-2">Capital Intelligence Engine — How It Works</h1>
         <p className="text-slate-300 text-sm leading-relaxed max-w-2xl">
-          JPGE-GMS is an end-to-end AI-powered grant management platform. It guides your team through every phase of the grant lifecycle — from discovering opportunities to submitting polished proposals — using intelligent automation, human-in-the-loop review, and structured workflows.
+          JPGE Capital Intelligence Engine is an end-to-end AI-powered funding discovery and management platform. It guides your team through discovering opportunities (grants, foundations, major gifts) and submitting polished proposals — using intelligent automation, human-in-the-loop review, and structured workflows.
         </p>
         <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-400">
           <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> AI-powered discovery & scoring</span>
@@ -281,7 +281,7 @@ export default function Help() {
       </div>
 
       <p className="text-center text-xs text-slate-400 pb-4">
-        JPGE-GMS · Grant Management System · For support, contact your system administrator.
+        JPGE Capital Intelligence Engine · For support, contact your system administrator.
       </p>
     </div>
   );
