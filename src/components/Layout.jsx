@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Search, BarChart3, 
-  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList, FolderOpen, Users
+  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList, FolderOpen, Users, Sparkles
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ const NAV = [
   { to: "/dossier", label: "Grant Dossier", icon: BookOpen },
   { to: "/tracker", label: "App Tracker", icon: ClipboardList },
   { to: "/org-profile", label: "Org Profile", icon: Building2 },
+  { to: "/ai-assistant", label: "AI Assistant", icon: Sparkles },
   { to: "/my-workspace", label: "My Workspace", icon: FolderOpen },
   { to: "/admin/workspaces", label: "Admin: Users", icon: Users, adminOnly: true },
 ];

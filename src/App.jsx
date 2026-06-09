@@ -17,6 +17,7 @@ import GrantDossier from '@/pages/GrantDossier';
 import ApplicationTracker from '@/pages/ApplicationTracker';
 import MyWorkspace from '@/pages/MyWorkspace';
 import AdminWorkspaces from '@/pages/AdminWorkspaces';
+import AIAssistant from '@/pages/AIAssistant';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
         <Route path="/tracker" element={<ApplicationTracker />} />
         <Route path="/my-workspace" element={<MyWorkspace />} />
         <Route path="/admin/workspaces" element={<AdminWorkspaces />} />
+        <Route path="/ai-assistant" element={<AIAssistant />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
