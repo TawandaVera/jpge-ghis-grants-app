@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Kanban, List, Clock, AlertTriangle } from "lucide-react";
-import { differenceInDays, format } from "date-fns";
+import { Kanban, List, Clock, AlertTriangle, Wand2 } from "lucide-react";
+import { differenceInDays } from "date-fns";
 
 // Simplified Kanban stages matching the copy app's working UX
 const KANBAN_STAGES = [
@@ -34,6 +35,7 @@ const STAGES = [
 ];
 
 export default function Pipeline() {
+  const navigate = useNavigate();
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -148,7 +150,10 @@ export default function Pipeline() {
                     </div>
                     <div className="space-y-2 min-h-24">
                       {stageApps.map(app => (
-                        <KanbanCard key={app.id} app={app} currentKanban={stage.key} onMove={moveKanban} />
+                        <KanbanCard key={app.id} app={app} currentKanban={stage.key} onMove={moveKanban} onDraft={async () => {
+                          await base44.entities.GrantApplication.update(app.id, { stage: "writing" });
+                          navigate(`/copilot?app_id=${app.id}`);
+                        }} />
                       ))}
                       {stageApps.length === 0 && (
                         <div className="border-2 border-dashed border-slate-200 rounded-lg py-8 text-center text-xs text-slate-400">Empty</div>
@@ -174,16 +179,15 @@ export default function Pipeline() {
   );
 }
 
-function KanbanCard({ app, currentKanban, onMove }) {
+function KanbanCard({ app, currentKanban, onMove, onDraft }) {
   const days = app.deadline ? differenceInDays(new Date(app.deadline), new Date()) : null;
   const isUrgent = days !== null && days >= 0 && days <= 14;
-  const match = app.total_score;
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow">
       <p className="font-medium text-sm text-slate-900 line-clamp-2 mb-1">{app.grant_title}</p>
       <p className="text-xs text-slate-500 mb-2">{app.funder}</p>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-2">
         <div className={`flex items-center gap-1 text-xs ${isUrgent ? "text-red-600 font-medium" : days < 0 ? "text-slate-400" : "text-slate-500"}`}>
           {isUrgent && <AlertTriangle className="w-3 h-3" />}
           {days !== null && <Clock className="w-3 h-3" />}
@@ -191,20 +195,24 @@ function KanbanCard({ app, currentKanban, onMove }) {
         </div>
         {app.award_amount_min && <span className="text-xs text-emerald-700 font-medium">${(app.award_amount_min/1000).toFixed(0)}K</span>}
       </div>
-      <div className="mt-2">
-        <Select value={currentKanban} onValueChange={v => onMove(app, v)}>
-          <SelectTrigger className="h-6 text-xs py-0 px-2">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {["in_progress", "submitted", "pending_decision", "awarded", "declined"].map(k => (
-              <SelectItem key={k} value={k} className="text-xs">
-                {k.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <button
+        onClick={onDraft}
+        className="w-full flex items-center justify-center gap-1.5 text-xs text-purple-700 border border-purple-200 rounded-md py-1 hover:bg-purple-50 transition-colors mb-2"
+      >
+        <Wand2 className="w-3 h-3" /> Start / Continue Drafting
+      </button>
+      <Select value={currentKanban} onValueChange={v => onMove(app, v)}>
+        <SelectTrigger className="h-6 text-xs py-0 px-2">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {["in_progress", "submitted", "pending_decision", "awarded", "declined"].map(k => (
+            <SelectItem key={k} value={k} className="text-xs">
+              {k.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

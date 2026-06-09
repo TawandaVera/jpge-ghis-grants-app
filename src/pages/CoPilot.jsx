@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Upload, CheckCircle2, AlertTriangle, Loader2, Wand2, RefreshCw, Save, ChevronRight, ExternalLink, Package } from "lucide-react";
+import { Upload, CheckCircle2, AlertTriangle, Loader2, Wand2, RefreshCw, Save, ChevronRight, ExternalLink } from "lucide-react";
+import FinalPackStage from "@/components/copilot/FinalPackStage";
 import { toast } from "sonner";
 import { SECTION_KEYS, COPILOT_STAGES as STAGES } from "@/lib/grantConstants";
 
@@ -32,6 +33,12 @@ export default function CoPilot() {
 
   useEffect(() => {
     loadAll();
+    // If arriving from pipeline/assessment with a pre-selected app, auto-advance to drafting
+    const params = new URLSearchParams(window.location.search);
+    const appId = params.get("app_id");
+    if (appId) {
+      setCurrentStage(3);
+    }
   }, []);
 
   const loadAll = async () => {
@@ -39,19 +46,32 @@ export default function CoPilot() {
     const [profiles, g, m, a, narratives] = await Promise.all([
       base44.entities.OrgProfile.list(),
       base44.entities.Grant.list("-created_date", 100),
-      base44.entities.GrantMatch.filter({ recommendation: "GO" }),
-      base44.entities.GrantApplication.list("-created_date", 50),
+      base44.entities.GrantMatch.list("-total_score", 200),
+      base44.entities.GrantApplication.list("-created_date", 100),
       base44.entities.MasterNarrative.list(),
     ]);
     setOrgProfile(profiles[0] || null);
     setGrants(g);
-    setMatches(m);
+    setMatches(m.filter(mm => ["GO", "PREP"].includes(mm.recommendation)));
     setApplications(a);
     setSavedNarratives(narratives);
     if (narratives.length > 0) {
       const blocks = narratives.map(n => ({ section: n.section, content: n.content, approved: n.approved }));
       setParsedBlocks(blocks);
       setHilPending(false);
+    }
+    // Auto-select if coming from pipeline
+    const params = new URLSearchParams(window.location.search);
+    const appId = params.get("app_id");
+    if (appId) {
+      const app = a.find(ap => ap.id === appId);
+      if (app) {
+        setSelectedApp(app);
+        setSections(app.sections || {});
+        const grant = g.find(gr => gr.id === app.grant_id);
+        if (grant) setSelectedGrant({ id: grant.id, title: grant.title, funder: grant.funder, description: grant.description, eligibility: grant.eligibility, deadline: grant.deadline });
+        setCurrentStage(6);
+      }
     }
     setLoading(false);
   };
@@ -131,30 +151,89 @@ Extract 8-12 distinct content blocks. Each block should be a specific, reusable 
     if (!selectedApp || !selectedGrant) { toast.error("Select an application first"); return; }
     setDrafting(sectionKey);
     try {
-      const blockContext = parsedBlocks.map(b => `[${b.section}]: ${b.content?.substring(0, 300)}`).join("\n\n");
+      // Build rich org context from master narrative blocks
+      const blockContext = parsedBlocks.length > 0
+        ? parsedBlocks.map(b => `[${b.section}]:\n${b.content?.substring(0, 500)}`).join("\n\n")
+        : "No master narrative blocks available — rely on org profile data below.";
+
+      // Org profile context
+      const orgCtx = orgProfile ? `
+ORG NAME: ${orgProfile.org_name}
+MISSION: ${orgProfile.mission}
+FOCUS AREAS: ${(orgProfile.focus_areas || []).join(", ")}
+GEOGRAPHIC COVERAGE: ${(orgProfile.geographic_coverage || []).join(", ")}
+ANNUAL BUDGET: $${orgProfile.annual_budget?.toLocaleString() || "N/A"}
+STAFF COUNT: ${orgProfile.staff_count || "N/A"}
+EIN: ${orgProfile.ein || "N/A"} | UEI: ${orgProfile.duns_uei || "N/A"}
+INDIRECT COST RATE: ${orgProfile.indirect_cost_rate || "N/A"}%
+PAST PERFORMANCE: ${orgProfile.past_performance || "N/A"}
+CERTIFICATIONS: ${(orgProfile.compliance_certifications || []).join(", ") || "N/A"}
+CAPACITY NOTES: ${orgProfile.capacity_notes || "N/A"}`.trim()
+        : "GHIS LLC — health innovation consultancy operating across 14 states.";
+
+      // Match/assessment rationale if available
+      const matchData = matches.find(mm => mm.grant_id === selectedGrant.id);
+      const matchCtx = matchData ? `
+ASSESSMENT SCORE: ${matchData.total_score}/100 (${matchData.recommendation})
+MANDATE ALIGNMENT: ${matchData.mandate_alignment}/40
+STRENGTHS: ${(matchData.strengths || []).join("; ")}
+CONCERNS: ${(matchData.concerns || []).join("; ")}
+AI RATIONALE: ${matchData.rationale || "N/A"}`.trim() : "";
+
+      // Already-drafted sections for cross-referencing
+      const draftedCtx = Object.entries(sections)
+        .filter(([k, v]) => k !== sectionKey && v)
+        .map(([k, v]) => `[ALREADY DRAFTED — ${k.replace(/_/g, " ").toUpperCase()}]:\n${v.substring(0, 400)}`)
+        .join("\n\n");
+
+      const sectionGuidance = {
+        executive_summary: "Write a 200-300 word executive summary. Lead with the funding ask, then the problem, your approach, and expected outcomes. Do NOT use generic boilerplate.",
+        needs_statement: "Write a 400-600 word needs statement using data and evidence. Reference specific communities, health disparities, or workforce gaps. Cite relevant statistics where possible.",
+        goals_objectives: "Write 2-3 SMART goals with 2-3 measurable objectives each. Use action verbs. Tie directly to funder priorities.",
+        methodology: "Describe the program model, activities, timeline, and partnerships. Be specific about what will happen, when, and how.",
+        evaluation_plan: "Describe data collection methods, metrics, milestones, and how success will be measured. Reference logic model if applicable.",
+        organizational_capacity: "DO NOT repeat org info already stated in other sections. Focus on unique capacity, credentials, past grants, partnerships, and why this org can execute this specific project.",
+        budget_narrative: `Reference the org's indirect cost rate of ${orgProfile?.indirect_cost_rate || "N/A"}% and fringe rate of ${orgProfile?.fringe_rate || "N/A"}%. Justify major budget line items. Keep to requested award range.`,
+      };
+
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a professional grant writer for GHIS LLC.
+        prompt: `You are an expert grant writer for GHIS LLC producing a FINAL, submission-ready proposal section.
 
-Write the "${sectionKey.replace(/_/g, " ").toUpperCase()}" section for this grant:
+SECTION TO WRITE: ${sectionKey.replace(/_/g, " ").toUpperCase()}
+WRITING GUIDANCE: ${sectionGuidance[sectionKey] || "Write a compelling, evidence-based 300-500 word section."}
 
-GRANT: ${selectedGrant.title}
+═══ GRANT OPPORTUNITY ═══
+TITLE: ${selectedGrant.title}
 FUNDER: ${selectedGrant.funder}
+DESCRIPTION: ${selectedGrant.description || "N/A"}
+ELIGIBILITY: ${selectedGrant.eligibility || "N/A"}
+DEADLINE: ${selectedGrant.deadline || "N/A"}
 
-MASTER NARRATIVE BLOCKS (use these as source material):
+═══ ORGANIZATION PROFILE (DO NOT ASK USER TO FILL THIS IN — DRAW FROM THIS DATA) ═══
+${orgCtx}
+
+${matchCtx ? `═══ ASSESSMENT INTELLIGENCE ═══\n${matchCtx}\n` : ""}
+═══ MASTER NARRATIVE LIBRARY (DRAW FROM THESE BLOCKS) ═══
 ${blockContext}
 
-ORG PROFILE: ${orgProfile ? `${orgProfile.org_name}: ${orgProfile.mission}` : "GHIS LLC — health innovation consultancy"}
-
-Write a compelling, specific 300-500 word section. Use evidence from the narrative blocks. Tailor specifically to this funder's priorities.`,
+${draftedCtx ? `═══ ALREADY DRAFTED SECTIONS (avoid repetition) ═══\n${draftedCtx}\n` : ""}
+CRITICAL RULES:
+1. Write in first person ("GHIS LLC will..." or "Our organization...")
+2. NEVER use placeholder text like [INSERT NAME] or [TBD]
+3. Pull specific details from the org profile above — mission, certifications, geography, past performance
+4. Tailor language to the specific funder's stated priorities
+5. This is a FINAL draft, not a template — it must be submission-ready
+6. Target word count: 350-550 words for most sections`,
         response_json_schema: {
           type: "object",
           properties: { content: { type: "string" } }
-        }
+        },
+        model: "claude_sonnet_4_6"
       });
-      setSections(prev => ({ ...prev, [sectionKey]: result.content }));
-      await base44.entities.GrantApplication.update(selectedApp.id, {
-        sections: { ...sections, [sectionKey]: result.content }
-      });
+
+      const updatedSections = { ...sections, [sectionKey]: result.content };
+      setSections(updatedSections);
+      await base44.entities.GrantApplication.update(selectedApp.id, { sections: updatedSections });
       toast.success(`${sectionKey.replace(/_/g, " ")} drafted`);
     } catch(e) {
       toast.error("Draft failed: " + e.message);
@@ -336,49 +415,94 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
         {currentStage === 3 && (
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Stage 3: Opportunity Intake</h2>
-              <p className="text-slate-500 text-sm">Select a GO/PREP grant opportunity to build an application for</p>
+              <h2 className="text-xl font-bold text-slate-900">Stage 3: Select Opportunity</h2>
+              <p className="text-slate-500 text-sm">Pick a GO or PREP grant to draft — or open an existing in-progress application</p>
             </div>
-            <div className="space-y-3">
-              {matches.length === 0 && <p className="text-slate-400 text-sm">No GO matches yet. Run assessment first.</p>}
-              {matches.map(m => (
-                <Card
-                  key={m.id}
-                  className={`cursor-pointer transition-all ${selectedGrant?.id === m.grant_id ? "border-emerald-400 bg-emerald-50" : "hover:shadow-md"}`}
-                  onClick={() => {
-                    setSelectedGrant({ id: m.grant_id, title: m.grant_title, funder: m.funder });
-                    const existingApp = applications.find(a => a.grant_id === m.grant_id);
-                    if (existingApp) { setSelectedApp(existingApp); setSections(existingApp.sections || {}); }
-                  }}
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-slate-800">{m.grant_title}</p>
-                      <p className="text-sm text-slate-500">{m.funder} · Deadline: {m.deadline}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-emerald-700">{m.total_score}%</span>
-                      <Badge className={`text-xs border ${m.recommendation === "GO" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-blue-800 border-blue-300"}`}>{m.recommendation}</Badge>
-                      {selectedGrant?.id === m.grant_id && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+
+            {/* Existing applications in writing stage */}
+            {applications.filter(a => ["writing", "compliance_check", "review", "hil_review"].includes(a.stage)).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">In-Progress Applications</p>
+                <div className="space-y-2">
+                  {applications.filter(a => ["writing", "compliance_check", "review", "hil_review"].includes(a.stage)).map(app => (
+                    <Card
+                      key={app.id}
+                      className={`cursor-pointer transition-all border-2 ${selectedApp?.id === app.id ? "border-purple-400 bg-purple-50" : "border-transparent hover:border-purple-200"}`}
+                      onClick={() => {
+                        setSelectedApp(app);
+                        setSections(app.sections || {});
+                        const grant = grants.find(g => g.id === app.grant_id);
+                        if (grant) setSelectedGrant({ id: grant.id, title: grant.title, funder: grant.funder, description: grant.description, eligibility: grant.eligibility, deadline: grant.deadline });
+                      }}
+                    >
+                      <CardContent className="p-3 flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-slate-800 text-sm">{app.grant_title}</p>
+                          <p className="text-xs text-slate-500">{app.funder} · {Object.keys(app.sections || {}).length} sections drafted</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{app.stage?.replace(/_/g, " ")}</Badge>
+                          {selectedApp?.id === app.id && <CheckCircle2 className="w-5 h-5 text-purple-600" />}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Assessed GO/PREP grants */}
+            <div>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Assessed GO / PREP Grants</p>
+              {matches.length === 0 && <p className="text-slate-400 text-sm">No GO/PREP matches yet. Run the Assessment Matrix first.</p>}
+              <div className="space-y-2">
+                {matches.map(m => {
+                  const inPipeline = applications.find(a => a.grant_id === m.grant_id);
+                  return (
+                    <Card
+                      key={m.id}
+                      className={`cursor-pointer transition-all border-2 ${selectedGrant?.id === m.grant_id && !selectedApp ? "border-emerald-400 bg-emerald-50" : "border-transparent hover:border-emerald-200"}`}
+                      onClick={() => {
+                        const grant = grants.find(g => g.id === m.grant_id);
+                        setSelectedGrant({ id: m.grant_id, title: m.grant_title, funder: m.funder, description: grant?.description, eligibility: grant?.eligibility, deadline: m.deadline });
+                        if (inPipeline) { setSelectedApp(inPipeline); setSections(inPipeline.sections || {}); }
+                        else { setSelectedApp(null); setSections({}); }
+                      }}
+                    >
+                      <CardContent className="p-3 flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-slate-800 text-sm">{m.grant_title}</p>
+                          <p className="text-xs text-slate-500">{m.funder} · Due: {m.deadline}</p>
+                          {m.rationale && <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{m.rationale}</p>}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-3">
+                          <span className="font-bold text-emerald-700 text-sm">{Math.round(m.total_score)}%</span>
+                          <Badge className={`text-xs border ${m.recommendation === "GO" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-blue-800 border-blue-300"}`}>{m.recommendation}</Badge>
+                          {inPipeline && <Badge variant="outline" className="text-xs">In Pipeline</Badge>}
+                          {selectedGrant?.id === m.grant_id && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             </div>
+
             {selectedGrant && (
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={async () => {
+              <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={async () => {
                 if (!selectedApp) {
                   const app = await base44.entities.GrantApplication.create({
                     grant_id: selectedGrant.id,
                     grant_title: selectedGrant.title,
                     funder: selectedGrant.funder,
+                    deadline: selectedGrant.deadline,
                     stage: "writing",
                   });
                   setSelectedApp(app);
                 }
                 setCurrentStage(6);
               }}>
-                Proceed with {selectedGrant.title} <ChevronRight className="w-4 h-4 ml-1" />
+                {selectedApp ? "Continue Drafting" : "Start Drafting"}: {selectedGrant.title} <ChevronRight className="w-4 h-4" />
               </Button>
             )}
           </div>
@@ -516,40 +640,15 @@ Write a compelling, specific 300-500 word section. Use evidence from the narrati
           </div>
         )}
 
-        {/* Stage 8: Final Pack — managed in the dedicated Pack & Export page */}
+        {/* Stage 8: Final Pack & Export */}
         {currentStage === 8 && (
-          <div className="p-6 max-w-2xl mx-auto space-y-5">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Stage 8: Final Pack & Export</h2>
-              <p className="text-slate-500 text-sm">Review readiness checklist and generate your submission package</p>
-            </div>
-            <Card className="border-emerald-200 bg-emerald-50">
-              <CardContent className="p-5 space-y-3">
-                <p className="text-emerald-800 font-medium text-sm">Package generation and export is handled in the Pack & Export section.</p>
-                <div className="space-y-2">
-                  {SECTION_KEYS.map(key => (
-                    <div key={key} className="flex items-center gap-2 text-sm">
-                      {sections[key]
-                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        : <AlertTriangle className="w-4 h-4 text-slate-300 shrink-0" />}
-                      <span className={sections[key] ? "text-slate-700" : "text-slate-400"}>
-                        {key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
-                      </span>
-                      {sections[key] && <span className="text-xs text-slate-400 ml-auto">{sections[key].length} chars</span>}
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-slate-500">
-                  {SECTION_KEYS.filter(k => sections[k]).length}/{SECTION_KEYS.length} sections complete
-                </p>
-                <Link to="/pack">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 w-full">
-                    <ExternalLink className="w-4 h-4" /> Go to Pack & Export
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
+          <FinalPackStage
+            sections={sections}
+            selectedGrant={selectedGrant}
+            selectedApp={selectedApp}
+            orgProfile={orgProfile}
+            onGoBack={() => setCurrentStage(7)}
+          />
         )}
       </div>
 

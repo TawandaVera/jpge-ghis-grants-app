@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Zap, ThumbsUp, AlertCircle, Download, BarChart3 } from "lucide-react";
+import { Loader2, Zap, ThumbsUp, AlertCircle, Download, BarChart3, Send, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -29,6 +30,7 @@ const MANDATE_AREAS = [
 ];
 
 export default function Assessment() {
+  const navigate = useNavigate();
   const [grants, setGrants] = useState([]);
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +40,7 @@ export default function Assessment() {
   const [feedback, setFeedback] = useState("");
   const [checked, setChecked] = useState({});
   const [batchReport, setBatchReport] = useState(null);
+  const [sendingToPipeline, setSendingToPipeline] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -165,6 +168,51 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
     await loadData();
   };
 
+  const sendCheckedToPipeline = async () => {
+    const checkedIds = Object.entries(checked).filter(([, v]) => v).map(([id]) => id);
+    if (!checkedIds.length) { toast.error("Check at least one grant first"); return; }
+    setSendingToPipeline(true);
+    let added = 0;
+    for (const grantId of checkedIds) {
+      const grant = grants.find(g => g.id === grantId);
+      if (!grant) continue;
+      const existing = await base44.entities.GrantApplication.filter({ grant_id: grantId });
+      if (existing.length === 0) {
+        await base44.entities.GrantApplication.create({
+          grant_id: grant.id,
+          grant_title: grant.title,
+          funder: grant.funder,
+          deadline: grant.deadline,
+          stage: "assessment",
+        });
+        added++;
+      }
+    }
+    setSendingToPipeline(false);
+    setChecked({});
+    toast.success(`${added} grant(s) sent to pipeline`);
+  };
+
+  const startDrafting = async (match) => {
+    let appId;
+    const existing = await base44.entities.GrantApplication.filter({ grant_id: match.grant_id });
+    if (existing.length === 0) {
+      const created = await base44.entities.GrantApplication.create({
+        grant_id: match.grant_id,
+        grant_title: match.grant_title,
+        funder: match.funder,
+        deadline: match.deadline,
+        stage: "writing",
+      });
+      appId = created.id;
+    } else {
+      await base44.entities.GrantApplication.update(existing[0].id, { stage: "writing" });
+      appId = existing[0].id;
+    }
+    navigate(`/copilot?app_id=${appId}`);
+    toast.success("Opening Co-Pilot for drafting");
+  };
+
   const exportGoPrep = () => {
     const eligible = matches.filter(m => ["GO", "PREP"].includes(m.recommendation));
     const rows = [["Grant", "Funder", "Score", "State", "Deadline", "Rationale"]];
@@ -228,6 +276,24 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
           </Button>
         </div>
       </div>
+
+      {/* Bulk Action Bar */}
+      {Object.values(checked).some(Boolean) && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-3 flex items-center justify-between flex-wrap gap-2">
+            <span className="text-sm font-medium text-blue-800">
+              {Object.values(checked).filter(Boolean).length} grant(s) selected
+            </span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setChecked({})}>Clear</Button>
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-2" onClick={sendCheckedToPipeline} disabled={sendingToPipeline}>
+                {sendingToPipeline ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                Send to Pipeline
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Batch Report */}
       {batchReport && (
@@ -421,7 +487,29 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                 <p className="text-sm font-medium text-slate-700 mb-1">Human Feedback</p>
                 <Textarea placeholder="Add your notes or override..." value={feedback} onChange={e => setFeedback(e.target.value)} rows={3} />
               </div>
-              <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={saveFeedback}>Save Feedback & Mark Reviewed</Button>
+              <div className="flex gap-2 flex-wrap">
+                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={saveFeedback}>Save Feedback & Mark Reviewed</Button>
+                {["GO", "PREP"].includes(selected?.recommendation) && (
+                  <>
+                    <Button variant="outline" className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-50" onClick={async () => {
+                      const grant = grants.find(g => g.id === selected.grant_id);
+                      if (!grant) return;
+                      const existing = await base44.entities.GrantApplication.filter({ grant_id: selected.grant_id });
+                      if (existing.length === 0) {
+                        await base44.entities.GrantApplication.create({ grant_id: grant.id, grant_title: grant.title, funder: grant.funder, deadline: grant.deadline, stage: "assessment" });
+                        toast.success("Sent to pipeline");
+                      } else {
+                        toast.info("Already in pipeline");
+                      }
+                    }} disabled={sendingToPipeline}>
+                      <Send className="w-4 h-4" /> Pipeline
+                    </Button>
+                    <Button className="gap-2 bg-purple-600 hover:bg-purple-700" onClick={() => { setSelected(null); startDrafting(selected); }}>
+                      <Wand2 className="w-4 h-4" /> Draft Now
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
