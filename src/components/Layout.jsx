@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Search, BarChart3, 
-  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList, FolderOpen, Users, Sparkles
+  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList, FolderOpen, Users, Sparkles, HelpCircle
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ const NAV = [
   { to: "/ai-assistant", label: "AI Assistant", icon: Sparkles },
   { to: "/my-workspace", label: "My Workspace", icon: FolderOpen },
   { to: "/admin/workspaces", label: "Admin: Users", icon: Users, adminOnly: true },
+  { to: "/help", label: "Help", icon: HelpCircle },
 ];
 
 export default function Layout() {
