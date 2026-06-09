@@ -200,12 +200,12 @@ export default function Overview() {
           <CardContent>
             <div className="grid grid-cols-2 gap-3 mt-2">
               {[
-                { label: "< 30d", count: lt30, color: "bg-red-500" },
-                { label: "30-60d", count: d30to60, color: "bg-amber-500" },
-                { label: "60-90d", count: d60to90, color: "bg-emerald-500" },
-                { label: "90d+", count: gt90, color: "bg-blue-400" },
+                { label: "< 30d", count: lt30, color: "bg-red-50 border-red-200 text-red-900" },
+                { label: "30-60d", count: d30to60, color: "bg-amber-50 border-amber-200 text-amber-900" },
+                { label: "60-90d", count: d60to90, color: "bg-emerald-50 border-emerald-200 text-emerald-900" },
+                { label: "90d+", count: gt90, color: "bg-blue-50 border-blue-200 text-blue-900" },
               ].map(d => (
-                <div key={d.label} className={`${d.color} rounded-xl p-4 text-white text-center`}>
+                <div key={d.label} className={`${d.color} border rounded-xl p-4 text-center`}>
                   <p className="text-3xl font-bold">{d.count}</p>
                   <p className="text-sm opacity-90">{d.label}</p>
                 </div>
