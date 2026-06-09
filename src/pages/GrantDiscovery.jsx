@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Zap, ExternalLink, Calendar, MapPin, Loader2, Plus, FileText, AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Search, Zap, ExternalLink, Calendar, MapPin, Loader2, Plus, FileText, AlertTriangle, CheckCircle2, ShieldCheck, SlidersHorizontal, X, Sparkles } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -40,11 +41,34 @@ export default function GrantDiscovery() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [auditLog, setAuditLog] = useState([]);
 
-  // Scan parameters (per spec)
+  // Scan parameters
   const [scanClass, setScanClass] = useState("all");
   const [scanMinAmount, setScanMinAmount] = useState("25000");
   const [scanMaxAmount, setScanMaxAmount] = useState("2500000");
   const [scanDeadlineDays, setScanDeadlineDays] = useState("90");
+  const [scanFunderType, setScanFunderType] = useState("all");
+  const [scanApplicantType, setScanApplicantType] = useState("all");
+  const [scanGeo, setScanGeo] = useState("");
+  const [scanKeywords, setScanKeywords] = useState("");
+  const [scanLowHanging, setScanLowHanging] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const PRESETS = [
+    { label: "Private Foundation — Digital Equity", icon: "🏛️", values: { scanClass: "digital_health", scanFunderType: "private_foundation", scanApplicantType: "all", scanKeywords: "digital equity broadband access technology", scanLowHanging: false } },
+    { label: "Entrepreneur / For-Profit Friendly", icon: "🚀", values: { scanClass: "all", scanFunderType: "all", scanApplicantType: "for_profit", scanKeywords: "small business entrepreneur startup innovation", scanLowHanging: true } },
+    { label: "Research Grants (Any Funder)", icon: "🔬", values: { scanClass: "research", scanFunderType: "all", scanApplicantType: "all", scanKeywords: "research evidence-based clinical community health", scanLowHanging: false } },
+    { label: "Low-Hanging Fruit — Quick Wins", icon: "🍎", values: { scanClass: "all", scanFunderType: "all", scanApplicantType: "all", scanKeywords: "capacity building technical assistance small grants", scanLowHanging: true } },
+    { label: "Health Equity — Foundation Only", icon: "❤️", values: { scanClass: "health_equity", scanFunderType: "private_foundation", scanApplicantType: "all", scanKeywords: "health equity underserved SDOH disparities", scanLowHanging: false } },
+    { label: "Workforce Dev — Federal", icon: "👷", values: { scanClass: "workforce_development", scanFunderType: "federal", scanApplicantType: "all", scanKeywords: "workforce training jobs skills development", scanLowHanging: false } },
+  ];
+
+  const applyPreset = (preset) => {
+    setScanClass(preset.values.scanClass);
+    setScanFunderType(preset.values.scanFunderType);
+    setScanApplicantType(preset.values.scanApplicantType);
+    setScanKeywords(preset.values.scanKeywords);
+    setScanLowHanging(preset.values.scanLowHanging);
+  };
 
   const [newGrant, setNewGrant] = useState({
     title: "", funder: "", deadline: "", award_amount_min: "", award_amount_max: "",
@@ -68,7 +92,7 @@ export default function GrantDiscovery() {
 
     try {
       log(`Starting discovery run ${runId}`);
-      log(`Scan parameters: class=${scanClass}, amount=$${Number(scanMinAmount).toLocaleString()}–$${Number(scanMaxAmount).toLocaleString()}, deadline=${scanDeadlineDays}d`);
+      log(`Scan: class=${scanClass}, funder=${scanFunderType}, applicant=${scanApplicantType}, amount=$${Number(scanMinAmount).toLocaleString()}–$${Number(scanMaxAmount).toLocaleString()}, deadline=${scanDeadlineDays}d${scanLowHanging ? ", LOW-HANGING ONLY" : ""}${scanKeywords ? `, keywords="${scanKeywords}"` : ""}`);
 
       // Build exclusion set from existing grants (deduplication layer 1)
       const existing = await base44.entities.Grant.list("-created_date", 500);
@@ -80,25 +104,48 @@ export default function GrantDiscovery() {
         ? `Focus specifically on the class: ${CLASS_LABELS[scanClass] || scanClass}.`
         : "Include grants across all classes: Health Equity, Digital Health, Workforce Development, Community Engagement, and Research.";
 
+      const funderTypeFilter = scanFunderType === "federal" ? "FEDERAL FUNDERS ONLY (e.g. HHS, HRSA, CDC, NIH, SAMHSA, DOL, NSF)."
+        : scanFunderType === "private_foundation" ? "PRIVATE FOUNDATIONS ONLY (e.g. Robert Wood Johnson, W.K. Kellogg, Gates, Bloomberg, Annie E. Casey, Ford Foundation, etc.). NO federal grants."
+        : scanFunderType === "state" ? "STATE GOVERNMENT FUNDERS ONLY."
+        : scanFunderType === "corporate" ? "CORPORATE FOUNDATIONS AND CORPORATE CSR GRANTS ONLY."
+        : "Include all funder types: federal, private foundation, state, and corporate.";
+
+      const applicantFilter = scanApplicantType === "for_profit" ? "CRITICAL: Only return grants that EXPLICITLY accept for-profit companies, LLCs, or private sector applicants. Skip all nonprofit-only opportunities."
+        : scanApplicantType === "nonprofit" ? "Focus on grants open to nonprofits and 501(c)(3) organizations."
+        : "Include grants for all applicant types.";
+
+      const lowHangingFilter = scanLowHanging ? `
+LOW-HANGING FRUIT MODE: Prioritize grants that are:
+- Simple application process (letter of inquiry, short application, rolling deadline)
+- Smaller award amounts (under $150K) — easier competition
+- Local/regional funders (less national competition)
+- Capacity-building, planning grants, or seed grants
+- Foundations with history of first-time grantees` : "";
+
+      const keywordFilter = scanKeywords ? `\nKEYWORD FOCUS: Prioritize grants specifically related to: ${scanKeywords}` : "";
+      const geoFilter = scanGeo ? `\nGEOGRAPHIC SCOPE: Focus on grants available in or targeting: ${scanGeo}` : "";
+
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `You are the Grant Discovery Agent for GHIS LLC (Global Health Innovation Solutions), a health innovation consultancy serving 14 states.
 
-TODAY'S DATE: 2026-05-11
+TODAY'S DATE: ${new Date().toISOString().split("T")[0]}
 
 TASK: Search the web RIGHT NOW for REAL, currently open grant opportunities. Do NOT invent or hallucinate grants. Only return grants you can confirm exist on grants.gov, agency websites, or foundation portals.
 
 SCAN PARAMETERS:
 - ${classFilter}
+- FUNDER TYPE: ${funderTypeFilter}
+- APPLICANT TYPE: ${applicantFilter}
 - Award range: $${scanMinAmount}–$${scanMaxAmount}
-- Deadline: MUST be between 2026-05-11 and ${new Date(Date.now() + Number(scanDeadlineDays) * 86400000).toISOString().split("T")[0]} (within ${scanDeadlineDays} days)
-- Eligible applicant types: LLCs, for-profit organizations, private sector entities
+- Deadline: MUST be between ${new Date().toISOString().split("T")[0]} and ${new Date(Date.now() + Number(scanDeadlineDays) * 86400000).toISOString().split("T")[0]} (within ${scanDeadlineDays} days)
+${keywordFilter}${geoFilter}${lowHangingFilter}
 
 CRITICAL RULES:
-1. REAL GRANTS ONLY — Search grants.gov, HRSA.gov, CDC.gov, SAMHSA.gov, RWJF.org, etc. right now.
-2. SOURCE URL — Must be the actual direct URL to the grant announcement (e.g. https://grants.gov/search-results-detail/XXXX or https://www.hrsa.gov/grants/find-funding/...). Generic homepage URLs are NOT acceptable.
+1. REAL GRANTS ONLY — Search grants.gov, HRSA.gov, CDC.gov, SAMHSA.gov, RWJF.org, foundation directories, etc. right now.
+2. SOURCE URL — Must be the actual direct URL to the grant announcement. Generic homepage URLs are NOT acceptable.
 3. DEADLINE MUST BE REAL — The deadline field must be the actual published deadline. If you cannot confirm the deadline, mark needs_verification=true.
-4. OPPORTUNITY NUMBER — Include the real Grants.gov opportunity number (e.g. HHS-2026-ACF-OPRE-YE-0123) when available.
-5. LLC ELIGIBILITY — Verify the funder accepts LLCs / for-profit / private sector applicants. Many federal grants require nonprofits — flag those clearly in eligibility field.
+4. OPPORTUNITY NUMBER — Include the real Grants.gov opportunity number when available.
+5. APPLICANT ELIGIBILITY — Clearly state in the eligibility field whether LLCs, for-profits, nonprofits, or all entity types are accepted.
 
 DEDUPLICATION: Do NOT return any of these (already in our database):
 ${[...existingTitles].slice(0, 25).join(" | ")}
@@ -106,8 +153,8 @@ ${[...existingTitles].slice(0, 25).join(" | ")}
 Return 5–8 confirmed real opportunities. If you cannot find enough REAL grants matching these criteria, return fewer — do NOT pad with invented ones.
 
 For each, classify actionability:
-- PASS: Real grant, direct URL confirmed, deadline within window, LLC-eligible
-- NEEDS_VERIFICATION: Real grant found but URL or LLC eligibility needs manual confirmation
+- PASS: Real grant, direct URL confirmed, deadline within window
+- NEEDS_VERIFICATION: Real grant found but URL or eligibility needs manual confirmation
 - REJECTED: Cannot confirm real source — DO NOT include these in the output`,
         add_context_from_internet: true,
         model: "gemini_3_flash",
@@ -315,15 +362,41 @@ For each, classify actionability:
 
       {/* Scan Parameters Panel */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Zap className="w-4 h-4 text-emerald-500" /> Scan Parameters
-          </CardTitle>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Zap className="w-4 h-4 text-emerald-500" /> Scan Parameters
+            </CardTitle>
+            <button
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-md px-2.5 py-1 bg-white"
+              onClick={() => setShowAdvanced(v => !v)}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              {showAdvanced ? "Hide" : "Advanced Filters"}
+            </button>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <CardContent className="space-y-4">
+          {/* Quick Presets */}
+          <div>
+            <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-amber-500" /> Quick Presets</p>
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map(p => (
+                <button
+                  key={p.label}
+                  onClick={() => applyPreset(p)}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
+                >
+                  <span>{p.icon}</span> {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Core Filters Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Class</label>
+              <label className="text-xs text-slate-500 mb-1 block">Class / Topic</label>
               <Select value={scanClass} onValueChange={setScanClass}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -337,22 +410,80 @@ For each, classify actionability:
               </Select>
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Min Amount ($)</label>
-              <Input value={scanMinAmount} onChange={e => setScanMinAmount(e.target.value)} type="number" />
+              <label className="text-xs text-slate-500 mb-1 block">Funder Type</label>
+              <Select value={scanFunderType} onValueChange={setScanFunderType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Funders</SelectItem>
+                  <SelectItem value="federal">Federal Only</SelectItem>
+                  <SelectItem value="private_foundation">Private Foundation</SelectItem>
+                  <SelectItem value="state">State Government</SelectItem>
+                  <SelectItem value="corporate">Corporate / CSR</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Max Amount ($)</label>
-              <Input value={scanMaxAmount} onChange={e => setScanMaxAmount(e.target.value)} type="number" />
+              <label className="text-xs text-slate-500 mb-1 block">Applicant Type</label>
+              <Select value={scanApplicantType} onValueChange={setScanApplicantType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Applicants</SelectItem>
+                  <SelectItem value="for_profit">For-Profit / LLC</SelectItem>
+                  <SelectItem value="nonprofit">Nonprofit / 501c3</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Deadline (days)</label>
+              <label className="text-xs text-slate-500 mb-1 block">Deadline Window (days)</label>
               <Input value={scanDeadlineDays} onChange={e => setScanDeadlineDays(e.target.value)} type="number" />
             </div>
           </div>
-          <Button onClick={runDiscovery} disabled={discovering} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
-            {discovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-            {discovering ? "Scanning..." : "Run Discovery Scan"}
-          </Button>
+
+          {/* Advanced Filters */}
+          {showAdvanced && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Min Amount ($)</label>
+                <Input value={scanMinAmount} onChange={e => setScanMinAmount(e.target.value)} type="number" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Max Amount ($)</label>
+                <Input value={scanMaxAmount} onChange={e => setScanMaxAmount(e.target.value)} type="number" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Geographic Focus</label>
+                <Input value={scanGeo} onChange={e => setScanGeo(e.target.value)} placeholder="e.g. Southeast US, Texas, rural..." />
+              </div>
+              <div className="md:col-span-3">
+                <label className="text-xs text-slate-500 mb-1 block">Keyword Focus (comma or space separated)</label>
+                <Textarea
+                  value={scanKeywords}
+                  onChange={e => setScanKeywords(e.target.value)}
+                  placeholder="e.g. digital equity, broadband, telehealth, SDOH, maternal health, workforce training..."
+                  rows={2}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Low-hanging fruit toggle + Run */}
+          <div className="flex items-center justify-between flex-wrap gap-3 pt-1">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-sm">
+              <input
+                type="checkbox"
+                checked={scanLowHanging}
+                onChange={e => setScanLowHanging(e.target.checked)}
+                className="rounded border-slate-300 accent-emerald-600"
+              />
+              <span className="text-slate-700 font-medium">🍎 Low-hanging fruit mode</span>
+              <span className="text-xs text-slate-400">(prioritize simple apps, small awards, less competition)</span>
+            </label>
+            <Button onClick={runDiscovery} disabled={discovering} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+              {discovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+              {discovering ? "Scanning..." : "Run Discovery Scan"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
