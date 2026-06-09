@@ -178,7 +178,7 @@ INDIRECT COST RATE: ${orgProfile.indirect_cost_rate || "N/A"}%
 PAST PERFORMANCE: ${orgProfile.past_performance || "N/A"}
 CERTIFICATIONS: ${(orgProfile.compliance_certifications || []).join(", ") || "N/A"}
 CAPACITY NOTES: ${orgProfile.capacity_notes || "N/A"}`.trim()
-        : "JPGE — health innovation consultancy.";
+        : "JPGE — health grant management organization.";
 
       // Match/assessment rationale if available
       const matchData = matches.find(mm => mm.grant_id === selectedGrant.id);
@@ -206,7 +206,7 @@ AI RATIONALE: ${matchData.rationale || "N/A"}`.trim() : "";
       };
 
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an expert grant writer for JPGE producing a FINAL, submission-ready proposal section.
+        prompt: `You are an expert grant writer for JPGE-GMS producing a FINAL, submission-ready proposal section.
 
 SECTION TO WRITE: ${sectionKey.replace(/_/g, " ").toUpperCase()}
 WRITING GUIDANCE: ${sectionGuidance[sectionKey] || "Write a compelling, evidence-based 300-500 word section."}
@@ -227,12 +227,13 @@ ${blockContext}
 
 ${draftedCtx ? `═══ ALREADY DRAFTED SECTIONS (avoid repetition) ═══\n${draftedCtx}\n` : ""}${priorProposals ? `═══ PRIOR FUNDED PROPOSALS (reference for tone, structure, and language patterns) ═══\n${priorProposals}\n` : ""}
 CRITICAL RULES:
-1. Write in first person ("JPGE will..." or "Our organization...")
+1. Write in first person ("Our organization will..." or "We will...")
 2. NEVER use placeholder text like [INSERT NAME] or [TBD]
 3. Pull specific details from the org profile above — mission, certifications, geography, past performance
 4. Tailor language to the specific funder's stated priorities
-5. This is a FINAL draft, not a template — it must be submission-ready
-6. Target word count: 350-550 words for most sections`,
+5. Write in the voice of the organization — professional, specific, evidence-based
+6. This is a FINAL draft, not a template — it must be submission-ready
+7. Target word count: 350-550 words for most sections`,
         response_json_schema: {
           type: "object",
           properties: { content: { type: "string" } }

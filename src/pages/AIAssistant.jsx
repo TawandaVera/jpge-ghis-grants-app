@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 const AGENTS = [
   {
-    id: "GrantAdvisor",
+    id: "grant_advisor",
     label: "Grant Advisor",
     description: "Strategy, discovery, writing guidance, and pipeline advice",
     icon: Sparkles,
@@ -18,7 +18,7 @@ const AGENTS = [
     activeBg: "bg-emerald-600",
   },
   {
-    id: "HILReviewer",
+    id: "hil_reviewer",
     label: "HIL Reviewer",
     description: "Guided human-in-the-loop review for pending checkpoints",
     icon: Shield,

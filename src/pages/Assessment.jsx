@@ -60,7 +60,7 @@ export default function Assessment() {
     setScoring(true);
     setBatchReport(null);
     try {
-      let orgProfile = "JPGE — health innovation consultancy operating across multiple states. Focus areas: health systems, workforce innovation, health equity, health technology, prevention & SDOH.";
+      let orgProfile = "JPGE — health grant management. Focus areas: health systems, workforce innovation, health equity, health technology, prevention & SDOH.";
       try {
         const profiles = await base44.entities.OrgProfile.list();
         if (profiles.length) {
@@ -81,7 +81,7 @@ export default function Assessment() {
         const daysLeft = deadline ? Math.round((deadline - today) / (1000 * 60 * 60 * 24)) : 999;
 
         const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are the Grant Assessment Agent for GHIS LLC. Apply the SOP4 framework.
+          prompt: `You are the Grant Assessment Agent for JPGE-GMS. Apply the SOP4 framework.
 
 ORG PROFILE: ${orgProfile}
 

@@ -92,8 +92,8 @@ export default function Overview() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Grant Intelligence Overview</h1>
-          <p className="text-slate-500 text-sm">Real-time pipeline health across all 5 classes</p>
+          <h1 className="text-2xl font-bold text-slate-900">JPGE-GMS Overview</h1>
+          <p className="text-slate-500 text-sm">Real-time pipeline health across all grant classes</p>
         </div>
         <Button variant="outline" onClick={exportCSV} className="gap-2">
           <Download className="w-4 h-4" /> Export CSV
