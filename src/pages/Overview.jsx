@@ -107,7 +107,7 @@ export default function Overview() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Capital Intelligence Engine</h1>
-          <p className="text-slate-500 text-sm">Real-time pipeline health across all grant classes</p>
+          <p className="text-slate-500 text-sm">An intelligent platform matching organizations with relevant funding opportunities</p>
         </div>
         <Button variant="outline" onClick={exportCSV} className="gap-2">
           <Download className="w-4 h-4" /> Export CSV

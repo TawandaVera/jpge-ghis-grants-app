@@ -206,7 +206,7 @@ export default function Help() {
         </div>
         <h1 className="text-2xl font-bold mb-2">Capital Intelligence Engine — How It Works</h1>
         <p className="text-slate-300 text-sm leading-relaxed max-w-2xl">
-          JPGE Capital Intelligence Engine is an end-to-end AI-powered funding discovery and management platform. It guides your team through discovering opportunities (grants, foundations, major gifts) and submitting polished proposals — using intelligent automation, human-in-the-loop review, and structured workflows.
+          The JPGE Capital Intelligence Engine is an intelligent platform designed to simplify the grant discovery and application process by matching organizations with relevant funding opportunities — guiding your team from discovery through submission with intelligent automation, human-in-the-loop review, and structured workflows.
         </p>
         <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-400">
           <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> AI-powered discovery & scoring</span>
