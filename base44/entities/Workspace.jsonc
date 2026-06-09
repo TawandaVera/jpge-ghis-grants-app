@@ -1,0 +1,52 @@
+{
+  "name": "Workspace",
+  "type": "object",
+  "properties": {
+    "owner_id": {
+      "type": "string",
+      "description": "User ID of the workspace owner"
+    },
+    "owner_name": {
+      "type": "string",
+      "description": "Display name of the workspace owner"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the workspace owner"
+    },
+    "org_name": {
+      "type": "string",
+      "description": "Organization name for this workspace"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes about this workspace"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "last_backup_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When a backup was last generated"
+    },
+    "grant_count": {
+      "type": "number",
+      "default": 0
+    },
+    "application_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "owner_id",
+    "owner_email"
+  ]
+}

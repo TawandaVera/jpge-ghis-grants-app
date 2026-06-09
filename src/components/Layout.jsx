@@ -1,9 +1,9 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Search, BarChart3, 
-  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList
+  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList, FolderOpen, Users
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { base44 } from "@/api/base44Client";
 
@@ -17,15 +17,22 @@ const NAV = [
   { to: "/dossier", label: "Grant Dossier", icon: BookOpen },
   { to: "/tracker", label: "App Tracker", icon: ClipboardList },
   { to: "/org-profile", label: "Org Profile", icon: Building2 },
+  { to: "/my-workspace", label: "My Workspace", icon: FolderOpen },
+  { to: "/admin/workspaces", label: "Admin: Users", icon: Users, adminOnly: true },
 ];
 
 export default function Layout() {
   const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(u => setUserRole(u?.role)).catch(() => {});
+  }, []);
 
   const NavItems = () => (
     <>
-      {NAV.map(({ to, label, icon: Icon }) => (
+      {NAV.filter(item => !item.adminOnly || userRole === "admin").map(({ to, label, icon: Icon, adminOnly }) => (
         <Link
           key={to}
           to={to}
@@ -34,7 +41,9 @@ export default function Layout() {
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
             pathname === to
               ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-              : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+              : adminOnly
+                ? "text-amber-400/70 hover:bg-white/5 hover:text-amber-300"
+                : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
           )}
         >
           <Icon className="w-4 h-4" />

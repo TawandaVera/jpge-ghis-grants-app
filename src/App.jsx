@@ -15,6 +15,8 @@ import PackExport from '@/pages/PackExport';
 import OrgProfile from '@/pages/OrgProfile';
 import GrantDossier from '@/pages/GrantDossier';
 import ApplicationTracker from '@/pages/ApplicationTracker';
+import MyWorkspace from '@/pages/MyWorkspace';
+import AdminWorkspaces from '@/pages/AdminWorkspaces';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -48,6 +50,8 @@ const AuthenticatedApp = () => {
         <Route path="/org-profile" element={<OrgProfile />} />
         <Route path="/dossier" element={<GrantDossier />} />
         <Route path="/tracker" element={<ApplicationTracker />} />
+        <Route path="/my-workspace" element={<MyWorkspace />} />
+        <Route path="/admin/workspaces" element={<AdminWorkspaces />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
