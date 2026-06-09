@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, AlertTriangle, Loader2, Wand2, Save, ChevronRight, Database, BookOpen, BarChart2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { SECTION_KEYS } from "@/lib/grantConstants";
+import StageGuide from "@/components/copilot/StageGuide";
 
 export default function Stage6Draft({
   selectedGrant, selectedApp, sections, setSections,
@@ -71,6 +72,8 @@ export default function Stage6Draft({
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
+      <StageGuide stageId={6} />
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -190,7 +193,8 @@ export default function Stage6Draft({
                   {isDrafting ? "Writing…" : isDone ? "Redraft" : "AI Draft"}
                 </Button>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-2">
+                <StageGuide sectionKey={key} compact={true} />
                 <Textarea
                   value={sections[key] || ""}
                   onChange={e => setSections(prev => ({ ...prev, [key]: e.target.value }))}

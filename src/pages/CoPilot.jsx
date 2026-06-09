@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Upload, CheckCircle2, AlertTriangle, Loader2, Wand2, RefreshCw, Save, ChevronRight, ExternalLink } from "lucide-react";
 import FinalPackStage from "@/components/copilot/FinalPackStage";
 import Stage6Draft from "@/components/copilot/Stage6Draft";
+import StageGuide from "@/components/copilot/StageGuide";
 import { toast } from "sonner";
 import { SECTION_KEYS, COPILOT_STAGES as STAGES } from "@/lib/grantConstants";
 
@@ -293,6 +294,7 @@ CRITICAL RULES:
         {/* Stage 1: Master Narrative */}
         {currentStage === 1 && (
           <div className="p-6 max-w-6xl mx-auto space-y-5">
+            <StageGuide stageId={1} />
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Stage 1: Master Narrative Ingestion</h2>
@@ -388,6 +390,7 @@ CRITICAL RULES:
         {/* Stage 2: Org Profile — managed in the dedicated Org Profile page */}
         {currentStage === 2 && (
           <div className="p-6 max-w-2xl mx-auto space-y-5">
+            <StageGuide stageId={2} />
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 2: Org Profile</h2>
               <p className="text-slate-500 text-sm">Review and update your organizational profile before drafting</p>
@@ -422,6 +425,7 @@ CRITICAL RULES:
         {/* Stage 3: Opportunity Intake */}
         {currentStage === 3 && (
           <div className="p-6 max-w-4xl mx-auto space-y-5">
+            <StageGuide stageId={3} />
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 3: Select Opportunity</h2>
               <p className="text-slate-500 text-sm">Pick a GO or PREP grant to draft — or open an existing in-progress application</p>
@@ -519,6 +523,7 @@ CRITICAL RULES:
         {/* Stage 4: Pipeline Board — managed in the dedicated Pipeline page */}
         {currentStage === 4 && (
           <div className="p-6 max-w-2xl mx-auto space-y-5">
+            <StageGuide stageId={4} />
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 4: Pipeline Board</h2>
               <p className="text-slate-500 text-sm">Track and manage your applications in the pipeline</p>
@@ -551,6 +556,7 @@ CRITICAL RULES:
         {/* Stage 5: Content Mapping */}
         {currentStage === 5 && (
           <div className="p-6 max-w-4xl mx-auto space-y-5">
+            <StageGuide stageId={5} />
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 5: Content Mapping</h2>
               <p className="text-slate-500 text-sm">Map master narrative blocks to grant application sections</p>
@@ -604,6 +610,7 @@ CRITICAL RULES:
         {/* Stage 7: Edit Guidance */}
         {currentStage === 7 && (
           <div className="p-6 max-w-4xl mx-auto space-y-5">
+            <StageGuide stageId={7} />
             <div>
               <h2 className="text-xl font-bold text-slate-900">Stage 7: Edit Guidance</h2>
               <p className="text-slate-500 text-sm">AI-generated recommendations to strengthen your application</p>

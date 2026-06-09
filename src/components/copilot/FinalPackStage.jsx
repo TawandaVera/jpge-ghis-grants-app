@@ -6,6 +6,7 @@ import { CheckCircle2, AlertTriangle, Download, Wand2, Loader2, FileText, Save, 
 import { toast } from "sonner";
 import { SECTION_KEYS } from "@/lib/grantConstants";
 import { jsPDF } from "jspdf";
+import StageGuide from "@/components/copilot/StageGuide";
 
 function buildProposalLines(sections, selectedGrant, orgProfile) {
   const lines = [];
@@ -218,6 +219,7 @@ Provide:
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-5">
+      <StageGuide stageId={8} />
       <div>
         <h2 className="text-xl font-bold text-slate-900">Stage 8: Final Pack & Submission</h2>
         <p className="text-slate-500 text-sm">Review readiness, run a final AI check, and export your proposal</p>
