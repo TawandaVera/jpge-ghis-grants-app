@@ -22,7 +22,7 @@ const STAGE_GUIDES = {
       "Make sure your EIN, UEI, indirect cost rate, and mission statement are filled in.",
       "Come back here and click 'Profile Confirmed' when you're ready.",
     ],
-    tip: "Missing your indirect cost rate? Check your most recent federal award or contact your finance team.",
+    tip: "Missing your indirect cost rate or UEI? Check your most recent federal award letter or your finance team's records.",
   },
   3: {
     emoji: "🎯",

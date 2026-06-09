@@ -60,7 +60,7 @@ export default function Assessment() {
     setScoring(true);
     setBatchReport(null);
     try {
-      let orgProfile = "GHIS LLC — health innovation consultancy, $3.2M deployed across 14 states. Focus areas: health systems, workforce innovation, health equity, health technology, prevention & SDOH. LLC-eligible for all grant types.";
+      let orgProfile = "JPGE — health innovation consultancy operating across multiple states. Focus areas: health systems, workforce innovation, health equity, health technology, prevention & SDOH.";
       try {
         const profiles = await base44.entities.OrgProfile.list();
         if (profiles.length) {

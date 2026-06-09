@@ -178,7 +178,7 @@ INDIRECT COST RATE: ${orgProfile.indirect_cost_rate || "N/A"}%
 PAST PERFORMANCE: ${orgProfile.past_performance || "N/A"}
 CERTIFICATIONS: ${(orgProfile.compliance_certifications || []).join(", ") || "N/A"}
 CAPACITY NOTES: ${orgProfile.capacity_notes || "N/A"}`.trim()
-        : "GHIS LLC — health innovation consultancy operating across 14 states.";
+        : "JPGE — health innovation consultancy.";
 
       // Match/assessment rationale if available
       const matchData = matches.find(mm => mm.grant_id === selectedGrant.id);
@@ -206,7 +206,7 @@ AI RATIONALE: ${matchData.rationale || "N/A"}`.trim() : "";
       };
 
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an expert grant writer for GHIS LLC producing a FINAL, submission-ready proposal section.
+        prompt: `You are an expert grant writer for JPGE producing a FINAL, submission-ready proposal section.
 
 SECTION TO WRITE: ${sectionKey.replace(/_/g, " ").toUpperCase()}
 WRITING GUIDANCE: ${sectionGuidance[sectionKey] || "Write a compelling, evidence-based 300-500 word section."}
@@ -227,7 +227,7 @@ ${blockContext}
 
 ${draftedCtx ? `═══ ALREADY DRAFTED SECTIONS (avoid repetition) ═══\n${draftedCtx}\n` : ""}${priorProposals ? `═══ PRIOR FUNDED PROPOSALS (reference for tone, structure, and language patterns) ═══\n${priorProposals}\n` : ""}
 CRITICAL RULES:
-1. Write in first person ("GHIS LLC will..." or "Our organization...")
+1. Write in first person ("JPGE will..." or "Our organization...")
 2. NEVER use placeholder text like [INSERT NAME] or [TBD]
 3. Pull specific details from the org profile above — mission, certifications, geography, past performance
 4. Tailor language to the specific funder's stated priorities

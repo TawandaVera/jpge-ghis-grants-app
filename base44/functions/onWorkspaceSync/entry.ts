@@ -13,11 +13,11 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: data.owner_email,
-      from_name: "GHIS Grants Intelligence",
-      subject: "Welcome to the GHIS Grants Intelligence Platform",
+      from_name: "JPGE-GMS",
+      subject: "Welcome to the JPGE Grant Management System",
       body: `Hello ${data.owner_name || ""},
 
-Your workspace has been set up on the GHIS Grants Intelligence Platform.
+Your workspace has been set up on the JPGE Grant Management System (JPGE-GMS).
 
 Your workspace is now active and ready to use. You can:
 • Discover and assess grant opportunities
@@ -27,7 +27,7 @@ Your workspace is now active and ready to use. You can:
 
 Log in to get started.
 
-— GHIS Grants Team`
+— JPGE-GMS Team`
     });
 
     return Response.json({ welcomed: true, email: data.owner_email });

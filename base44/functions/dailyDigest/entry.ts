@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     const adminUsers = users.filter(u => u.role === "admin");
 
     for (const user of adminUsers) {
-      const body = `GHIS Grants Daily Digest — ${today.toDateString()}
+      const body = `JPGE-GMS Daily Digest — ${today.toDateString()}
 
 ━━━━━━━━━━━━━━━━━━━━━━━
 📊 PIPELINE SNAPSHOT
@@ -44,11 +44,11 @@ ${urgent.map(a => `  • ${a.grant_title} — Due ${a.deadline}`).join("\n")}
 ${hilItems.length > 0 ? `🔴 HIL CHECKPOINTS REQUIRING REVIEW:
 ${hilItems.map(h => `  • ${h.grant_title} [${h.stage}]`).join("\n")}
 ` : ""}
-Log in at the GHIS Grants platform to manage your pipeline.`;
+Log in at the JPGE-GMS platform to manage your pipeline.`;
 
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: user.email,
-        from_name: "GHIS Grants Intelligence",
+        from_name: "JPGE-GMS",
         subject: `📊 Daily Digest — ${today.toDateString()} | ${urgent.length ? `${urgent.length} urgent` : "Pipeline update"}`,
         body
       });

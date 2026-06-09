@@ -150,7 +150,7 @@ export default function Overview() {
         <StatCard label="PREP" value={prepCount} sub={`${assessed ? Math.round(prepCount/assessed*100) : 0}% of assessed`} icon={<AlertTriangle className="w-5 h-5" />} color="amber" />
       </div>
 
-      {/* ROI & Financial Summary (GHIS-008) */}
+      {/* ROI & Financial Summary */}
       {(submitted.length > 0 || awarded.length > 0) && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard label="Submitted" value={submitted.length} sub="applications" icon={<ArrowRight className="w-5 h-5" />} color="blue" />

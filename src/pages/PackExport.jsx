@@ -10,12 +10,14 @@ import { toast } from "sonner";
 import { SECTION_KEYS } from "@/lib/grantConstants";
 
 const READINESS_ITEMS = [
-  "SAM.gov Registration Active",
-  "DUNS/UEI Number Current",
-  "LLC Operating Agreement Filed",
-  "Professional Liability Insurance",
-  "Financial Statements (2 yr)",
-  "Capability Statement Updated",
+  "Org Profile complete (EIN, UEI, mission)",
+  "Indirect cost rate documented",
+  "Financial Statements ready (2 yr)",
+  "Master Narrative parsed & approved",
+  "All proposal sections drafted",
+  "Compliance checklist reviewed",
+  "Budget narrative finalized",
+  "Application reviewed by team",
 ];
 
 export default function PackExport() {
