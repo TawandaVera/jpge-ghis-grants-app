@@ -36,6 +36,7 @@ export default function AIAssistant() {
   const [sending, setSending] = useState(false);
   const [loadingConvs, setLoadingConvs] = useState(false);
   const bottomRef = useRef(null);
+  const unsubRef = useRef(null);
 
   useEffect(() => {
     loadConversations(activeAgent.id);
@@ -45,40 +46,57 @@ export default function AIAssistant() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Clean up any active subscription on unmount
+  useEffect(() => () => { unsubRef.current?.(); }, []);
+
+  const subscribe = (conversationId) => {
+    unsubRef.current?.();
+    unsubRef.current = base44.agents.subscribeToConversation(conversationId, (data) => {
+      setMessages(data.messages || []);
+    });
+  };
+
   const loadConversations = async (agentId) => {
     setLoadingConvs(true);
+    unsubRef.current?.();
     setCurrentConv(null);
     setMessages([]);
-    const convs = await base44.agents.listConversations({ agent_name: agentId });
-    setConversations(prev => ({ ...prev, [agentId]: convs || [] }));
+    try {
+      const convs = await base44.agents.listConversations({ agent_name: agentId });
+      setConversations(prev => ({ ...prev, [agentId]: convs || [] }));
+    } catch (e) {
+      toast.error("Failed to load conversations: " + e.message);
+    }
     setLoadingConvs(false);
   };
 
   const newConversation = async () => {
-    const conv = await base44.agents.createConversation({
-      agent_name: activeAgent.id,
-      metadata: { name: `Chat ${new Date().toLocaleTimeString()}` }
-    });
-    setCurrentConv(conv);
-    setMessages([]);
-    setConversations(prev => ({
-      ...prev,
-      [activeAgent.id]: [conv, ...(prev[activeAgent.id] || [])]
-    }));
-
-    // Subscribe to updates
-    base44.agents.subscribeToConversation(conv.id, (data) => {
-      setMessages(data.messages || []);
-    });
+    try {
+      const conv = await base44.agents.createConversation({
+        agent_name: activeAgent.id,
+        metadata: { name: `Chat ${new Date().toLocaleTimeString()}` }
+      });
+      setCurrentConv(conv);
+      setMessages([]);
+      setConversations(prev => ({
+        ...prev,
+        [activeAgent.id]: [conv, ...(prev[activeAgent.id] || [])]
+      }));
+      subscribe(conv.id);
+    } catch (e) {
+      toast.error("Failed to start conversation: " + e.message);
+    }
   };
 
   const openConversation = async (conv) => {
-    const full = await base44.agents.getConversation(conv.id);
-    setCurrentConv(full);
-    setMessages(full.messages || []);
-    base44.agents.subscribeToConversation(full.id, (data) => {
-      setMessages(data.messages || []);
-    });
+    try {
+      const full = await base44.agents.getConversation(conv.id);
+      setCurrentConv(full);
+      setMessages(full.messages || []);
+      subscribe(full.id);
+    } catch (e) {
+      toast.error("Failed to open conversation: " + e.message);
+    }
   };
 
   const sendMessage = async () => {
@@ -87,7 +105,11 @@ export default function AIAssistant() {
     setInput("");
     setSending(true);
 
-    await base44.agents.addMessage(currentConv, { role: "user", content: text });
+    try {
+      await base44.agents.addMessage(currentConv, { role: "user", content: text });
+    } catch (e) {
+      toast.error("Failed to send message: " + e.message);
+    }
     setSending(false);
   };
 

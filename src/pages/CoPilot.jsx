@@ -30,8 +30,20 @@ export default function CoPilot() {
   const [editingBlock, setEditingBlock] = useState(null);
   const [editContent, setEditContent] = useState("");
   const [savedNarratives, setSavedNarratives] = useState([]);
+  const [sectionMap, setSectionMap] = useState({});
+  const [highQuality, setHighQuality] = useState(true);
   const [loading, setLoading] = useState(true);
   const fileRef = useRef();
+
+  const toggleMapping = (sectionKey, blockName) => {
+    setSectionMap(prev => {
+      const current = prev[sectionKey] || [];
+      const next = current.includes(blockName)
+        ? current.filter(b => b !== blockName)
+        : [...current, blockName];
+      return { ...prev, [sectionKey]: next };
+    });
+  };
 
   useEffect(() => {
     loadAll();
@@ -132,7 +144,7 @@ Extract 8-12 distinct content blocks. Each block should be a specific, reusable 
         section: block.section,
         content: block.content,
         approved: true,
-        version: 1
+        version: "1.0.0"
       });
     }
     setHilPending(false);
@@ -160,9 +172,13 @@ Extract 8-12 distinct content blocks. Each block should be a specific, reusable 
         .map(a => `[PRIOR PROPOSAL — ${a.grant_title} / ${a.funder}]:\n${a.proposal_text.substring(0, 800)}`)
         .join("\n\n");
 
-      // Build rich org context from master narrative blocks
-      const blockContext = parsedBlocks.length > 0
-        ? parsedBlocks.map(b => `[${b.section}]:\n${b.content?.substring(0, 500)}`).join("\n\n")
+      // Prefer blocks the user explicitly mapped to this section; otherwise use all blocks
+      const mappedNames = sectionMap[sectionKey] || [];
+      const relevantBlocks = mappedNames.length > 0
+        ? parsedBlocks.filter(b => mappedNames.includes(b.section))
+        : parsedBlocks;
+      const blockContext = relevantBlocks.length > 0
+        ? relevantBlocks.map(b => `[${b.section}]:\n${b.content?.substring(0, 500)}`).join("\n\n")
         : "No master narrative blocks available — rely on org profile data below.";
 
       // Org profile context
@@ -238,7 +254,7 @@ CRITICAL RULES:
           type: "object",
           properties: { content: { type: "string" } }
         },
-        model: "claude_sonnet_4_6"
+        ...(highQuality ? { model: "claude_sonnet_4_6" } : {})
       });
 
       const updatedSections = { ...sections, [sectionKey]: result.content };
@@ -279,13 +295,25 @@ CRITICAL RULES:
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-700">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
-            <span>Stage {currentStage}/8</span>
-            <span>{progress}%</span>
-          </div>
-          <div className="h-1.5 bg-slate-700 rounded-full">
-            <div className="h-1.5 bg-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+        <div className="p-4 border-t border-slate-700 space-y-3">
+          <button
+            onClick={() => setHighQuality(q => !q)}
+            className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-slate-200 transition-colors"
+            title="High-quality mode uses a premium AI model — better drafts, more integration credits per section"
+          >
+            <span>High-quality drafting</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${highQuality ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"}`}>
+              {highQuality ? "ON" : "OFF"}
+            </span>
+          </button>
+          <div>
+            <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+              <span>Stage {currentStage}/8</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="h-1.5 bg-slate-700 rounded-full">
+              <div className="h-1.5 bg-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+            </div>
           </div>
         </div>
       </div>
@@ -566,18 +594,33 @@ CRITICAL RULES:
               <p className="text-slate-400">Complete Stage 1 first to parse your master narrative.</p>
             ) : (
               <div className="space-y-3">
+                <p className="text-xs text-slate-500">Click narrative blocks to map them to each section — mapped blocks guide the AI draft.</p>
                 {SECTION_KEYS.map(key => (
                   <div key={key} className="bg-white rounded-lg border p-4">
-                    <p className="font-medium text-slate-800 mb-2">{key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-medium text-slate-800">{key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</p>
+                      {(sectionMap[key]?.length || 0) > 0 && (
+                        <Badge variant="outline" className="text-xs">{sectionMap[key].length} mapped</Badge>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-2">
-                      {parsedBlocks.map((b, i) => (
-                        <button
-                          key={i}
-                          className="text-xs px-2 py-1 rounded border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-600 transition-colors"
-                        >
-                          {b.section}
-                        </button>
-                      ))}
+                      {parsedBlocks.map((b, i) => {
+                        const isMapped = (sectionMap[key] || []).includes(b.section);
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => toggleMapping(key, b.section)}
+                            className={`text-xs px-2 py-1 rounded border transition-colors ${
+                              isMapped
+                                ? "border-emerald-400 bg-emerald-50 text-emerald-700 font-medium"
+                                : "border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-600"
+                            }`}
+                          >
+                            {isMapped && <CheckCircle2 className="w-3 h-3 inline mr-1" />}
+                            {b.section}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}

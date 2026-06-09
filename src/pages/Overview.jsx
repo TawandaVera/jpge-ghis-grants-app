@@ -17,6 +17,8 @@ export default function Overview() {
   const [outcomes, setOutcomes] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [loadError, setLoadError] = useState(false);
+
   useEffect(() => {
     Promise.all([
       base44.entities.Grant.list("-created_date", 200),
@@ -31,6 +33,10 @@ export default function Overview() {
       setHilItems(h);
       setOutcomes(o);
       setLoading(false);
+    }).catch((e) => {
+      setLoadError(true);
+      setLoading(false);
+      toast.error("Failed to load dashboard data: " + e.message);
     });
   }, []);
 
@@ -40,7 +46,7 @@ export default function Overview() {
   const declineCount = matches.filter(m => m.recommendation === "DECLINE").length;
   const assessed = matches.length;
 
-  // ROI & submission tracking (GHIS-008)
+  // ROI & submission tracking
   const submitted = applications.filter(a => ["submitted", "awarded", "declined"].includes(a.stage));
   const awarded = outcomes.filter(o => o.outcome === "awarded");
   const totalAwarded = awarded.reduce((s, o) => s + (o.award_amount || 0), 0);
@@ -77,13 +83,21 @@ export default function Overview() {
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "ghis-grants.csv"; a.click();
+    a.href = url; a.download = "jpge-grants.csv"; a.click();
     toast.success("CSV exported");
   };
 
   if (loading) return (
     <div className="flex items-center justify-center h-96">
       <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="flex flex-col items-center justify-center h-96 text-center gap-3">
+      <AlertTriangle className="w-10 h-10 text-amber-500" />
+      <p className="text-slate-700 font-medium">Couldn't load dashboard data</p>
+      <Button variant="outline" onClick={() => window.location.reload()}>Retry</Button>
     </div>
   );
 
@@ -240,16 +254,25 @@ export default function Overview() {
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-xs text-slate-400">{g.funder?.split(" ").slice(-1)[0]}</span>
                   <button
-                    onClick={() => window.open(`https://grantedai.com/grants?q=${encodeURIComponent(g.title)}`, "_blank")}
+                    onClick={() => window.open(g.source_url || `https://www.grants.gov/search-grants?keywords=${encodeURIComponent(g.title)}`, "_blank")}
                     className="text-amber-500 hover:text-amber-700 transition-colors"
-                    title="Verify on GrantedAI"
+                    title="Verify grant opportunity"
                   >
                     <ShieldCheck className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
             ))}
-            {recentGrants.length === 0 && <p className="text-sm text-slate-400 text-center py-4">No grants yet. Run discovery.</p>}
+            {recentGrants.length === 0 && (
+              <div className="text-center py-6">
+                <p className="text-sm text-slate-400 mb-2">No grants yet.</p>
+                <Link to="/discovery">
+                  <Button size="sm" variant="outline" className="gap-1">
+                    Run Discovery <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
