@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Bot, Send, Plus, MessageSquare, Sparkles, Shield } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import CreditNotice, { isCreditError } from "@/components/ai/CreditNotice.jsx";
 
 const AGENTS = [
   {
@@ -35,12 +36,54 @@ export default function AIAssistant() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loadingConvs, setLoadingConvs] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(true);
+  const [disabledReason, setDisabledReason] = useState("");
+  const [creditError, setCreditError] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [settingsId, setSettingsId] = useState(null);
   const bottomRef = useRef(null);
   const unsubRef = useRef(null);
 
   useEffect(() => {
+    loadSettings();
+  }, []);
+
+  useEffect(() => {
     loadConversations(activeAgent.id);
   }, [activeAgent]);
+
+  const loadSettings = async () => {
+    try {
+      const [rows, me] = await Promise.all([
+        base44.entities.AISettings.list(),
+        base44.auth.me().catch(() => null),
+      ]);
+      const cfg = rows?.[0];
+      setSettingsId(cfg?.id || null);
+      setAiEnabled(cfg ? cfg.assistants_enabled !== false : true);
+      setDisabledReason(cfg?.disabled_reason || "");
+      setIsAdmin(me?.role === "admin");
+    } catch {
+      setAiEnabled(true);
+    }
+  };
+
+  const toggleAssistants = async () => {
+    const next = !aiEnabled;
+    setAiEnabled(next);
+    try {
+      if (settingsId) {
+        await base44.entities.AISettings.update(settingsId, { assistants_enabled: next });
+      } else {
+        const created = await base44.entities.AISettings.create({ assistants_enabled: next });
+        setSettingsId(created.id);
+      }
+      if (next) setCreditError(false);
+    } catch (e) {
+      setAiEnabled(!next);
+      toast.error("Failed to update setting: " + e.message);
+    }
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -107,8 +150,13 @@ export default function AIAssistant() {
 
     try {
       await base44.agents.addMessage(currentConv, { role: "user", content: text });
+      setCreditError(false);
     } catch (e) {
-      toast.error("Failed to send message: " + e.message);
+      if (isCreditError(e.message)) {
+        setCreditError(true);
+      } else {
+        toast.error("Failed to send message: " + e.message);
+      }
     }
     setSending(false);
   };
@@ -194,11 +242,28 @@ export default function AIAssistant() {
             <p className="font-semibold text-slate-900 text-sm">{activeAgent.label}</p>
             <p className="text-xs text-slate-500">{activeAgent.description}</p>
           </div>
-          {currentConv && <Badge variant="outline" className="ml-auto text-xs">Active</Badge>}
+          <div className="ml-auto flex items-center gap-3">
+            {currentConv && <Badge variant="outline" className="text-xs">Active</Badge>}
+            {isAdmin && (
+              <button
+                onClick={toggleAssistants}
+                className={`text-xs px-2.5 py-1 rounded-full font-medium border transition-colors ${
+                  aiEnabled
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                    : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+                }`}
+                title="Admin: turn AI Assistants on/off to control credit usage"
+              >
+                AI {aiEnabled ? "On" : "Off"}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {!aiEnabled && <CreditNotice mode="disabled" reason={disabledReason} />}
+          {aiEnabled && creditError && <CreditNotice mode="credit" />}
           {!currentConv ? (
             <div className="flex flex-col items-center justify-center h-full text-center gap-4">
               <div className={`p-4 rounded-2xl ${activeAgent.color}`}>
@@ -261,11 +326,11 @@ export default function AIAssistant() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                placeholder={`Ask the ${activeAgent.label}…`}
+                placeholder={aiEnabled ? `Ask the ${activeAgent.label}…` : "AI Assistants are turned off"}
                 className="flex-1"
-                disabled={sending}
+                disabled={sending || !aiEnabled}
               />
-              <Button onClick={sendMessage} disabled={!input.trim() || sending} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+              <Button onClick={sendMessage} disabled={!input.trim() || sending || !aiEnabled} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
