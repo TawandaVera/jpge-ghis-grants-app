@@ -253,13 +253,15 @@ export default function Overview() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-xs text-slate-400">{g.funder?.split(" ").slice(-1)[0]}</span>
-                  <button
-                    onClick={() => window.open(g.source_url || `https://www.grants.gov/search-grants?keywords=${encodeURIComponent(g.title)}`, "_blank")}
-                    className="text-amber-500 hover:text-amber-700 transition-colors"
-                    title="Verify grant opportunity"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                  </button>
+                  {g.source_url && (
+                    <button
+                      onClick={() => window.open(g.source_url, "_blank")}
+                      className="text-amber-500 hover:text-amber-700 transition-colors"
+                      title="Verify at source"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
