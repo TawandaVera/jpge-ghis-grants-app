@@ -4,11 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Zap, ExternalLink, Calendar, MapPin, Loader2, Plus, FileText, AlertTriangle, CheckCircle2, ShieldCheck, SlidersHorizontal, X, Sparkles } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
+import { Search, Zap, ExternalLink, MapPin, Loader2, Plus, FileText, ShieldCheck, SlidersHorizontal, Sparkles } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -30,6 +29,15 @@ const CLASS_COLORS = {
   other: "bg-slate-100 text-slate-700",
 };
 
+const PRESETS = [
+  { label: "Private Foundation — Digital Equity", icon: "🏛️", values: { scanClass: "digital_health", scanFunderType: "private_foundation", scanApplicantType: "all", scanKeywords: "digital equity broadband access technology", scanLowHanging: false } },
+  { label: "Entrepreneur / For-Profit Friendly", icon: "🚀", values: { scanClass: "all", scanFunderType: "all", scanApplicantType: "for_profit", scanKeywords: "small business entrepreneur startup innovation", scanLowHanging: true } },
+  { label: "Research Grants (Any Funder)", icon: "🔬", values: { scanClass: "research", scanFunderType: "all", scanApplicantType: "all", scanKeywords: "research evidence-based clinical community health", scanLowHanging: false } },
+  { label: "Low-Hanging Fruit — Quick Wins", icon: "🍎", values: { scanClass: "all", scanFunderType: "all", scanApplicantType: "all", scanKeywords: "capacity building technical assistance small grants", scanLowHanging: true } },
+  { label: "Health Equity — Foundation Only", icon: "❤️", values: { scanClass: "health_equity", scanFunderType: "private_foundation", scanApplicantType: "all", scanKeywords: "health equity underserved SDOH disparities", scanLowHanging: false } },
+  { label: "Workforce Dev — Federal", icon: "👷", values: { scanClass: "workforce_development", scanFunderType: "federal", scanApplicantType: "all", scanKeywords: "workforce training jobs skills development", scanLowHanging: false } },
+];
+
 export default function GrantDiscovery() {
   const [grants, setGrants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +48,7 @@ export default function GrantDiscovery() {
   const [selected, setSelected] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [auditLog, setAuditLog] = useState([]);
+  const [scanTab, setScanTab] = useState("filters");
 
   // Scan parameters
   const [scanClass, setScanClass] = useState("all");
@@ -52,23 +61,7 @@ export default function GrantDiscovery() {
   const [scanKeywords, setScanKeywords] = useState("");
   const [scanLowHanging, setScanLowHanging] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  const PRESETS = [
-    { label: "Private Foundation — Digital Equity", icon: "🏛️", values: { scanClass: "digital_health", scanFunderType: "private_foundation", scanApplicantType: "all", scanKeywords: "digital equity broadband access technology", scanLowHanging: false } },
-    { label: "Entrepreneur / For-Profit Friendly", icon: "🚀", values: { scanClass: "all", scanFunderType: "all", scanApplicantType: "for_profit", scanKeywords: "small business entrepreneur startup innovation", scanLowHanging: true } },
-    { label: "Research Grants (Any Funder)", icon: "🔬", values: { scanClass: "research", scanFunderType: "all", scanApplicantType: "all", scanKeywords: "research evidence-based clinical community health", scanLowHanging: false } },
-    { label: "Low-Hanging Fruit — Quick Wins", icon: "🍎", values: { scanClass: "all", scanFunderType: "all", scanApplicantType: "all", scanKeywords: "capacity building technical assistance small grants", scanLowHanging: true } },
-    { label: "Health Equity — Foundation Only", icon: "❤️", values: { scanClass: "health_equity", scanFunderType: "private_foundation", scanApplicantType: "all", scanKeywords: "health equity underserved SDOH disparities", scanLowHanging: false } },
-    { label: "Workforce Dev — Federal", icon: "👷", values: { scanClass: "workforce_development", scanFunderType: "federal", scanApplicantType: "all", scanKeywords: "workforce training jobs skills development", scanLowHanging: false } },
-  ];
-
-  const applyPreset = (preset) => {
-    setScanClass(preset.values.scanClass);
-    setScanFunderType(preset.values.scanFunderType);
-    setScanApplicantType(preset.values.scanApplicantType);
-    setScanKeywords(preset.values.scanKeywords);
-    setScanLowHanging(preset.values.scanLowHanging);
-  };
+  const [customSearchText, setCustomSearchText] = useState("");
 
   const [newGrant, setNewGrant] = useState({
     title: "", funder: "", deadline: "", award_amount_min: "", award_amount_max: "",
@@ -84,6 +77,14 @@ export default function GrantDiscovery() {
     setLoading(false);
   };
 
+  const applyPreset = (preset) => {
+    setScanClass(preset.values.scanClass);
+    setScanFunderType(preset.values.scanFunderType);
+    setScanApplicantType(preset.values.scanApplicantType);
+    setScanKeywords(preset.values.scanKeywords);
+    setScanLowHanging(preset.values.scanLowHanging);
+  };
+
   const runDiscovery = async () => {
     setDiscovering(true);
     setAuditLog([]);
@@ -92,45 +93,69 @@ export default function GrantDiscovery() {
 
     try {
       log(`Starting discovery run ${runId}`);
-      log(`Scan: class=${scanClass}, funder=${scanFunderType}, applicant=${scanApplicantType}, amount=$${Number(scanMinAmount).toLocaleString()}–$${Number(scanMaxAmount).toLocaleString()}, deadline=${scanDeadlineDays}d${scanLowHanging ? ", LOW-HANGING ONLY" : ""}${scanKeywords ? `, keywords="${scanKeywords}"` : ""}`);
 
-      // Build exclusion set from existing grants (deduplication layer 1)
       const existing = await base44.entities.Grant.list("-created_date", 500);
       const existingTitles = new Set(existing.map(g => g.title?.toLowerCase().trim()));
       const existingFingerprints = new Set(existing.map(g => g.fingerprint).filter(Boolean));
       log(`Exclusion set built: ${existing.length} existing grants`);
 
-      const classFilter = scanClass !== "all"
-        ? `Focus specifically on the class: ${CLASS_LABELS[scanClass] || scanClass}.`
-        : "Include grants across all classes: Health Equity, Digital Health, Workforce Development, Community Engagement, and Research.";
+      let prompt;
 
-      const funderTypeFilter = scanFunderType === "federal" ? "FEDERAL FUNDERS ONLY (e.g. HHS, HRSA, CDC, NIH, SAMHSA, DOL, NSF)."
-        : scanFunderType === "private_foundation" ? "PRIVATE FOUNDATIONS ONLY (e.g. Robert Wood Johnson, W.K. Kellogg, Gates, Bloomberg, Annie E. Casey, Ford Foundation, etc.). NO federal grants."
-        : scanFunderType === "state" ? "STATE GOVERNMENT FUNDERS ONLY."
-        : scanFunderType === "corporate" ? "CORPORATE FOUNDATIONS AND CORPORATE CSR GRANTS ONLY."
-        : "Include all funder types: federal, private foundation, state, and corporate.";
-
-      const applicantFilter = scanApplicantType === "for_profit" ? "CRITICAL: Only return grants that EXPLICITLY accept for-profit companies, LLCs, or private sector applicants. Skip all nonprofit-only opportunities."
-        : scanApplicantType === "nonprofit" ? "Focus on grants open to nonprofits and 501(c)(3) organizations."
-        : "Include grants for all applicant types.";
-
-      const lowHangingFilter = scanLowHanging ? `
-LOW-HANGING FRUIT MODE: Prioritize grants that are:
-- Simple application process (letter of inquiry, short application, rolling deadline)
-- Smaller award amounts (under $150K) — easier competition
-- Local/regional funders (less national competition)
-- Capacity-building, planning grants, or seed grants
-- Foundations with history of first-time grantees` : "";
-
-      const keywordFilter = scanKeywords ? `\nKEYWORD FOCUS: Prioritize grants specifically related to: ${scanKeywords}` : "";
-      const geoFilter = scanGeo ? `\nGEOGRAPHIC SCOPE: Focus on grants available in or targeting: ${scanGeo}` : "";
-
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are the Grant Discovery Agent for GHIS LLC (Global Health Innovation Solutions), a health innovation consultancy serving 14 states.
+      if (scanTab === "freeform") {
+        log(`Mode: Custom Search — "${customSearchText.substring(0, 80)}..."`);
+        const lowHangingNote = scanLowHanging ? "\n\nLOW-HANGING FRUIT MODE: Prioritize simple applications, smaller awards (under $150K), rolling deadlines, local/regional funders, and first-time grantee-friendly foundations." : "";
+        prompt = `You are the Grant Discovery Agent for GHIS LLC (Global Health Innovation Solutions), a health innovation consultancy serving 14 states.
 
 TODAY'S DATE: ${new Date().toISOString().split("T")[0]}
 
-TASK: Search the web RIGHT NOW for REAL, currently open grant opportunities. Do NOT invent or hallucinate grants. Only return grants you can confirm exist on grants.gov, agency websites, or foundation portals.
+TASK: Search the web RIGHT NOW for REAL, currently open grant opportunities matching this specific request:
+
+"${customSearchText}"
+${lowHangingNote}
+
+CRITICAL RULES:
+1. REAL GRANTS ONLY — Search grants.gov, HRSA.gov, CDC.gov, foundation directories, etc. right now. Do NOT hallucinate.
+2. SOURCE URL — Must be the actual direct URL to the grant announcement. No generic homepage URLs.
+3. DEADLINE MUST BE REAL — Include the actual published deadline. If uncertain, mark needs_verification=true.
+4. OPPORTUNITY NUMBER — Include the Grants.gov opportunity number when available.
+5. APPLICANT ELIGIBILITY — Clearly state whether LLCs, for-profits, nonprofits, or all entity types are accepted.
+
+DEDUPLICATION: Do NOT return any of these (already in our database):
+${[...existingTitles].slice(0, 25).join(" | ")}
+
+Return 5–8 confirmed real opportunities. Return fewer if you cannot find enough — do NOT pad with invented ones.
+
+For each, classify actionability:
+- PASS: Real grant, direct URL confirmed, deadline future-dated
+- NEEDS_VERIFICATION: Real grant found but URL or eligibility needs manual confirmation
+- REJECTED: Cannot confirm real source — DO NOT include these in output`;
+      } else {
+        log(`Scan: class=${scanClass}, funder=${scanFunderType}, applicant=${scanApplicantType}, deadline=${scanDeadlineDays}d${scanLowHanging ? ", LOW-HANGING" : ""}${scanKeywords ? `, kw="${scanKeywords}"` : ""}`);
+
+        const classFilter = scanClass !== "all"
+          ? `Focus specifically on the class: ${CLASS_LABELS[scanClass] || scanClass}.`
+          : "Include grants across all classes: Health Equity, Digital Health, Workforce Development, Community Engagement, and Research.";
+
+        const funderTypeFilter = scanFunderType === "federal" ? "FEDERAL FUNDERS ONLY (e.g. HHS, HRSA, CDC, NIH, SAMHSA, DOL, NSF)."
+          : scanFunderType === "private_foundation" ? "PRIVATE FOUNDATIONS ONLY (e.g. Robert Wood Johnson, W.K. Kellogg, Gates, Bloomberg, Annie E. Casey, Ford Foundation, etc.). NO federal grants."
+          : scanFunderType === "state" ? "STATE GOVERNMENT FUNDERS ONLY."
+          : scanFunderType === "corporate" ? "CORPORATE FOUNDATIONS AND CORPORATE CSR GRANTS ONLY."
+          : "Include all funder types: federal, private foundation, state, and corporate.";
+
+        const applicantFilter = scanApplicantType === "for_profit" ? "CRITICAL: Only return grants that EXPLICITLY accept for-profit companies, LLCs, or private sector applicants. Skip all nonprofit-only opportunities."
+          : scanApplicantType === "nonprofit" ? "Focus on grants open to nonprofits and 501(c)(3) organizations."
+          : "Include grants for all applicant types.";
+
+        const lowHangingFilter = scanLowHanging ? `\nLOW-HANGING FRUIT MODE: Prioritize grants that are:\n- Simple application process (letter of inquiry, short application, rolling deadline)\n- Smaller award amounts (under $150K) — easier competition\n- Local/regional funders (less national competition)\n- Capacity-building, planning grants, or seed grants\n- Foundations with history of first-time grantees` : "";
+
+        const keywordFilter = scanKeywords ? `\nKEYWORD FOCUS: Prioritize grants specifically related to: ${scanKeywords}` : "";
+        const geoFilter = scanGeo ? `\nGEOGRAPHIC SCOPE: Focus on grants available in or targeting: ${scanGeo}` : "";
+
+        prompt = `You are the Grant Discovery Agent for GHIS LLC (Global Health Innovation Solutions), a health innovation consultancy serving 14 states.
+
+TODAY'S DATE: ${new Date().toISOString().split("T")[0]}
+
+TASK: Search the web RIGHT NOW for REAL, currently open grant opportunities. Do NOT invent or hallucinate grants.
 
 SCAN PARAMETERS:
 - ${classFilter}
@@ -145,17 +170,21 @@ CRITICAL RULES:
 2. SOURCE URL — Must be the actual direct URL to the grant announcement. Generic homepage URLs are NOT acceptable.
 3. DEADLINE MUST BE REAL — The deadline field must be the actual published deadline. If you cannot confirm the deadline, mark needs_verification=true.
 4. OPPORTUNITY NUMBER — Include the real Grants.gov opportunity number when available.
-5. APPLICANT ELIGIBILITY — Clearly state in the eligibility field whether LLCs, for-profits, nonprofits, or all entity types are accepted.
+5. APPLICANT ELIGIBILITY — Clearly state whether LLCs, for-profits, nonprofits, or all entity types are accepted.
 
 DEDUPLICATION: Do NOT return any of these (already in our database):
 ${[...existingTitles].slice(0, 25).join(" | ")}
 
-Return 5–8 confirmed real opportunities. If you cannot find enough REAL grants matching these criteria, return fewer — do NOT pad with invented ones.
+Return 5–8 confirmed real opportunities. Return fewer if you cannot find enough — do NOT pad with invented ones.
 
 For each, classify actionability:
 - PASS: Real grant, direct URL confirmed, deadline within window
 - NEEDS_VERIFICATION: Real grant found but URL or eligibility needs manual confirmation
-- REJECTED: Cannot confirm real source — DO NOT include these in the output`,
+- REJECTED: Cannot confirm real source — DO NOT include these in the output`;
+      }
+
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt,
         add_context_from_internet: true,
         model: "gemini_3_flash",
         response_json_schema: {
@@ -217,39 +246,33 @@ For each, classify actionability:
       let created = 0;
       let deduped = 0;
       let qualityRejected = 0;
-      const today = new Date("2026-05-11");
-      const maxDeadline = new Date(today.getTime() + Number(scanDeadlineDays) * 86400000);
+      const today = new Date();
 
       for (const g of grantList) {
-        // Layer 2: title similarity check
         const normalizedTitle = g.title?.toLowerCase().trim();
         if (existingTitles.has(normalizedTitle)) {
-          log(`DUPLICATE (L2 title): ${g.title}`, "warn");
+          log(`DUPLICATE (title): ${g.title}`, "warn");
           deduped++;
           continue;
         }
 
-        // Fingerprint (Layer 1)
         const fingerprint = btoa(`${g.funder?.toLowerCase()}_${g.title?.toLowerCase()}`).substring(0, 32);
         if (existingFingerprints.has(fingerprint)) {
-          log(`DUPLICATE (L1 fingerprint): ${g.title}`, "warn");
+          log(`DUPLICATE (fingerprint): ${g.title}`, "warn");
           deduped++;
           continue;
         }
 
-        // Layer 3: Quality checks — URL and deadline validation
         const url = g.source_url || "";
         const hasRealUrl = url.length > 10 && (
           url.includes("grants.gov") || url.includes(".gov") || url.includes(".org") || url.includes("https://")
         ) && !url.includes("example.com") && !url.endsWith(".gov") && !url.endsWith(".org");
 
         if (!hasRealUrl) {
-          log(`⚠️ QUALITY FLAG (no direct URL): ${g.title} — URL: "${url}"`, "warn");
-          // Still save but flag as needs_verification
+          log(`⚠️ QUALITY FLAG (no direct URL): ${g.title}`, "warn");
           g.actionability = "NEEDS_VERIFICATION";
         }
 
-        // Deadline validation
         if (g.deadline) {
           const deadline = new Date(g.deadline);
           if (isNaN(deadline.getTime())) {
@@ -259,11 +282,6 @@ For each, classify actionability:
           }
           if (deadline < today) {
             log(`❌ QUALITY REJECT (past deadline ${g.deadline}): ${g.title}`, "error");
-            qualityRejected++;
-            continue;
-          }
-          if (deadline > maxDeadline) {
-            log(`❌ QUALITY REJECT (deadline too far: ${g.deadline}, max: ${maxDeadline.toISOString().split("T")[0]}): ${g.title}`, "error");
             qualityRejected++;
             continue;
           }
@@ -282,15 +300,10 @@ For each, classify actionability:
         created++;
       }
 
-      if (qualityRejected > 0) {
-        log(`🚫 Quality filter blocked ${qualityRejected} grants (bad URL / invalid deadline)`, "warn");
-      }
+      if (qualityRejected > 0) log(`🚫 Quality filter blocked ${qualityRejected} grants`, "warn");
+      for (const r of rejected) log(`REJECTED: ${r.title}: ${r.rejection_reason}`, "error");
 
-      for (const r of rejected) {
-        log(`REJECTED — NON-ACTIONABLE: ${r.title}: ${r.rejection_reason}`, "error");
-      }
-
-      log(`Run complete: ${created} new grants added, ${deduped} duplicates blocked, ${rejected.length} rejected as non-actionable`, "success");
+      log(`Run complete: ${created} new grants added, ${deduped} duplicates blocked`, "success");
       toast.success(`Discovery complete: ${created} new grants added`);
       await loadGrants();
     } catch (e) {
@@ -367,123 +380,182 @@ For each, classify actionability:
             <CardTitle className="text-sm flex items-center gap-2">
               <Zap className="w-4 h-4 text-emerald-500" /> Scan Parameters
             </CardTitle>
-            <button
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-md px-2.5 py-1 bg-white"
-              onClick={() => setShowAdvanced(v => !v)}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              {showAdvanced ? "Hide" : "Advanced Filters"}
-            </button>
+            {scanTab === "filters" && (
+              <button
+                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-md px-2.5 py-1 bg-white"
+                onClick={() => setShowAdvanced(v => !v)}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                {showAdvanced ? "Hide Advanced" : "Advanced Filters"}
+              </button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Quick Presets */}
-          <div>
-            <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-amber-500" /> Quick Presets</p>
-            <div className="flex flex-wrap gap-2">
-              {PRESETS.map(p => (
-                <button
-                  key={p.label}
-                  onClick={() => applyPreset(p)}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
-                >
-                  <span>{p.icon}</span> {p.label}
-                </button>
-              ))}
-            </div>
+
+          {/* Tab switcher */}
+          <div className="flex border border-slate-200 rounded-lg p-1 bg-slate-50 w-fit gap-1">
+            <button
+              onClick={() => setScanTab("filters")}
+              className={`px-4 py-1.5 text-xs rounded-md font-medium transition-colors ${scanTab === "filters" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+            >
+              🔧 Guided Filters
+            </button>
+            <button
+              onClick={() => setScanTab("freeform")}
+              className={`px-4 py-1.5 text-xs rounded-md font-medium transition-colors ${scanTab === "freeform" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+            >
+              ✏️ Custom Search
+            </button>
           </div>
 
-          {/* Core Filters Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Class / Topic</label>
-              <Select value={scanClass} onValueChange={setScanClass}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Classes</SelectItem>
-                  <SelectItem value="health_equity">Health Equity</SelectItem>
-                  <SelectItem value="digital_health">Digital Health</SelectItem>
-                  <SelectItem value="workforce_development">Workforce Dev</SelectItem>
-                  <SelectItem value="community_engagement">Community</SelectItem>
-                  <SelectItem value="research">Research</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Funder Type</label>
-              <Select value={scanFunderType} onValueChange={setScanFunderType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Funders</SelectItem>
-                  <SelectItem value="federal">Federal Only</SelectItem>
-                  <SelectItem value="private_foundation">Private Foundation</SelectItem>
-                  <SelectItem value="state">State Government</SelectItem>
-                  <SelectItem value="corporate">Corporate / CSR</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Applicant Type</label>
-              <Select value={scanApplicantType} onValueChange={setScanApplicantType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Applicants</SelectItem>
-                  <SelectItem value="for_profit">For-Profit / LLC</SelectItem>
-                  <SelectItem value="nonprofit">Nonprofit / 501c3</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Deadline Window (days)</label>
-              <Input value={scanDeadlineDays} onChange={e => setScanDeadlineDays(e.target.value)} type="number" />
-            </div>
-          </div>
+          {/* ── GUIDED FILTERS TAB ── */}
+          {scanTab === "filters" && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Quick Presets
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {PRESETS.map(p => (
+                    <button
+                      key={p.label}
+                      onClick={() => applyPreset(p)}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
+                    >
+                      <span>{p.icon}</span> {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          {/* Advanced Filters */}
-          {showAdvanced && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
-              <div>
-                <label className="text-xs text-slate-500 mb-1 block">Min Amount ($)</label>
-                <Input value={scanMinAmount} onChange={e => setScanMinAmount(e.target.value)} type="number" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block">Class / Topic</label>
+                  <Select value={scanClass} onValueChange={setScanClass}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Classes</SelectItem>
+                      <SelectItem value="health_equity">Health Equity</SelectItem>
+                      <SelectItem value="digital_health">Digital Health</SelectItem>
+                      <SelectItem value="workforce_development">Workforce Dev</SelectItem>
+                      <SelectItem value="community_engagement">Community</SelectItem>
+                      <SelectItem value="research">Research</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block">Funder Type</label>
+                  <Select value={scanFunderType} onValueChange={setScanFunderType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Funders</SelectItem>
+                      <SelectItem value="federal">Federal Only</SelectItem>
+                      <SelectItem value="private_foundation">Private Foundation</SelectItem>
+                      <SelectItem value="state">State Government</SelectItem>
+                      <SelectItem value="corporate">Corporate / CSR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block">Applicant Type</label>
+                  <Select value={scanApplicantType} onValueChange={setScanApplicantType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Applicants</SelectItem>
+                      <SelectItem value="for_profit">For-Profit / LLC</SelectItem>
+                      <SelectItem value="nonprofit">Nonprofit / 501c3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block">Deadline Window (days)</label>
+                  <Input value={scanDeadlineDays} onChange={e => setScanDeadlineDays(e.target.value)} type="number" />
+                </div>
               </div>
-              <div>
-                <label className="text-xs text-slate-500 mb-1 block">Max Amount ($)</label>
-                <Input value={scanMaxAmount} onChange={e => setScanMaxAmount(e.target.value)} type="number" />
-              </div>
-              <div>
-                <label className="text-xs text-slate-500 mb-1 block">Geographic Focus</label>
-                <Input value={scanGeo} onChange={e => setScanGeo(e.target.value)} placeholder="e.g. Southeast US, Texas, rural..." />
-              </div>
-              <div className="md:col-span-3">
-                <label className="text-xs text-slate-500 mb-1 block">Keyword Focus (comma or space separated)</label>
-                <Textarea
-                  value={scanKeywords}
-                  onChange={e => setScanKeywords(e.target.value)}
-                  placeholder="e.g. digital equity, broadband, telehealth, SDOH, maternal health, workforce training..."
-                  rows={2}
-                  className="text-sm"
-                />
+
+              {showAdvanced && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 block">Min Amount ($)</label>
+                    <Input value={scanMinAmount} onChange={e => setScanMinAmount(e.target.value)} type="number" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 block">Max Amount ($)</label>
+                    <Input value={scanMaxAmount} onChange={e => setScanMaxAmount(e.target.value)} type="number" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 block">Geographic Focus</label>
+                    <Input value={scanGeo} onChange={e => setScanGeo(e.target.value)} placeholder="e.g. Southeast US, Texas, rural..." />
+                  </div>
+                  <div className="md:col-span-3">
+                    <label className="text-xs text-slate-500 mb-1 block">Keyword Focus</label>
+                    <Textarea
+                      value={scanKeywords}
+                      onChange={e => setScanKeywords(e.target.value)}
+                      placeholder="e.g. digital equity, broadband, telehealth, SDOH, maternal health, workforce training..."
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between flex-wrap gap-3 pt-1">
+                <label className="flex items-center gap-2 cursor-pointer select-none text-sm">
+                  <input
+                    type="checkbox"
+                    checked={scanLowHanging}
+                    onChange={e => setScanLowHanging(e.target.checked)}
+                    className="rounded border-slate-300 accent-emerald-600"
+                  />
+                  <span className="text-slate-700 font-medium">🍎 Low-hanging fruit mode</span>
+                  <span className="text-xs text-slate-400">(prioritize simple apps, small awards, less competition)</span>
+                </label>
+                <Button onClick={runDiscovery} disabled={discovering} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+                  {discovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                  {discovering ? "Scanning..." : "Run Discovery Scan"}
+                </Button>
               </div>
             </div>
           )}
 
-          {/* Low-hanging fruit toggle + Run */}
-          <div className="flex items-center justify-between flex-wrap gap-3 pt-1">
-            <label className="flex items-center gap-2 cursor-pointer select-none text-sm">
-              <input
-                type="checkbox"
-                checked={scanLowHanging}
-                onChange={e => setScanLowHanging(e.target.checked)}
-                className="rounded border-slate-300 accent-emerald-600"
+          {/* ── CUSTOM SEARCH TAB ── */}
+          {scanTab === "freeform" && (
+            <div className="space-y-3">
+              <p className="text-xs text-slate-500">
+                Describe exactly what you're looking for in plain English. Useful for niche areas, cross-sector topics, or anything not covered by the guided filters. The AI will search the web based on your description.
+              </p>
+              <Textarea
+                value={customSearchText}
+                onChange={e => setCustomSearchText(e.target.value)}
+                placeholder={"Examples:\n• Find private foundation grants for digital literacy programs targeting rural communities in the Southeast, $50K–$200K, open to LLCs\n• Search for entrepreneurship and small business innovation grants in health tech with rolling deadlines\n• Federal SBIR/STTR opportunities related to maternal health or telehealth for Q3 2026\n• Environmental justice or climate resilience grants open to for-profit consultancies\n• HBCU partnerships, minority business grants, or DEI-focused corporate foundations"}
+                rows={7}
+                className="text-sm"
               />
-              <span className="text-slate-700 font-medium">🍎 Low-hanging fruit mode</span>
-              <span className="text-xs text-slate-400">(prioritize simple apps, small awards, less competition)</span>
-            </label>
-            <Button onClick={runDiscovery} disabled={discovering} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
-              {discovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-              {discovering ? "Scanning..." : "Run Discovery Scan"}
-            </Button>
-          </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <label className="flex items-center gap-2 cursor-pointer select-none text-sm">
+                  <input
+                    type="checkbox"
+                    checked={scanLowHanging}
+                    onChange={e => setScanLowHanging(e.target.checked)}
+                    className="rounded border-slate-300 accent-emerald-600"
+                  />
+                  <span className="text-slate-700 font-medium">🍎 Low-hanging fruit mode</span>
+                  <span className="text-xs text-slate-400">(prefer simple apps & smaller awards)</span>
+                </label>
+                <Button
+                  onClick={runDiscovery}
+                  disabled={discovering || !customSearchText.trim()}
+                  className="bg-emerald-600 hover:bg-emerald-700 gap-2 ml-auto"
+                >
+                  {discovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                  {discovering ? "Scanning..." : "Run Custom Search"}
+                </Button>
+              </div>
+            </div>
+          )}
+
         </CardContent>
       </Card>
 
