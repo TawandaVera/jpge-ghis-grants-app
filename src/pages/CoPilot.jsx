@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload, CheckCircle2, AlertTriangle, Loader2, Wand2, RefreshCw, Save, ChevronRight, ExternalLink } from "lucide-react";
 import FinalPackStage from "@/components/copilot/FinalPackStage";
+import Stage6Draft from "@/components/copilot/Stage6Draft";
 import { toast } from "sonner";
 import { SECTION_KEYS, COPILOT_STAGES as STAGES } from "@/lib/grantConstants";
 
@@ -574,58 +575,23 @@ CRITICAL RULES:
 
         {/* Stage 6: Draft Generation */}
         {currentStage === 6 && (
-          <div className="p-6 max-w-5xl mx-auto space-y-5">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Stage 6: Draft Generation</h2>
-                <p className="text-slate-500 text-sm">{selectedGrant ? `Drafting: ${selectedGrant.title}` : "Select an opportunity in Stage 3 first"}</p>
-              </div>
-            </div>
-            {!selectedGrant && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-amber-800 text-sm">Please go to Stage 3 and select a grant opportunity first.</p>
-              </div>
-            )}
-            <div className="grid md:grid-cols-2 gap-4">
-              {SECTION_KEYS.map(key => (
-                <Card key={key}>
-                  <CardHeader className="pb-2 flex-row items-center justify-between">
-                    <CardTitle className="text-sm capitalize">{key.replace(/_/g, " ")}</CardTitle>
-                    <div className="flex gap-2">
-                      {sections[key] && <div className="w-2 h-2 bg-emerald-400 rounded-full mt-1" />}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={!selectedGrant || drafting === key}
-                        onClick={() => draftSection(key)}
-                        className="h-7 text-xs gap-1"
-                      >
-                        {drafting === key ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                        {drafting === key ? "Drafting..." : "AI Draft"}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Textarea
-                      value={sections[key] || ""}
-                      onChange={e => setSections(prev => ({ ...prev, [key]: e.target.value }))}
-                      placeholder="Click AI Draft to generate or write manually..."
-                      className="min-h-28 text-xs resize-none"
-                    />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            {selectedApp && (
-              <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={async () => {
-                await base44.entities.GrantApplication.update(selectedApp.id, { sections });
-                toast.success("All sections saved");
-                setCurrentStage(7);
-              }}>
-                <Save className="w-4 h-4" /> Save All & Continue
-              </Button>
-            )}
-          </div>
+          <Stage6Draft
+            selectedGrant={selectedGrant}
+            selectedApp={selectedApp}
+            sections={sections}
+            setSections={setSections}
+            drafting={drafting}
+            setDrafting={setDrafting}
+            draftSection={draftSection}
+            orgProfile={orgProfile}
+            parsedBlocks={parsedBlocks}
+            matches={matches}
+            onSaveAndContinue={async () => {
+              await base44.entities.GrantApplication.update(selectedApp.id, { sections });
+              toast.success("All sections saved");
+              setCurrentStage(7);
+            }}
+          />
         )}
 
         {/* Stage 7: Edit Guidance */}
