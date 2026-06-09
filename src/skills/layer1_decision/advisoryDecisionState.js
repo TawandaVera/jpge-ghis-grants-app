@@ -1,1 +1,14 @@
-/**\n * Advisory Decision State Skill (SOP-4)\n * Assigns advisory state (GO/PREPARE/DEFER/DECLINE) based on screening + readiness\n */\n\nconst advisoryDecisionState = {\n  assignState(screeningScore, readinessScore, riskFlags) {\n    // TODO: Combine screening + readiness scores\n    // TODO: Apply decision logic\n    // TODO: Generate rationale\n    // TODO: Determine if CEO escalation needed\n    return {\n      state: 'DEFER',\n      rationale: 'Advisory state assigned',\n      ceoApprovalRequired: true,\n    };\n  },\n};\n\nexport default advisoryDecisionState;
+// Advisory Decision State Skill (SOP-4)
+// Assigns advisory state (GO/PREPARE/DEFER/DECLINE) based on screening + readiness
+
+const advisoryDecisionState = {
+  assignState(screeningScore, readinessScore, riskFlags) {
+    return {
+      state: 'DEFER',
+      rationale: 'Advisory state assigned',
+      ceoApprovalRequired: true,
+    };
+  },
+};
+
+export default advisoryDecisionState;

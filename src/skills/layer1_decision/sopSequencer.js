@@ -1,1 +1,19 @@
-/**\n * SOP Sequencer Skill (System Level)\n * Enforces SOP order (no skipping, no backtracking)\n */\n\nconst sopSequencer = {\n  sequence: ['SOP-1', 'SOP-2', 'SOP-3', 'SOP-4', 'SOP-5'],\n  \n  isTransitionAllowed(currentStep, targetStep) {\n    // TODO: Ensure targetStep is next in sequence\n    return false;\n  },\n  \n  getNextStep(currentStep) {\n    // TODO: Find currentStep in sequence and return next\n    return null;\n  },\n};\n\nexport default sopSequencer;
+// SOP Sequencer Skill (System Level)
+// Enforces SOP order (no skipping, no backtracking)
+
+const sopSequencer = {
+  sequence: ['SOP-1', 'SOP-2', 'SOP-3', 'SOP-4', 'SOP-5'],
+
+  isTransitionAllowed(currentStep, targetStep) {
+    const currentIdx = this.sequence.indexOf(currentStep);
+    const targetIdx = this.sequence.indexOf(targetStep);
+    return targetIdx === currentIdx + 1;
+  },
+
+  getNextStep(currentStep) {
+    const idx = this.sequence.indexOf(currentStep);
+    return idx >= 0 && idx < this.sequence.length - 1 ? this.sequence[idx + 1] : null;
+  },
+};
+
+export default sopSequencer;

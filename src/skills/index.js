@@ -1,1 +1,6 @@
-/**\n * Skills Registry & Orchestration\n * Central export for all domain skills (Layer 1 & Layer 2)\n */\n\nimport * as layer1Decision from './layer1_decision';\nimport * as layer2Operations from './layer2_operations';\nimport * as schemas from './schemas';\n\nexport { layer1Decision, layer2Operations, schemas };
+// Skills Registry & Orchestration
+// Central export for all domain skills (Layer 1 & Layer 2)
+
+import * as layer1Decision from './layer1_decision';
+
+export { layer1Decision };

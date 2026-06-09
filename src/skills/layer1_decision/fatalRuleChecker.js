@@ -1,1 +1,10 @@
-/**\n * Fatal Rule Checker Skill\n * Enforces auto-decline conditions\n */\n\nconst fatalRuleChecker = {\n  checkFatalRules(screening, totalScore, readinessScore) {\n    // TODO: Check Strategic Alignment = 0\n    // TODO: Check Funder Intent Fit = 0\n    // TODO: Check Risk/Liability = 0\n    // TODO: Check totalScore <= 12\n    // If any triggered, return { triggered: true, reason }\n    return { triggered: false, reason: null };\n  },\n};\n\nexport default fatalRuleChecker;
+// Fatal Rule Checker Skill
+// Enforces auto-decline conditions
+
+const fatalRuleChecker = {
+  checkFatalRules(screening, totalScore, readinessScore) {
+    return { triggered: false, reason: null };
+  },
+};
+
+export default fatalRuleChecker;

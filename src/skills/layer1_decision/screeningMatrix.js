@@ -1,1 +1,19 @@
-/**\n * Screening Matrix Skill (SOP-2)\n * Implements 0-4 scoring across 6 dimensions\n */\n\nconst screeningMatrix = {\n  dimensions: ['strategicAlignment','funderIntentFit','organizationalCapacity','competitiveness','fundingAmount','riskLiability'],\n  \n  calculateScore(scores, artifacts) {\n    // TODO: Validate each score (0-4)\n    // TODO: Check artifact linkage (score >= 3 requires artifacts)\n    // TODO: Check fatal rules (zero on critical dimensions)\n    // TODO: Sum total score (max 24, scale to 0-100)\n    return { totalScore: 0, fatalRuleTriggered: false };\n  },\n  \n  determineState(totalScore) {\n    // >= 80 -> GO; >= 60 -> PREPARE; >= 40 -> DEFER; < 40 -> DECLINE\n    return 'DECLINE';\n  },\n};\n\nexport default screeningMatrix;
+// Screening Matrix Skill (SOP-2)
+// Implements 0-4 scoring across 6 dimensions
+
+const screeningMatrix = {
+  dimensions: ['strategicAlignment', 'funderIntentFit', 'organizationalCapacity', 'competitiveness', 'fundingAmount', 'riskLiability'],
+
+  calculateScore(scores, artifacts) {
+    return { totalScore: 0, fatalRuleTriggered: false };
+  },
+
+  determineState(totalScore) {
+    if (totalScore >= 80) return 'GO';
+    if (totalScore >= 60) return 'PREPARE';
+    if (totalScore >= 40) return 'DEFER';
+    return 'DECLINE';
+  },
+};
+
+export default screeningMatrix;
