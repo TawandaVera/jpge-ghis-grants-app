@@ -60,6 +60,10 @@
         }
       }
     },
+    "proposal_text": {
+      "type": "string",
+      "description": "Full compiled proposal text saved at export time \u2014 used as context for future proposals"
+    },
     "budget": {
       "type": "object",
       "properties": {

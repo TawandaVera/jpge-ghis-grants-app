@@ -152,6 +152,13 @@ Extract 8-12 distinct content blocks. Each block should be a specific, reusable 
     if (!selectedApp || !selectedGrant) { toast.error("Select an application first"); return; }
     setDrafting(sectionKey);
     try {
+      // Load prior completed proposals as reusable context (skip current app)
+      const priorProposals = applications
+        .filter(a => a.id !== selectedApp?.id && a.proposal_text && a.proposal_text.length > 100)
+        .slice(0, 2) // max 2 prior proposals to keep tokens manageable
+        .map(a => `[PRIOR PROPOSAL — ${a.grant_title} / ${a.funder}]:\n${a.proposal_text.substring(0, 800)}`)
+        .join("\n\n");
+
       // Build rich org context from master narrative blocks
       const blockContext = parsedBlocks.length > 0
         ? parsedBlocks.map(b => `[${b.section}]:\n${b.content?.substring(0, 500)}`).join("\n\n")
@@ -217,7 +224,7 @@ ${matchCtx ? `═══ ASSESSMENT INTELLIGENCE ═══\n${matchCtx}\n` : ""}
 ═══ MASTER NARRATIVE LIBRARY (DRAW FROM THESE BLOCKS) ═══
 ${blockContext}
 
-${draftedCtx ? `═══ ALREADY DRAFTED SECTIONS (avoid repetition) ═══\n${draftedCtx}\n` : ""}
+${draftedCtx ? `═══ ALREADY DRAFTED SECTIONS (avoid repetition) ═══\n${draftedCtx}\n` : ""}${priorProposals ? `═══ PRIOR FUNDED PROPOSALS (reference for tone, structure, and language patterns) ═══\n${priorProposals}\n` : ""}
 CRITICAL RULES:
 1. Write in first person ("GHIS LLC will..." or "Our organization...")
 2. NEVER use placeholder text like [INSERT NAME] or [TBD]
