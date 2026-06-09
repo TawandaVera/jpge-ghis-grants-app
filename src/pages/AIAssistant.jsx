@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Bot, Send, Plus, MessageSquare, Sparkles, Shield } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
-import CreditNotice, { isCreditError } from "@/components/ai/CreditNotice.jsx";
+import CreditNotice, { isCreditError } from "@/components/ai/CreditNotice";
 
 const AGENTS = [
   {

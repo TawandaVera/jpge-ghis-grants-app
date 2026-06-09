@@ -1,0 +1,16 @@
+{
+  "name": "AISettings",
+  "type": "object",
+  "properties": {
+    "assistants_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Master switch for in-app AI Assistants (Grant Advisor, HIL Reviewer). Turn off to preserve integration credits."
+    },
+    "disabled_reason": {
+      "type": "string",
+      "description": "Optional note shown to users when assistants are disabled"
+    }
+  },
+  "required": []
+}
