@@ -12,7 +12,6 @@ import Stage6Draft from "@/components/copilot/Stage6Draft";
 import StageGuide from "@/components/copilot/StageGuide";
 import { toast } from "sonner";
 import { SECTION_KEYS, COPILOT_STAGES as STAGES } from "@/lib/grantConstants";
-import { recLabel } from "@/lib/friendlyLabels";
 
 export default function CoPilot() {
   const [currentStage, setCurrentStage] = useState(1);
@@ -149,7 +148,7 @@ Extract 8-12 distinct content blocks. Each block should be a specific, reusable 
       });
     }
     setHilPending(false);
-    toast.success("Master narrative approved and saved");
+    toast.success("Saved! Your story is ready to use.");
     setCurrentStage(2);
   };
 
@@ -278,7 +277,7 @@ CRITICAL RULES:
       <div className="w-64 bg-slate-800 text-white flex flex-col shrink-0 overflow-y-auto">
         <div className="p-4 border-b border-slate-700">
           <p className="font-semibold text-sm">Write with AI</p>
-          <p className="text-xs text-slate-400 mt-0.5">8 easy steps</p>
+          <p className="text-xs text-slate-400 mt-0.5">Step by step</p>
         </div>
         <nav className="p-3 space-y-1 flex-1">
           {STAGES.map(s => (
@@ -302,14 +301,14 @@ CRITICAL RULES:
             className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-slate-200 transition-colors"
             title="High-quality mode uses a premium AI model — better drafts, more integration credits per section"
           >
-            <span>Best writing quality</span>
+            <span>Best quality writing</span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${highQuality ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"}`}>
               {highQuality ? "ON" : "OFF"}
             </span>
           </button>
           <div>
             <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
-              <span>Step {currentStage} of 8</span>
+              <span>Step {currentStage}/8</span>
               <span>{progress}%</span>
             </div>
             <div className="h-1.5 bg-slate-700 rounded-full">
@@ -327,11 +326,11 @@ CRITICAL RULES:
             <StageGuide stageId={1} />
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Step 1: Add Your Writing</h2>
-                <p className="text-slate-500 text-sm">Share past writing about your organization so the AI sounds like you</p>
+                <h2 className="text-xl font-bold text-slate-900">Step 1: Add Your Story</h2>
+                <p className="text-slate-500 text-sm">Add your past write-ups so the AI can sound like you</p>
               </div>
               {hilPending && parsedBlocks.length > 0 && (
-                <Badge className="bg-red-100 text-red-700 border border-red-200">Needs Your Review</Badge>
+                <Badge className="bg-red-100 text-red-700 border border-red-200">Please Review</Badge>
               )}
             </div>
 
@@ -339,7 +338,7 @@ CRITICAL RULES:
               {/* Upload */}
               <div className="space-y-4">
                 <Card>
-                  <CardHeader className="pb-2"><CardTitle className="text-sm">Add Your Writing</CardTitle></CardHeader>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm">Add Your Write-Ups</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
                     <div
                       className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors"
@@ -352,14 +351,14 @@ CRITICAL RULES:
                     </div>
                     <p className="text-xs text-slate-400 text-center">Or paste text</p>
                     <Textarea
-                      placeholder="Paste your writing here..."
+                      placeholder="Paste your past write-ups here..."
                       value={narrativeText}
                       onChange={e => setNarrativeText(e.target.value)}
                       className="min-h-32 text-sm"
                     />
                     <Button className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={parseNarrative} disabled={parsing}>
                       {parsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                      {parsing ? "Working..." : "Sort My Writing"}
+                      {parsing ? "Reading..." : "Break It Down"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -368,7 +367,7 @@ CRITICAL RULES:
               {/* Parsed Blocks */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-slate-800">Your Writing, Sorted</h3>
+                  <h3 className="font-semibold text-slate-800">Your Content, Sorted</h3>
                   {parsedBlocks.length > 0 && <Badge variant="outline">{parsedBlocks.length} pieces</Badge>}
                 </div>
                 <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
@@ -391,7 +390,7 @@ CRITICAL RULES:
                   ))}
                   {parsedBlocks.length === 0 && (
                     <div className="text-center py-12 text-slate-400 text-sm">
-                      Add your writing above, then tap "Sort My Writing"
+                      Add your write-ups above and click "Break It Down"
                     </div>
                   )}
                 </div>
@@ -402,8 +401,8 @@ CRITICAL RULES:
             {hilPending && parsedBlocks.length > 0 && (
               <Card className="border-amber-200 bg-amber-50">
                 <CardContent className="p-4">
-                  <p className="font-semibold text-amber-800 mb-1">Take a Quick Look</p>
-                  <p className="text-sm text-amber-700 mb-3">Check the sorted pieces look right before moving on</p>
+                  <p className="font-semibold text-amber-800 mb-1">Quick Check Before Moving On</p>
+                  <p className="text-sm text-amber-700 mb-3">Take a look at what we pulled out, then continue</p>
                   <div className="flex gap-2">
                     <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={approveAndSave}>Approve & Continue</Button>
                     <Button variant="outline" onClick={() => setHilPending(false)}>Edit</Button>
@@ -422,12 +421,12 @@ CRITICAL RULES:
           <div className="p-6 max-w-2xl mx-auto space-y-5">
             <StageGuide stageId={2} />
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Step 2: Your Organization</h2>
-              <p className="text-slate-500 text-sm">Double-check your organization's info before we start writing</p>
+              <h2 className="text-xl font-bold text-slate-900">Step 2: Your Org Info</h2>
+              <p className="text-slate-500 text-sm">Make sure your organization's details are up to date</p>
             </div>
             <Card className="border-blue-200 bg-blue-50">
               <CardContent className="p-5 space-y-3">
-                <p className="text-blue-800 font-medium text-sm">You can edit your organization's info on the "About My Org" page.</p>
+                <p className="text-blue-800 font-medium text-sm">Your Org Profile is managed in the dedicated Org Profile section.</p>
                 {orgProfile ? (
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div><span className="text-slate-500">Org:</span> <span className="font-medium text-slate-800">{orgProfile.org_name}</span></div>
@@ -441,7 +440,7 @@ CRITICAL RULES:
                 )}
                 <Link to="/org-profile" target="_blank">
                   <Button variant="outline" size="sm" className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-100">
-                  <ExternalLink className="w-3.5 h-3.5" /> Open About My Org
+                    <ExternalLink className="w-3.5 h-3.5" /> Open Org Profile
                   </Button>
                 </Link>
               </CardContent>
@@ -457,14 +456,14 @@ CRITICAL RULES:
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <StageGuide stageId={3} />
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Step 3: Pick One to Apply For</h2>
-              <p className="text-slate-500 text-sm">Choose a good match to write — or pick up where you left off</p>
+              <h2 className="text-xl font-bold text-slate-900">Step 3: Pick One</h2>
+              <p className="text-slate-500 text-sm">Choose a good match to apply for — or pick up one you already started</p>
             </div>
 
             {/* Existing applications in writing stage */}
             {applications.filter(a => ["writing", "compliance_check", "review", "hil_review"].includes(a.stage)).length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Pick Up Where You Left Off</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Already Started</p>
                 <div className="space-y-2">
                   {applications.filter(a => ["writing", "compliance_check", "review", "hil_review"].includes(a.stage)).map(app => (
                     <Card
@@ -496,7 +495,7 @@ CRITICAL RULES:
             {/* Assessed GO/PREP grants */}
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Your Best Matches</p>
-              {matches.length === 0 && <p className="text-slate-400 text-sm">No strong matches yet. Score some on the Score Matches page first.</p>}
+              {matches.length === 0 && <p className="text-slate-400 text-sm">No good matches yet. Score some matches first.</p>}
               <div className="space-y-2">
                 {matches.map(m => {
                   const inPipeline = applications.find(a => a.grant_id === m.grant_id);
@@ -519,8 +518,8 @@ CRITICAL RULES:
                         </div>
                         <div className="flex items-center gap-2 shrink-0 ml-3">
                           <span className="font-bold text-emerald-700 text-sm">{Math.round(m.total_score)}%</span>
-                          <Badge className={`text-xs border ${m.recommendation === "GO" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-blue-800 border-blue-300"}`}>{recLabel(m.recommendation)}</Badge>
-                          {inPipeline && <Badge variant="outline" className="text-xs">Started</Badge>}
+                          <Badge className={`text-xs border ${m.recommendation === "GO" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-blue-800 border-blue-300"}`}>{m.recommendation === "GO" ? "Great Fit" : "Worth a Look"}</Badge>
+                          {inPipeline && <Badge variant="outline" className="text-xs">On Your List</Badge>}
                           {selectedGrant?.id === m.grant_id && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
                         </div>
                       </CardContent>
@@ -555,12 +554,12 @@ CRITICAL RULES:
           <div className="p-6 max-w-2xl mx-auto space-y-5">
             <StageGuide stageId={4} />
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Step 4: Your Applications</h2>
-              <p className="text-slate-500 text-sm">A quick look at what you're working on</p>
+              <h2 className="text-xl font-bold text-slate-900">Step 4: Your List</h2>
+              <p className="text-slate-500 text-sm">See where your applications stand</p>
             </div>
             <Card className="border-purple-200 bg-purple-50">
               <CardContent className="p-5 space-y-3">
-                <p className="text-purple-800 font-medium text-sm">You can manage all your applications on the "Track Progress" page.</p>
+                <p className="text-purple-800 font-medium text-sm">You can manage all your applications on the Track Progress page.</p>
                 <div className="space-y-2">
                   {applications.filter(a => !["awarded", "declined"].includes(a.stage)).slice(0, 4).map(app => (
                     <div key={app.id} className="flex items-center justify-between bg-white rounded-lg border px-3 py-2 text-sm">
@@ -568,11 +567,11 @@ CRITICAL RULES:
                       <Badge variant="outline" className="text-xs shrink-0">{app.stage?.replace(/_/g, " ")}</Badge>
                     </div>
                   ))}
-                  {applications.length === 0 && <p className="text-slate-500 text-sm">Nothing yet. Finish Step 3 to start one.</p>}
+                  {applications.length === 0 && <p className="text-slate-500 text-sm">Nothing yet. Finish Step 3 to add one.</p>}
                 </div>
                 <Link to="/pipeline" target="_blank">
                   <Button variant="outline" size="sm" className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-100">
-                  <ExternalLink className="w-3.5 h-3.5" /> Open Track Progress
+                    <ExternalLink className="w-3.5 h-3.5" /> Open Track Progress
                   </Button>
                 </Link>
               </CardContent>
@@ -588,14 +587,14 @@ CRITICAL RULES:
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <StageGuide stageId={5} />
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Step 5: Match Your Writing</h2>
-              <p className="text-slate-500 text-sm">Tell the AI which of your writing fits each part of the application</p>
+              <h2 className="text-xl font-bold text-slate-900">Step 5: Match Content</h2>
+              <p className="text-slate-500 text-sm">Match your stored content to each part of the application</p>
             </div>
             {parsedBlocks.length === 0 ? (
-              <p className="text-slate-400">Finish Step 1 first to add your writing.</p>
+              <p className="text-slate-400">Finish Step 1 first to add your content.</p>
             ) : (
               <div className="space-y-3">
-                <p className="text-xs text-slate-500">Tap your writing to attach it to each part — this helps the AI write better drafts.</p>
+                <p className="text-xs text-slate-500">Tap your content pieces to match them to each part — this helps the AI write better.</p>
                 {SECTION_KEYS.map(key => (
                   <div key={key} className="bg-white rounded-lg border p-4">
                     <div className="flex items-center justify-between mb-2">
@@ -627,7 +626,7 @@ CRITICAL RULES:
                 ))}
               </div>
             )}
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(6)}>Start Writing <ChevronRight className="w-4 h-4 ml-1" /></Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(6)}>Let AI Write <ChevronRight className="w-4 h-4 ml-1" /></Button>
           </div>
         )}
 
@@ -646,7 +645,7 @@ CRITICAL RULES:
             matches={matches}
             onSaveAndContinue={async () => {
               await base44.entities.GrantApplication.update(selectedApp.id, { sections });
-              toast.success("All sections saved");
+              toast.success("All parts saved");
               setCurrentStage(7);
             }}
           />
@@ -657,8 +656,8 @@ CRITICAL RULES:
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <StageGuide stageId={7} />
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Step 7: Make It Stronger</h2>
-              <p className="text-slate-500 text-sm">Tips from the AI to improve your application</p>
+              <h2 className="text-xl font-bold text-slate-900">Step 7: Tips to Improve</h2>
+              <p className="text-slate-500 text-sm">Simple suggestions to make your application stronger</p>
             </div>
             <EditGuidance sections={sections} grant={selectedGrant} orgProfile={orgProfile} />
             <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(8)}>Finish Up <ChevronRight className="w-4 h-4 ml-1" /></Button>
