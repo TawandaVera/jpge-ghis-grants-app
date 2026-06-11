@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Zap, ThumbsUp, AlertCircle, Download, BarChart3, Send, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { recLabel } from "@/lib/friendlyLabels";
 
 const REC_BADGE = {
   GO: "bg-emerald-100 text-emerald-800 border-emerald-300",
@@ -252,27 +253,27 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
     <div className="p-6 max-w-7xl mx-auto space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Assessment Matrix</h1>
-          <p className="text-slate-500 text-sm">{matches.length} assessed · {pendingCount} pending · GO:{goCount} PREP:{prepCount}</p>
+          <h1 className="text-2xl font-bold text-slate-900">Score Matches</h1>
+          <p className="text-slate-500 text-sm">{matches.length} scored · {pendingCount} not scored yet · {goCount} great fits · {prepCount} worth a look</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <Select value={stateFilter} onValueChange={setStateFilter}>
-            <SelectTrigger className="w-36"><SelectValue placeholder="All States" /></SelectTrigger>
+            <SelectTrigger className="w-44"><SelectValue placeholder="Show all" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All States</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="GO">GO</SelectItem>
-              <SelectItem value="PREP">PREP</SelectItem>
-              <SelectItem value="DEF">DEFER</SelectItem>
-              <SelectItem value="DECLINE">DECLINE</SelectItem>
+              <SelectItem value="all">Show all</SelectItem>
+              <SelectItem value="pending">Not scored yet</SelectItem>
+              <SelectItem value="GO">Great Fit</SelectItem>
+              <SelectItem value="PREP">Worth a Look</SelectItem>
+              <SelectItem value="DEF">Maybe Later</SelectItem>
+              <SelectItem value="DECLINE">Skip</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={exportGoPrep} className="gap-2">
-            <Download className="w-4 h-4" /> Export GO/PREP
+            <Download className="w-4 h-4" /> Download Best Matches
           </Button>
           <Button onClick={() => assessNext(20)} disabled={scoring} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
             {scoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-            {scoring ? "Assessing..." : "Assess Next 20"}
+            {scoring ? "Scoring..." : "Score Next 20"}
           </Button>
         </div>
       </div>
@@ -288,7 +289,7 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
               <Button size="sm" variant="outline" onClick={() => setChecked({})}>Clear</Button>
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-2" onClick={sendCheckedToPipeline} disabled={sendingToPipeline}>
                 {sendingToPipeline ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                Send to Pipeline
+                Add to My List
               </Button>
             </div>
           </CardContent>
@@ -299,11 +300,11 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
       {batchReport && (
         <Card className="border-emerald-200 bg-emerald-50">
           <CardContent className="p-4">
-            <p className="font-semibold text-emerald-800 mb-2">Batch Assessment Complete — {batchReport.total} grants processed</p>
+            <p className="font-semibold text-emerald-800 mb-2">Done! We scored {batchReport.total} opportunities</p>
             <div className="flex gap-4 flex-wrap text-sm">
               {["GO", "PREP", "DEF", "DECLINE"].map(s => (
                 <span key={s} className={`font-bold ${s === "GO" ? "text-emerald-700" : s === "PREP" ? "text-blue-700" : s === "DEF" ? "text-amber-700" : "text-slate-600"}`}>
-                  {s}: {batchReport[s]}
+                  {recLabel(s)}: {batchReport[s]}
                 </span>
               ))}
             </div>
@@ -313,8 +314,8 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
 
       <Tabs defaultValue="matrix">
         <TabsList>
-          <TabsTrigger value="matrix">Assessment Table</TabsTrigger>
-          <TabsTrigger value="heatmap">Mandate Heatmap</TabsTrigger>
+          <TabsTrigger value="matrix">Match List</TabsTrigger>
+          <TabsTrigger value="heatmap">Topic Strength</TabsTrigger>
         </TabsList>
 
         <TabsContent value="matrix">
@@ -323,10 +324,10 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
                   <th className="w-8 px-4 py-3"></th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Match</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">State</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Grant</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Brief</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Score</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Verdict</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Opportunity</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Why</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Forms</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Deadline</th>
                 </tr>
@@ -354,9 +355,9 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                     <td className="px-4 py-3">
                       {match ? (
                         <Badge className={`text-xs border ${REC_BADGE[match.recommendation] || "bg-slate-100 text-slate-600"}`}>
-                          {match.recommendation}
+                          {recLabel(match.recommendation)}
                         </Badge>
-                      ) : <span className="text-xs text-slate-400">Pending</span>}
+                      ) : <span className="text-xs text-slate-400">Not scored yet</span>}
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-800 truncate max-w-52">{grant.title}</p>
@@ -380,7 +381,7 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
 
         <TabsContent value="heatmap">
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><BarChart3 className="w-4 h-4" /> Mandate Alignment Heatmap</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><BarChart3 className="w-4 h-4" /> How Well Topics Match Your Work</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {mandateHeatmap.map(area => (
                 <div key={area.key}>
@@ -394,7 +395,7 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                 </div>
               ))}
               {mandateHeatmap.every(a => a.avg === 0) && (
-                <p className="text-slate-400 text-sm text-center py-4">Run assessments to populate mandate heatmap data</p>
+                <p className="text-slate-400 text-sm text-center py-4">Score some matches to see how well topics line up with your work</p>
               )}
             </CardContent>
           </Card>
@@ -407,7 +408,7 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 flex-wrap">
               {selected?.grant_title}
-              {selected && <Badge className={`text-xs border ${REC_BADGE[selected.recommendation]}`}>{selected.recommendation}</Badge>}
+              {selected && <Badge className={`text-xs border ${REC_BADGE[selected.recommendation]}`}>{recLabel(selected.recommendation)}</Badge>}
             </DialogTitle>
           </DialogHeader>
           {selected && (
@@ -415,10 +416,10 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
               {/* Score Breakdown */}
               <div className="grid grid-cols-4 gap-3">
                 {[
-                  { label: "Total Score", val: Math.round(selected.total_score || 0) },
-                  { label: "Mandate (40%)", val: Math.round(selected.mandate_alignment || 0) },
-                  { label: "Eligibility (30%)", val: Math.round(selected.eligibility_fit || 0) },
-                  { label: "Deadline (20%)", val: Math.round(selected.deadline_feasibility || 0) },
+                  { label: "Overall", val: Math.round(selected.total_score || 0) },
+                  { label: "Topic Match", val: Math.round(selected.mandate_alignment || 0) },
+                  { label: "Can You Apply", val: Math.round(selected.eligibility_fit || 0) },
+                  { label: "Enough Time", val: Math.round(selected.deadline_feasibility || 0) },
                 ].map(s => (
                   <div key={s.label} className="text-center bg-slate-50 rounded-lg p-3">
                     <p className="text-2xl font-bold text-slate-800">{s.val}</p>
@@ -430,7 +431,7 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
               {/* Mandate Area Scores */}
               {selected.mandate_scores && (
                 <div>
-                  <p className="text-sm font-medium text-slate-700 mb-2">Mandate Area Breakdown</p>
+                  <p className="text-sm font-medium text-slate-700 mb-2">Topic-by-Topic Match</p>
                   <div className="space-y-2">
                     {MANDATE_AREAS.map(area => {
                       const score = selected.mandate_scores[area.key] || 0;
@@ -449,7 +450,7 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
               )}
 
               {selected.rationale && (
-                <div><p className="text-sm font-medium text-slate-700 mb-1">AI Rationale</p><p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">{selected.rationale}</p></div>
+                <div><p className="text-sm font-medium text-slate-700 mb-1">Why This Score</p><p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">{selected.rationale}</p></div>
               )}
 
               {/* Strengths */}
@@ -463,7 +464,7 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
               {/* Gap Analysis */}
               {selected.gap_analysis?.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium text-slate-700 mb-1 flex items-center gap-1"><AlertCircle className="w-4 h-4 text-amber-500" />Gap Analysis</p>
+                  <p className="text-sm font-medium text-slate-700 mb-1 flex items-center gap-1"><AlertCircle className="w-4 h-4 text-amber-500" />What's Missing</p>
                   <ul className="space-y-1">{selected.gap_analysis.map((s, i) => <li key={i} className="text-sm text-slate-600 flex items-start gap-2"><span className="text-amber-500 mt-0.5">•</span>{s}</li>)}</ul>
                 </div>
               )}
@@ -471,24 +472,24 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
               {/* Recommended Actions */}
               {selected.recommended_actions?.length > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm font-medium text-blue-800 mb-1">Recommended Actions</p>
+                  <p className="text-sm font-medium text-blue-800 mb-1">What To Do Next</p>
                   <ul className="space-y-1">{selected.recommended_actions.map((s, i) => <li key={i} className="text-sm text-blue-700">→ {s}</li>)}</ul>
-                  {selected.estimated_prep_days && <p className="text-xs text-blue-600 mt-2">Estimated prep time: {selected.estimated_prep_days} days</p>}
+                  {selected.estimated_prep_days && <p className="text-xs text-blue-600 mt-2">About {selected.estimated_prep_days} days to get ready</p>}
                 </div>
               )}
 
-              {/* Tiered HIL Notice */}
+              {/* Review Notice */}
               <div className={`rounded-lg p-3 text-sm border ${selected.total_score >= 80 ? "bg-emerald-50 border-emerald-200 text-emerald-800" : selected.total_score >= 60 ? "bg-blue-50 border-blue-200 text-blue-800" : "bg-slate-50 border-slate-200 text-slate-700"}`}>
-                <span className="font-medium">HIL Tier: </span>
-                {selected.total_score >= 80 ? "Tier 2 — Review recommended (48h window)" : selected.total_score >= 60 ? "Tier 1 — Mandatory human review required" : "Tier 3 — Auto-defer, notification only"}
+                <span className="font-medium">Next step: </span>
+                {selected.total_score >= 80 ? "Looks strong — give it a quick look when you can." : selected.total_score >= 60 ? "Please take a look before moving ahead." : "No action needed — we'll keep it on the list for later."}
               </div>
 
               <div>
-                <p className="text-sm font-medium text-slate-700 mb-1">Human Feedback</p>
-                <Textarea placeholder="Add your notes or override..." value={feedback} onChange={e => setFeedback(e.target.value)} rows={3} />
+                <p className="text-sm font-medium text-slate-700 mb-1">Your Notes</p>
+                <Textarea placeholder="Add your thoughts (optional)..." value={feedback} onChange={e => setFeedback(e.target.value)} rows={3} />
               </div>
               <div className="flex gap-2 flex-wrap">
-                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={saveFeedback}>Save Feedback & Mark Reviewed</Button>
+                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={saveFeedback}>Save & Mark Reviewed</Button>
                 {["GO", "PREP"].includes(selected?.recommendation) && (
                   <>
                     <Button variant="outline" className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-50" onClick={async () => {
@@ -497,15 +498,15 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                       const existing = await base44.entities.GrantApplication.filter({ grant_id: selected.grant_id });
                       if (existing.length === 0) {
                         await base44.entities.GrantApplication.create({ grant_id: grant.id, grant_title: grant.title, funder: grant.funder, deadline: grant.deadline, stage: "assessment" });
-                        toast.success("Sent to pipeline");
+                        toast.success("Added to your applications");
                       } else {
-                        toast.info("Already in pipeline");
+                        toast.info("Already in your applications");
                       }
                     }} disabled={sendingToPipeline}>
-                      <Send className="w-4 h-4" /> Pipeline
+                      <Send className="w-4 h-4" /> Add to My List
                     </Button>
                     <Button className="gap-2 bg-purple-600 hover:bg-purple-700" onClick={() => { setSelected(null); startDrafting(selected); }}>
-                      <Wand2 className="w-4 h-4" /> Draft Now
+                      <Wand2 className="w-4 h-4" /> Start Writing
                     </Button>
                   </>
                 )}

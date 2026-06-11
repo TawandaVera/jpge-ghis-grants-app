@@ -11,11 +11,11 @@ import { differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
 const COLUMNS = [
-  { key: "draft",     label: "Draft",     dot: "bg-slate-400",   color: "border-slate-200 bg-slate-50/60" },
-  { key: "review",    label: "Review",    dot: "bg-blue-500",    color: "border-blue-200 bg-blue-50/50" },
-  { key: "submitted", label: "Submitted", dot: "bg-purple-500",  color: "border-purple-200 bg-purple-50/50" },
-  { key: "awarded",   label: "Awarded",   dot: "bg-emerald-500", color: "border-emerald-200 bg-emerald-50/50" },
-  { key: "declined",  label: "Declined",  dot: "bg-red-400",     color: "border-red-200 bg-red-50/50" },
+  { key: "draft",     label: "Working On It",        dot: "bg-slate-400",   color: "border-slate-200 bg-slate-50/60" },
+  { key: "review",    label: "Reviewing",           dot: "bg-blue-500",    color: "border-blue-200 bg-blue-50/50" },
+  { key: "submitted", label: "Sent In",             dot: "bg-purple-500",  color: "border-purple-200 bg-purple-50/50" },
+  { key: "awarded",   label: "We Got It!",          dot: "bg-emerald-500", color: "border-emerald-200 bg-emerald-50/50" },
+  { key: "declined",  label: "Not This Time",       dot: "bg-red-400",     color: "border-red-200 bg-red-50/50" },
 ];
 
 // Map GrantApplication.stage → tracker column
@@ -106,15 +106,15 @@ export default function ApplicationTracker() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <ClipboardList className="w-6 h-6 text-emerald-600" /> Application Tracker
+            <ClipboardList className="w-6 h-6 text-emerald-600" /> My Applications
           </h1>
-          <p className="text-slate-500 text-sm">Move applications through stages · {apps.length} tracked</p>
+          <p className="text-slate-500 text-sm">Move each one along as you go · {apps.length} in your list</p>
         </div>
         <Button
           className="bg-emerald-600 hover:bg-emerald-700 gap-2"
           onClick={() => { setEditApp({ grant_title: "", funder: "", deadline: "", award_amount: "", notes: "", _col: "draft" }); setIsNew(true); }}
         >
-          <Plus className="w-4 h-4" /> New Application
+          <Plus className="w-4 h-4" /> Add One
         </Button>
       </div>
 
@@ -167,7 +167,7 @@ export default function ApplicationTracker() {
       <Dialog open={!!editApp} onOpenChange={() => setEditApp(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{isNew ? "New Application" : "Edit Application"}</DialogTitle>
+            <DialogTitle>{isNew ? "Add an Application" : "Edit Application"}</DialogTitle>
           </DialogHeader>
           {editApp && (
             <div className="space-y-3">
@@ -191,7 +191,7 @@ export default function ApplicationTracker() {
               </div>
               {isNew && (
                 <div>
-                  <label className="text-xs text-slate-500 font-medium">Starting Stage</label>
+                  <label className="text-xs text-slate-500 font-medium">Where It Is Now</label>
                   <Select value={editApp._col} onValueChange={v => setEditApp({ ...editApp, _col: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -219,7 +219,7 @@ export default function ApplicationTracker() {
       <Dialog open={!!logApp} onOpenChange={() => setLogApp(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Log Status Update</DialogTitle>
+            <DialogTitle>Add a Quick Update</DialogTitle>
           </DialogHeader>
           {logApp && (
             <div className="space-y-3">
@@ -233,7 +233,7 @@ export default function ApplicationTracker() {
               />
               <div className="flex gap-2">
                 <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={logStatus} disabled={!logNote.trim()}>
-                  Log Update
+                  Save Update
                 </Button>
                 <Button variant="outline" onClick={() => setLogApp(null)}>Cancel</Button>
               </div>

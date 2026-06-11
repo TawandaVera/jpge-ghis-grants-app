@@ -6,12 +6,12 @@ export const SECTION_KEYS = [
 ];
 
 export const COPILOT_STAGES = [
-  { id: 1, label: "Master Narrative", desc: "Upload and parse your organization's master narrative" },
-  { id: 2, label: "Org Profile", desc: "Review and update organization profile" },
-  { id: 3, label: "Opportunity Intake", desc: "Select grant opportunity and intake requirements" },
-  { id: 4, label: "Pipeline Board", desc: "Assign to pipeline and set priorities" },
-  { id: 5, label: "Content Mapping", desc: "Map master narrative blocks to grant sections" },
-  { id: 6, label: "Draft Generation", desc: "AI generates tailored grant narrative sections" },
-  { id: 7, label: "Edit Guidance", desc: "Review AI edit recommendations" },
-  { id: 8, label: "Final Pack", desc: "Compile and export final application package" },
+  { id: 1, label: "Add Your Writing", desc: "Share past writing about your organization" },
+  { id: 2, label: "Your Organization", desc: "Check your organization's info" },
+  { id: 3, label: "Pick One to Apply For", desc: "Choose a good match to write" },
+  { id: 4, label: "Your Applications", desc: "See what you're working on" },
+  { id: 5, label: "Match Your Writing", desc: "Attach your writing to each part" },
+  { id: 6, label: "Write the Draft", desc: "The AI writes each part for you" },
+  { id: 7, label: "Make It Stronger", desc: "Tips to improve your application" },
+  { id: 8, label: "Finish & Download", desc: "Put it together and download" },
 ];

@@ -12,16 +12,16 @@ import CreditNotice, { isCreditError } from "@/components/ai/CreditNotice";
 const AGENTS = [
   {
     id: "grant_advisor",
-    label: "Grant Advisor",
-    description: "Strategy, discovery, writing guidance, and pipeline advice",
+    label: "Advisor",
+    description: "Advice on finding funding, writing, and what to focus on",
     icon: Sparkles,
     color: "bg-emerald-100 text-emerald-700 border-emerald-200",
     activeBg: "bg-emerald-600",
   },
   {
     id: "hil_reviewer",
-    label: "HIL Reviewer",
-    description: "Guided human-in-the-loop review for pending checkpoints",
+    label: "Reviewer",
+    description: "Helps you decide on items that are waiting for you",
     icon: Shield,
     color: "bg-amber-100 text-amber-700 border-amber-200",
     activeBg: "bg-amber-600",
@@ -170,7 +170,7 @@ export default function AIAssistant() {
         <div className="p-4 border-b border-slate-800">
           <div className="flex items-center gap-2 mb-3">
             <Bot className="w-5 h-5 text-emerald-400" />
-            <p className="font-semibold text-sm">AI Assistants</p>
+            <p className="font-semibold text-sm">Ask AI</p>
           </div>
           {AGENTS.map(agent => {
             const Icon = agent.icon;

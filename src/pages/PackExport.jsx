@@ -10,14 +10,14 @@ import { toast } from "sonner";
 import { SECTION_KEYS } from "@/lib/grantConstants";
 
 const READINESS_ITEMS = [
-  "Org Profile complete (EIN, UEI, mission)",
-  "Indirect cost rate documented",
-  "Financial Statements ready (2 yr)",
-  "Master Narrative parsed & approved",
-  "All proposal sections drafted",
-  "Compliance checklist reviewed",
-  "Budget narrative finalized",
-  "Application reviewed by team",
+  "Filled in 'About My Org' (tax ID, mission)",
+  "Cost rates added",
+  "Financial statements ready",
+  "Saved your past write-ups",
+  "All sections written",
+  "Checked the rules",
+  "Budget finished",
+  "Team has reviewed it",
 ];
 
 export default function PackExport() {
@@ -48,7 +48,7 @@ export default function PackExport() {
   const generatePackage = async (match) => {
     const app = getApp(match.grant_id);
     if (!app) {
-      toast.error("No application found for this grant. Start drafting in Co-Pilot first.");
+      toast.error("No application started yet. Use 'Write with AI' first.");
       return;
     }
     setGenerating(true);
@@ -80,14 +80,14 @@ export default function PackExport() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Forms & Packaging</h1>
-        <p className="text-slate-500 text-sm">Prepare and package grant applications for GO/PREP opportunities</p>
+        <h1 className="text-2xl font-bold text-slate-900">Finish & Download</h1>
+        <p className="text-slate-500 text-sm">Put your best applications together and download them, ready to send</p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
         {/* Grant List */}
         <div className="md:col-span-2 space-y-3">
-          <h2 className="font-semibold text-slate-700 text-sm">GO/PREP Grants ({matches.length})</h2>
+          <h2 className="font-semibold text-slate-700 text-sm">Your Best Opportunities ({matches.length})</h2>
           {matches.map(match => {
             const app = getApp(match.grant_id);
             const sectionCount = Object.keys(app?.sections || {}).length;
@@ -115,7 +115,7 @@ export default function PackExport() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Badge className={`text-xs border ${match.recommendation === "GO" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-blue-800 border-blue-300"}`}>
-                        {match.recommendation}
+                        {match.recommendation === "GO" ? "Great Fit" : "Worth a Look"}
                       </Badge>
                       <span className="text-sm font-bold text-slate-600">{match.total_score}%</span>
                       {app ? (
@@ -131,7 +131,7 @@ export default function PackExport() {
                       ) : (
                         <Link to="/copilot" onClick={e => e.stopPropagation()}>
                           <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
-                            Co-Pilot <ArrowRight className="w-3 h-3" />
+                            Write with AI <ArrowRight className="w-3 h-3" />
                           </Button>
                         </Link>
                       )}
@@ -144,7 +144,7 @@ export default function PackExport() {
           {matches.length === 0 && (
             <div className="text-center py-16 text-slate-400">
               <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p>No GO/PREP matches yet. Run assessment first.</p>
+              <p>No good matches yet. Score some matches first.</p>
             </div>
           )}
         </div>
@@ -181,7 +181,7 @@ export default function PackExport() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Package className="w-4 h-4 text-blue-500" />
-                Package Generator
+                Build Your Document
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -211,11 +211,11 @@ export default function PackExport() {
                     }}
                   >
                     {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
-                    {generating ? "Generating..." : "Generate Package"}
+                    {generating ? "Building..." : "Build Document"}
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-slate-400 text-center py-4">Select a grant to generate a package</p>
+                <p className="text-sm text-slate-400 text-center py-4">Pick one on the left to build your document</p>
               )}
             </CardContent>
           </Card>

@@ -107,21 +107,21 @@ export default function Overview() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Capital Intelligence Engine</h1>
-          <p className="text-slate-500 text-sm">An intelligent platform matching organizations with relevant funding opportunities</p>
+          <p className="text-slate-500 text-sm">Find the right funding and apply with confidence — we make it simple</p>
         </div>
         <Button variant="outline" onClick={exportCSV} className="gap-2">
           <Download className="w-4 h-4" /> Export CSV
         </Button>
       </div>
 
-      {/* HIL Alert */}
+      {/* Needs Your Review Alert */}
       {hilItems.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
             <div>
-              <p className="font-semibold text-amber-800">{hilItems.length} HIL Checkpoint{hilItems.length > 1 ? "s" : ""} Awaiting Review</p>
-              <p className="text-sm text-amber-600">Pipeline paused — human decision required</p>
+              <p className="font-semibold text-amber-800">{hilItems.length} item{hilItems.length > 1 ? "s" : ""} need your review</p>
+              <p className="text-sm text-amber-600">We paused here so you can take a quick look before moving on</p>
             </div>
           </div>
           <Link to="/copilot">
@@ -132,17 +132,17 @@ export default function Overview() {
         </div>
       )}
 
-      {/* Pipeline Flow */}
+      {/* Step Flow */}
       <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Grant Lifecycle Pipeline</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Your Steps, Start to Finish</p>
         <div className="flex items-center gap-2 flex-wrap">
           {[
-            { label: "Discovery", to: "/discovery", color: "bg-slate-100 text-slate-700 border-slate-200" },
-            { label: "Assessment", to: "/assessment", color: "bg-blue-50 text-blue-700 border-blue-200" },
-            { label: "Pipeline", to: "/pipeline", color: "bg-purple-50 text-purple-700 border-purple-200" },
-            { label: "Co-Pilot", to: "/copilot", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-            { label: "Pack & Export", to: "/pack", color: "bg-amber-50 text-amber-700 border-amber-200" },
-            { label: "Grant Dossier", to: "/dossier", color: "bg-slate-100 text-slate-700 border-slate-200" },
+            { label: "Find Funding", to: "/discovery", color: "bg-slate-100 text-slate-700 border-slate-200" },
+            { label: "Score Matches", to: "/assessment", color: "bg-blue-50 text-blue-700 border-blue-200" },
+            { label: "Track Progress", to: "/pipeline", color: "bg-purple-50 text-purple-700 border-purple-200" },
+            { label: "Write with AI", to: "/copilot", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+            { label: "Finish & Download", to: "/pack", color: "bg-amber-50 text-amber-700 border-amber-200" },
+            { label: "Funding Library", to: "/dossier", color: "bg-slate-100 text-slate-700 border-slate-200" },
           ].map((step, i) => (
             <div key={step.label} className="flex items-center gap-2">
               <Link to={step.to}>
@@ -158,10 +158,10 @@ export default function Overview() {
 
       {/* Top Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Raw" value={grants.length} sub={`${grants.length} unique`} icon={<Database className="w-5 h-5" />} color="slate" />
-        <StatCard label="Assessed" value={assessed} sub={`of ${grants.length} total`} icon={<Target className="w-5 h-5" />} color="blue" />
-        <StatCard label="GO" value={goCount} sub={`${assessed ? Math.round(goCount/assessed*100) : 0}% of assessed`} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
-        <StatCard label="PREP" value={prepCount} sub={`${assessed ? Math.round(prepCount/assessed*100) : 0}% of assessed`} icon={<AlertTriangle className="w-5 h-5" />} color="amber" />
+        <StatCard label="Opportunities Found" value={grants.length} sub={`${grants.length} total`} icon={<Database className="w-5 h-5" />} color="slate" />
+        <StatCard label="Scored" value={assessed} sub={`of ${grants.length} found`} icon={<Target className="w-5 h-5" />} color="blue" />
+        <StatCard label="Great Fits" value={goCount} sub={`${assessed ? Math.round(goCount/assessed*100) : 0}% of scored`} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
+        <StatCard label="Worth a Look" value={prepCount} sub={`${assessed ? Math.round(prepCount/assessed*100) : 0}% of scored`} icon={<AlertTriangle className="w-5 h-5" />} color="amber" />
       </div>
 
       {/* ROI & Financial Summary */}
@@ -170,14 +170,14 @@ export default function Overview() {
           <StatCard label="Submitted" value={submitted.length} sub="applications" icon={<ArrowRight className="w-5 h-5" />} color="blue" />
           <StatCard label="Awarded" value={awarded.length} sub={`${successRate}% success rate`} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
           <StatCard label="Total Funded" value={`$${(totalAwarded/1000).toFixed(0)}K`} sub="awarded to date" icon={<Target className="w-5 h-5" />} color="amber" />
-          <StatCard label="HIL Pending" value={hilItems.length} sub="require decision" icon={<AlertTriangle className="w-5 h-5" />} color={hilItems.length > 0 ? "amber" : "slate"} />
+          <StatCard label="Needs Review" value={hilItems.length} sub="waiting for you" icon={<AlertTriangle className="w-5 h-5" />} color={hilItems.length > 0 ? "amber" : "slate"} />
         </div>
       )}
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Grants by Category */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">Grants by Class</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Opportunities by Topic</CardTitle></CardHeader>
           <CardContent>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={200}>
@@ -196,7 +196,7 @@ export default function Overview() {
 
         {/* Deadline Distribution */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">Deadline Distribution</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-base">When Things Are Due</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3 mt-2">
               {[
@@ -214,15 +214,15 @@ export default function Overview() {
           </CardContent>
         </Card>
 
-        {/* Assessment States */}
+        {/* How Matches Scored */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">Assessment States</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-base">How Your Matches Scored</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             {[
-              { label: "GO", count: goCount, color: "bg-emerald-500" },
-              { label: "PREP", count: prepCount, color: "bg-amber-500" },
-              { label: "DEFER", count: deferCount, color: "bg-slate-400" },
-              { label: "DECLINE", count: declineCount, color: "bg-red-400" },
+              { label: "Great Fit", count: goCount, color: "bg-emerald-500" },
+              { label: "Worth a Look", count: prepCount, color: "bg-amber-500" },
+              { label: "Maybe Later", count: deferCount, color: "bg-slate-400" },
+              { label: "Skip", count: declineCount, color: "bg-red-400" },
             ].map(s => (
               <div key={s.label}>
                 <div className="flex items-center justify-between text-sm mb-1">
@@ -267,10 +267,10 @@ export default function Overview() {
             ))}
             {recentGrants.length === 0 && (
               <div className="text-center py-6">
-                <p className="text-sm text-slate-400 mb-2">No grants yet.</p>
+                <p className="text-sm text-slate-400 mb-2">No opportunities yet.</p>
                 <Link to="/discovery">
                   <Button size="sm" variant="outline" className="gap-1">
-                    Run Discovery <ArrowRight className="w-3.5 h-3.5" />
+                    Find Funding <ArrowRight className="w-3.5 h-3.5" />
                   </Button>
                 </Link>
               </div>

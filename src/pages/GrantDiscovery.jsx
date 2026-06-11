@@ -351,12 +351,12 @@ For each, classify actionability:
     <div className="p-6 max-w-7xl mx-auto space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Discovery Engine</h1>
-          <p className="text-slate-500 text-sm">Scan, filter, and import grant opportunities · {grants.length} in database</p>
+          <h1 className="text-2xl font-bold text-slate-900">Find Funding</h1>
+          <p className="text-slate-500 text-sm">Search for funding that fits your work · {grants.length} found so far</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowAddForm(true)} className="gap-2">
-            <Plus className="w-4 h-4" /> Manual Import
+            <Plus className="w-4 h-4" /> Add My Own
           </Button>
           <Button variant="outline" className="gap-2" onClick={() => {
             const rows = [["Title", "Funder", "Category", "Deadline", "Award Min", "Award Max", "Status"]];
@@ -378,7 +378,7 @@ For each, classify actionability:
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Zap className="w-4 h-4 text-emerald-500" /> Scan Parameters
+              <Zap className="w-4 h-4 text-emerald-500" /> What Are You Looking For?
             </CardTitle>
             {scanTab === "filters" && (
               <button
@@ -386,7 +386,7 @@ For each, classify actionability:
                 onClick={() => setShowAdvanced(v => !v)}
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                {showAdvanced ? "Hide Advanced" : "Advanced Filters"}
+                {showAdvanced ? "Fewer Options" : "More Options"}
               </button>
             )}
           </div>
@@ -399,13 +399,13 @@ For each, classify actionability:
               onClick={() => setScanTab("filters")}
               className={`px-4 py-1.5 text-xs rounded-md font-medium transition-colors ${scanTab === "filters" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
-              🔧 Guided Filters
+              🔧 Pick Options
             </button>
             <button
               onClick={() => setScanTab("freeform")}
               className={`px-4 py-1.5 text-xs rounded-md font-medium transition-colors ${scanTab === "freeform" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
-              ✏️ Custom Search
+              ✏️ Just Type It
             </button>
           </div>
 
@@ -514,7 +514,7 @@ For each, classify actionability:
                 </label>
                 <Button onClick={runDiscovery} disabled={discovering} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
                   {discovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                  {discovering ? "Scanning..." : "Run Discovery Scan"}
+                  {discovering ? "Searching..." : "Search Now"}
                 </Button>
               </div>
             </div>
@@ -550,7 +550,7 @@ For each, classify actionability:
                   className="bg-emerald-600 hover:bg-emerald-700 gap-2 ml-auto"
                 >
                   {discovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                  {discovering ? "Scanning..." : "Run Custom Search"}
+                  {discovering ? "Searching..." : "Search Now"}
                 </Button>
               </div>
             </div>
@@ -564,7 +564,7 @@ For each, classify actionability:
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <FileText className="w-4 h-4" /> Audit Log
+              <FileText className="w-4 h-4" /> Search Activity
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -661,7 +661,7 @@ For each, classify actionability:
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-16 text-center text-slate-400">No grants found. Run a discovery scan to populate the database.</td></tr>
+                <tr><td colSpan={7} className="px-4 py-16 text-center text-slate-400">Nothing here yet. Run a search above to find funding.</td></tr>
               )}
             </tbody>
           </table>
@@ -687,7 +687,7 @@ For each, classify actionability:
               {selected.geographic_scope && <div className="flex items-center gap-2 text-sm text-slate-600"><MapPin className="w-4 h-4" />{selected.geographic_scope}</div>}
               <div className="flex gap-3 pt-2 flex-wrap">
                 <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => addToApplication(selected)}>
-                  Add to Pipeline
+                  Add to My List
                 </Button>
                 {selected.source_url && (
                   <Button variant="outline" className="gap-2" onClick={() => window.open(selected.source_url, "_blank")}>
@@ -710,7 +710,7 @@ For each, classify actionability:
       {/* Add Manual Grant Dialog */}
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Import Grant Manually</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Add Your Own</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <Input placeholder="Grant title *" value={newGrant.title} onChange={e => setNewGrant(p => ({...p, title: e.target.value}))} />
             <Input placeholder="Funder *" value={newGrant.funder} onChange={e => setNewGrant(p => ({...p, funder: e.target.value}))} />
@@ -731,7 +731,7 @@ For each, classify actionability:
               </SelectContent>
             </Select>
             <Input placeholder="Source URL (direct application link)" value={newGrant.source_url} onChange={e => setNewGrant(p => ({...p, source_url: e.target.value}))} />
-            <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={saveNewGrant} disabled={!newGrant.title || !newGrant.funder}>Import Grant</Button>
+            <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={saveNewGrant} disabled={!newGrant.title || !newGrant.funder}>Add It</Button>
           </div>
         </DialogContent>
       </Dialog>

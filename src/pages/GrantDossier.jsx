@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
+import { recLabel } from "@/lib/friendlyLabels";
 
 const REC_BADGE = {
   GO: "bg-emerald-100 text-emerald-800 border-emerald-300",
@@ -67,7 +68,7 @@ export default function GrantDossier() {
   const generateDossier = async (grant) => {
     const match = getMatch(grant.id);
     if (!match) {
-      toast.error("Run assessment first to generate a dossier for this grant.");
+      toast.error("Score this one first to build a game plan.");
       return;
     }
     setGenerating(true);
@@ -161,9 +162,9 @@ Generate a strategic dossier that includes:
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-emerald-600" /> Grant Dossier
+            <BookOpen className="w-6 h-6 text-emerald-600" /> Funding Library
           </h1>
-          <p className="text-slate-500 text-sm">Deep-dive profiles and strategic briefs for assessed grants · {combined.length} assessed</p>
+          <p className="text-slate-500 text-sm">Full details and game plans for opportunities you've scored · {combined.length} scored</p>
         </div>
         <Button
           variant="outline"
@@ -181,13 +182,13 @@ Generate a strategic dossier that includes:
           <Input placeholder="Search grants or funders..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select value={recFilter} onValueChange={setRecFilter}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="All States" /></SelectTrigger>
+          <SelectTrigger className="w-44"><SelectValue placeholder="Show all" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All States</SelectItem>
-            <SelectItem value="GO">GO Only</SelectItem>
-            <SelectItem value="PREP">PREP Only</SelectItem>
-            <SelectItem value="DEF">DEFER</SelectItem>
-            <SelectItem value="DECLINE">DECLINE</SelectItem>
+            <SelectItem value="all">Show all</SelectItem>
+            <SelectItem value="GO">Great Fit</SelectItem>
+            <SelectItem value="PREP">Worth a Look</SelectItem>
+            <SelectItem value="DEF">Maybe Later</SelectItem>
+            <SelectItem value="DECLINE">Skip</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -206,7 +207,7 @@ Generate a strategic dossier that includes:
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-sm font-semibold text-slate-800 line-clamp-2 leading-tight">{grant.title}</CardTitle>
-                  <Badge className={`text-xs border shrink-0 ${REC_BADGE[match.recommendation]}`}>{match.recommendation}</Badge>
+                  <Badge className={`text-xs border shrink-0 ${REC_BADGE[match.recommendation]}`}>{recLabel(match.recommendation)}</Badge>
                 </div>
                 <p className="text-xs text-slate-500">{grant.funder}</p>
               </CardHeader>
@@ -214,7 +215,7 @@ Generate a strategic dossier that includes:
                 <div className="flex items-center justify-between text-xs text-slate-600">
                   <div className="flex items-center gap-1">
                     <TrendingUp className="w-3 h-3 text-emerald-500" />
-                    <span className="font-bold text-emerald-700">{Math.round(match.total_score)}% match</span>
+                    <span className="font-bold text-emerald-700">{Math.round(match.total_score)}% fit</span>
                   </div>
                   <div className={`flex items-center gap-1 ${isUrgent ? "text-red-600 font-medium" : ""}`}>
                     <Calendar className="w-3 h-3" />
@@ -246,7 +247,7 @@ Generate a strategic dossier that includes:
         {combined.length === 0 && (
           <div className="col-span-3 text-center py-16 text-slate-400">
             <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p>No assessed grants found. Run Assessment first.</p>
+            <p>Nothing here yet. Score some matches first.</p>
           </div>
         )}
       </div>
@@ -260,7 +261,7 @@ Generate a strategic dossier that includes:
               <span className="line-clamp-2">{selected?.grant?.title}</span>
               {selected?.match && (
                 <Badge className={`text-xs border shrink-0 ${REC_BADGE[selected.match.recommendation]}`}>
-                  {selected.match.recommendation}
+                  {recLabel(selected.match.recommendation)}
                 </Badge>
               )}
             </DialogTitle>
@@ -272,7 +273,7 @@ Generate a strategic dossier that includes:
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-slate-50 rounded-lg p-3 text-center">
                   <p className="text-2xl font-bold text-emerald-700">{Math.round(selected.match.total_score)}%</p>
-                  <p className="text-xs text-slate-500">Match Score</p>
+                  <p className="text-xs text-slate-500">Fit Score</p>
                 </div>
                 <div className="bg-slate-50 rounded-lg p-3 text-center">
                   <p className="text-sm font-bold text-slate-800">{selected.grant.deadline ? format(new Date(selected.grant.deadline), "MMM d, yyyy") : "—"}</p>
@@ -293,7 +294,7 @@ Generate a strategic dossier that includes:
               {/* AI Rationale */}
               {selected.match.rationale && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-blue-700 mb-1">AI Assessment Summary</p>
+                  <p className="text-xs font-semibold text-blue-700 mb-1">Why This Score</p>
                   <p className="text-sm text-blue-800">{selected.match.rationale}</p>
                 </div>
               )}
@@ -306,7 +307,7 @@ Generate a strategic dossier that includes:
                   disabled={generating}
                 >
                   {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookOpen className="w-4 h-4" />}
-                  {generating ? "Generating Strategic Dossier..." : "Generate Full Strategic Dossier"}
+                  {generating ? "Building Your Game Plan..." : "Build a Game Plan"}
                 </Button>
               )}
 
@@ -322,7 +323,7 @@ Generate a strategic dossier that includes:
 
                   {dossier.fit_reasons?.length > 0 && (
                     <div>
-                      <p className="text-sm font-semibold text-slate-700 mb-2">Why This Fits GHIS</p>
+                      <p className="text-sm font-semibold text-slate-700 mb-2">Why This Fits You</p>
                       <ul className="space-y-1">
                         {dossier.fit_reasons.map((r, i) => (
                           <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
@@ -335,7 +336,7 @@ Generate a strategic dossier that includes:
 
                   {dossier.risks?.length > 0 && (
                     <div>
-                      <p className="text-sm font-semibold text-slate-700 mb-2">Risks & Mitigations</p>
+                      <p className="text-sm font-semibold text-slate-700 mb-2">Things to Watch & How to Handle Them</p>
                       <div className="space-y-2">
                         {dossier.risks.map((r, i) => (
                           <div key={i} className="bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -352,7 +353,7 @@ Generate a strategic dossier that includes:
                   {dossier.application_strategy?.key_steps?.length > 0 && (
                     <div>
                       <p className="text-sm font-semibold text-slate-700 mb-2">
-                        Application Strategy · {dossier.application_strategy.timeline_weeks} weeks to prepare
+                        Your Plan · about {dossier.application_strategy.timeline_weeks} weeks to get ready
                       </p>
                       <ol className="space-y-1">
                         {dossier.application_strategy.key_steps.map((s, i) => (
@@ -368,7 +369,7 @@ Generate a strategic dossier that includes:
                   {dossier.final_recommendation && (
                     <div className="bg-slate-900 text-white rounded-lg p-4">
                       <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                        Final Recommendation · <span className="text-emerald-400">{dossier.confidence_level}</span>
+                        Our Take · <span className="text-emerald-400">{dossier.confidence_level}</span>
                       </p>
                       <p className="text-sm">{dossier.final_recommendation}</p>
                     </div>
@@ -380,7 +381,7 @@ Generate a strategic dossier that includes:
               {selected.app && (
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
                   <p className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
-                    <ClipboardList className="w-3.5 h-3.5 text-emerald-600" /> Log Status Update
+                    <ClipboardList className="w-3.5 h-3.5 text-emerald-600" /> Add a Quick Update
                     <Badge className="ml-auto bg-emerald-100 text-emerald-800 border-emerald-300 text-xs border">{selected.app.stage}</Badge>
                   </p>
                   <Textarea

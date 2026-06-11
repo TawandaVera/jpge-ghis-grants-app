@@ -12,6 +12,7 @@ import Stage6Draft from "@/components/copilot/Stage6Draft";
 import StageGuide from "@/components/copilot/StageGuide";
 import { toast } from "sonner";
 import { SECTION_KEYS, COPILOT_STAGES as STAGES } from "@/lib/grantConstants";
+import { recLabel } from "@/lib/friendlyLabels";
 
 export default function CoPilot() {
   const [currentStage, setCurrentStage] = useState(1);
@@ -276,8 +277,8 @@ CRITICAL RULES:
       {/* Stage Sidebar */}
       <div className="w-64 bg-slate-800 text-white flex flex-col shrink-0 overflow-y-auto">
         <div className="p-4 border-b border-slate-700">
-          <p className="font-semibold text-sm">Grant Co-Pilot</p>
-          <p className="text-xs text-slate-400 mt-0.5">8-Stage Workflow</p>
+          <p className="font-semibold text-sm">Write with AI</p>
+          <p className="text-xs text-slate-400 mt-0.5">8 easy steps</p>
         </div>
         <nav className="p-3 space-y-1 flex-1">
           {STAGES.map(s => (
@@ -301,14 +302,14 @@ CRITICAL RULES:
             className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-slate-200 transition-colors"
             title="High-quality mode uses a premium AI model — better drafts, more integration credits per section"
           >
-            <span>High-quality drafting</span>
+            <span>Best writing quality</span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${highQuality ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"}`}>
               {highQuality ? "ON" : "OFF"}
             </span>
           </button>
           <div>
             <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
-              <span>Stage {currentStage}/8</span>
+              <span>Step {currentStage} of 8</span>
               <span>{progress}%</span>
             </div>
             <div className="h-1.5 bg-slate-700 rounded-full">
@@ -326,11 +327,11 @@ CRITICAL RULES:
             <StageGuide stageId={1} />
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Stage 1: Master Narrative Ingestion</h2>
-                <p className="text-slate-500 text-sm">Upload and parse your organization's master narrative</p>
+                <h2 className="text-xl font-bold text-slate-900">Step 1: Add Your Writing</h2>
+                <p className="text-slate-500 text-sm">Share past writing about your organization so the AI sounds like you</p>
               </div>
               {hilPending && parsedBlocks.length > 0 && (
-                <Badge className="bg-red-100 text-red-700 border border-red-200">HIL Required</Badge>
+                <Badge className="bg-red-100 text-red-700 border border-red-200">Needs Your Review</Badge>
               )}
             </div>
 
@@ -338,7 +339,7 @@ CRITICAL RULES:
               {/* Upload */}
               <div className="space-y-4">
                 <Card>
-                  <CardHeader className="pb-2"><CardTitle className="text-sm">Upload Master Narrative</CardTitle></CardHeader>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm">Add Your Writing</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
                     <div
                       className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors"
@@ -351,14 +352,14 @@ CRITICAL RULES:
                     </div>
                     <p className="text-xs text-slate-400 text-center">Or paste text</p>
                     <Textarea
-                      placeholder="Paste your master narrative here..."
+                      placeholder="Paste your writing here..."
                       value={narrativeText}
                       onChange={e => setNarrativeText(e.target.value)}
                       className="min-h-32 text-sm"
                     />
                     <Button className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={parseNarrative} disabled={parsing}>
                       {parsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                      {parsing ? "Parsing..." : "Parse Narrative"}
+                      {parsing ? "Working..." : "Sort My Writing"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -367,8 +368,8 @@ CRITICAL RULES:
               {/* Parsed Blocks */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-slate-800">Parsed Content Blocks</h3>
-                  {parsedBlocks.length > 0 && <Badge variant="outline">{parsedBlocks.length} blocks</Badge>}
+                  <h3 className="font-semibold text-slate-800">Your Writing, Sorted</h3>
+                  {parsedBlocks.length > 0 && <Badge variant="outline">{parsedBlocks.length} pieces</Badge>}
                 </div>
                 <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
                   {parsedBlocks.map((block, i) => (
@@ -390,7 +391,7 @@ CRITICAL RULES:
                   ))}
                   {parsedBlocks.length === 0 && (
                     <div className="text-center py-12 text-slate-400 text-sm">
-                      Upload or paste narrative and click "Parse Narrative"
+                      Add your writing above, then tap "Sort My Writing"
                     </div>
                   )}
                 </div>
@@ -401,8 +402,8 @@ CRITICAL RULES:
             {hilPending && parsedBlocks.length > 0 && (
               <Card className="border-amber-200 bg-amber-50">
                 <CardContent className="p-4">
-                  <p className="font-semibold text-amber-800 mb-1">Human-in-the-Loop Checkpoint</p>
-                  <p className="text-sm text-amber-700 mb-3">Review parsed blocks before proceeding to Stage 2</p>
+                  <p className="font-semibold text-amber-800 mb-1">Take a Quick Look</p>
+                  <p className="text-sm text-amber-700 mb-3">Check the sorted pieces look right before moving on</p>
                   <div className="flex gap-2">
                     <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={approveAndSave}>Approve & Continue</Button>
                     <Button variant="outline" onClick={() => setHilPending(false)}>Edit</Button>
@@ -421,12 +422,12 @@ CRITICAL RULES:
           <div className="p-6 max-w-2xl mx-auto space-y-5">
             <StageGuide stageId={2} />
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Stage 2: Org Profile</h2>
-              <p className="text-slate-500 text-sm">Review and update your organizational profile before drafting</p>
+              <h2 className="text-xl font-bold text-slate-900">Step 2: Your Organization</h2>
+              <p className="text-slate-500 text-sm">Double-check your organization's info before we start writing</p>
             </div>
             <Card className="border-blue-200 bg-blue-50">
               <CardContent className="p-5 space-y-3">
-                <p className="text-blue-800 font-medium text-sm">Your Org Profile is managed in the dedicated Org Profile section.</p>
+                <p className="text-blue-800 font-medium text-sm">You can edit your organization's info on the "About My Org" page.</p>
                 {orgProfile ? (
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div><span className="text-slate-500">Org:</span> <span className="font-medium text-slate-800">{orgProfile.org_name}</span></div>
@@ -440,13 +441,13 @@ CRITICAL RULES:
                 )}
                 <Link to="/org-profile" target="_blank">
                   <Button variant="outline" size="sm" className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-100">
-                    <ExternalLink className="w-3.5 h-3.5" /> Open Org Profile
+                  <ExternalLink className="w-3.5 h-3.5" /> Open About My Org
                   </Button>
                 </Link>
               </CardContent>
             </Card>
             <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(3)}>
-              Profile Confirmed — Continue to Stage 3 <ChevronRight className="w-4 h-4 ml-1" />
+              Looks Good — Next Step <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
         )}
@@ -456,14 +457,14 @@ CRITICAL RULES:
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <StageGuide stageId={3} />
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Stage 3: Select Opportunity</h2>
-              <p className="text-slate-500 text-sm">Pick a GO or PREP grant to draft — or open an existing in-progress application</p>
+              <h2 className="text-xl font-bold text-slate-900">Step 3: Pick One to Apply For</h2>
+              <p className="text-slate-500 text-sm">Choose a good match to write — or pick up where you left off</p>
             </div>
 
             {/* Existing applications in writing stage */}
             {applications.filter(a => ["writing", "compliance_check", "review", "hil_review"].includes(a.stage)).length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">In-Progress Applications</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Pick Up Where You Left Off</p>
                 <div className="space-y-2">
                   {applications.filter(a => ["writing", "compliance_check", "review", "hil_review"].includes(a.stage)).map(app => (
                     <Card
@@ -479,7 +480,7 @@ CRITICAL RULES:
                       <CardContent className="p-3 flex items-center justify-between">
                         <div>
                           <p className="font-semibold text-slate-800 text-sm">{app.grant_title}</p>
-                          <p className="text-xs text-slate-500">{app.funder} · {Object.keys(app.sections || {}).length} sections drafted</p>
+                          <p className="text-xs text-slate-500">{app.funder} · {Object.keys(app.sections || {}).length} parts written</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-xs">{app.stage?.replace(/_/g, " ")}</Badge>
@@ -494,8 +495,8 @@ CRITICAL RULES:
 
             {/* Assessed GO/PREP grants */}
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Assessed GO / PREP Grants</p>
-              {matches.length === 0 && <p className="text-slate-400 text-sm">No GO/PREP matches yet. Run the Assessment Matrix first.</p>}
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Your Best Matches</p>
+              {matches.length === 0 && <p className="text-slate-400 text-sm">No strong matches yet. Score some on the Score Matches page first.</p>}
               <div className="space-y-2">
                 {matches.map(m => {
                   const inPipeline = applications.find(a => a.grant_id === m.grant_id);
@@ -518,8 +519,8 @@ CRITICAL RULES:
                         </div>
                         <div className="flex items-center gap-2 shrink-0 ml-3">
                           <span className="font-bold text-emerald-700 text-sm">{Math.round(m.total_score)}%</span>
-                          <Badge className={`text-xs border ${m.recommendation === "GO" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-blue-800 border-blue-300"}`}>{m.recommendation}</Badge>
-                          {inPipeline && <Badge variant="outline" className="text-xs">In Pipeline</Badge>}
+                          <Badge className={`text-xs border ${m.recommendation === "GO" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-blue-800 border-blue-300"}`}>{recLabel(m.recommendation)}</Badge>
+                          {inPipeline && <Badge variant="outline" className="text-xs">Started</Badge>}
                           {selectedGrant?.id === m.grant_id && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
                         </div>
                       </CardContent>
@@ -543,7 +544,7 @@ CRITICAL RULES:
                 }
                 setCurrentStage(6);
               }}>
-                {selectedApp ? "Continue Drafting" : "Start Drafting"}: {selectedGrant.title} <ChevronRight className="w-4 h-4" />
+                {selectedApp ? "Keep Writing" : "Start Writing"}: {selectedGrant.title} <ChevronRight className="w-4 h-4" />
               </Button>
             )}
           </div>
@@ -554,12 +555,12 @@ CRITICAL RULES:
           <div className="p-6 max-w-2xl mx-auto space-y-5">
             <StageGuide stageId={4} />
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Stage 4: Pipeline Board</h2>
-              <p className="text-slate-500 text-sm">Track and manage your applications in the pipeline</p>
+              <h2 className="text-xl font-bold text-slate-900">Step 4: Your Applications</h2>
+              <p className="text-slate-500 text-sm">A quick look at what you're working on</p>
             </div>
             <Card className="border-purple-200 bg-purple-50">
               <CardContent className="p-5 space-y-3">
-                <p className="text-purple-800 font-medium text-sm">Application pipeline management lives in the dedicated Pipeline page.</p>
+                <p className="text-purple-800 font-medium text-sm">You can manage all your applications on the "Track Progress" page.</p>
                 <div className="space-y-2">
                   {applications.filter(a => !["awarded", "declined"].includes(a.stage)).slice(0, 4).map(app => (
                     <div key={app.id} className="flex items-center justify-between bg-white rounded-lg border px-3 py-2 text-sm">
@@ -567,17 +568,17 @@ CRITICAL RULES:
                       <Badge variant="outline" className="text-xs shrink-0">{app.stage?.replace(/_/g, " ")}</Badge>
                     </div>
                   ))}
-                  {applications.length === 0 && <p className="text-slate-500 text-sm">No applications yet. Complete Stage 3 to create one.</p>}
+                  {applications.length === 0 && <p className="text-slate-500 text-sm">Nothing yet. Finish Step 3 to start one.</p>}
                 </div>
                 <Link to="/pipeline" target="_blank">
                   <Button variant="outline" size="sm" className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-100">
-                    <ExternalLink className="w-3.5 h-3.5" /> Open Full Pipeline
+                  <ExternalLink className="w-3.5 h-3.5" /> Open Track Progress
                   </Button>
                 </Link>
               </CardContent>
             </Card>
             <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(5)}>
-              Continue to Content Mapping <ChevronRight className="w-4 h-4 ml-1" />
+              Next Step <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
         )}
@@ -587,14 +588,14 @@ CRITICAL RULES:
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <StageGuide stageId={5} />
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Stage 5: Content Mapping</h2>
-              <p className="text-slate-500 text-sm">Map master narrative blocks to grant application sections</p>
+              <h2 className="text-xl font-bold text-slate-900">Step 5: Match Your Writing</h2>
+              <p className="text-slate-500 text-sm">Tell the AI which of your writing fits each part of the application</p>
             </div>
             {parsedBlocks.length === 0 ? (
-              <p className="text-slate-400">Complete Stage 1 first to parse your master narrative.</p>
+              <p className="text-slate-400">Finish Step 1 first to add your writing.</p>
             ) : (
               <div className="space-y-3">
-                <p className="text-xs text-slate-500">Click narrative blocks to map them to each section — mapped blocks guide the AI draft.</p>
+                <p className="text-xs text-slate-500">Tap your writing to attach it to each part — this helps the AI write better drafts.</p>
                 {SECTION_KEYS.map(key => (
                   <div key={key} className="bg-white rounded-lg border p-4">
                     <div className="flex items-center justify-between mb-2">
@@ -626,7 +627,7 @@ CRITICAL RULES:
                 ))}
               </div>
             )}
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(6)}>Continue to Draft Generation <ChevronRight className="w-4 h-4 ml-1" /></Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(6)}>Start Writing <ChevronRight className="w-4 h-4 ml-1" /></Button>
           </div>
         )}
 
@@ -656,11 +657,11 @@ CRITICAL RULES:
           <div className="p-6 max-w-4xl mx-auto space-y-5">
             <StageGuide stageId={7} />
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Stage 7: Edit Guidance</h2>
-              <p className="text-slate-500 text-sm">AI-generated recommendations to strengthen your application</p>
+              <h2 className="text-xl font-bold text-slate-900">Step 7: Make It Stronger</h2>
+              <p className="text-slate-500 text-sm">Tips from the AI to improve your application</p>
             </div>
             <EditGuidance sections={sections} grant={selectedGrant} orgProfile={orgProfile} />
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(8)}>Proceed to Final Pack <ChevronRight className="w-4 h-4 ml-1" /></Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(8)}>Finish Up <ChevronRight className="w-4 h-4 ml-1" /></Button>
           </div>
         )}
 
@@ -736,7 +737,7 @@ Provide 3-5 specific, actionable edit recommendations to strengthen the applicat
       {!guidance ? (
         <Button onClick={generate} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-          {loading ? "Generating..." : "Generate Edit Guidance"}
+          {loading ? "Thinking..." : "Get Tips"}
         </Button>
       ) : (
         <div className="space-y-3">

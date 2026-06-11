@@ -11,27 +11,27 @@ import { differenceInDays } from "date-fns";
 
 // Simplified Kanban stages matching the copy app's working UX
 const KANBAN_STAGES = [
-  { key: "in_progress", label: "In Progress", dot: "bg-blue-500", color: "border-blue-200 bg-blue-50/50" },
-  { key: "submitted", label: "Submitted", dot: "bg-purple-500", color: "border-purple-200 bg-purple-50/50" },
-  { key: "pending_decision", label: "Pending Decision", dot: "bg-amber-500", color: "border-amber-200 bg-amber-50/50" },
-  { key: "awarded", label: "Awarded", dot: "bg-emerald-500", color: "border-emerald-200 bg-emerald-50/50" },
-  { key: "declined", label: "Declined", dot: "bg-red-500", color: "border-red-200 bg-red-50/50" },
+  { key: "in_progress", label: "Working On It", dot: "bg-blue-500", color: "border-blue-200 bg-blue-50/50" },
+  { key: "submitted", label: "Sent In", dot: "bg-purple-500", color: "border-purple-200 bg-purple-50/50" },
+  { key: "pending_decision", label: "Waiting to Hear Back", dot: "bg-amber-500", color: "border-amber-200 bg-amber-50/50" },
+  { key: "awarded", label: "We Got It!", dot: "bg-emerald-500", color: "border-emerald-200 bg-emerald-50/50" },
+  { key: "declined", label: "Not This Time", dot: "bg-red-500", color: "border-red-200 bg-red-50/50" },
 ];
 
 // Full lifecycle stages for list view / backward compat
 const STAGES = [
-  { key: "discovery", label: "Discovery" },
-  { key: "assessment", label: "Assessment" },
+  { key: "discovery", label: "Found It" },
+  { key: "assessment", label: "Scored" },
   { key: "matching", label: "Matching" },
   { key: "writing", label: "Writing" },
-  { key: "compliance_check", label: "Compliance" },
+  { key: "compliance_check", label: "Checking Rules" },
   { key: "budget", label: "Budget" },
-  { key: "review", label: "Review" },
-  { key: "hil_review", label: "HIL Review" },
-  { key: "submission_ready", label: "Submission Ready" },
-  { key: "submitted", label: "Submitted" },
-  { key: "awarded", label: "Awarded" },
-  { key: "declined", label: "Declined" },
+  { key: "review", label: "Reviewing" },
+  { key: "hil_review", label: "Final Review" },
+  { key: "submission_ready", label: "Ready to Send" },
+  { key: "submitted", label: "Sent In" },
+  { key: "awarded", label: "We Got It!" },
+  { key: "declined", label: "Not This Time" },
 ];
 
 export default function Pipeline() {
@@ -124,13 +124,13 @@ export default function Pipeline() {
   return (
     <div className="p-6 max-w-full space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Grant Pipeline</h1>
-        <p className="text-slate-500 text-sm">Drag cards between stages to track lifecycle progress · {apps.length} active grants</p>
+        <h1 className="text-2xl font-bold text-slate-900">Track Progress</h1>
+        <p className="text-slate-500 text-sm">Move cards along as you go · {apps.length} in progress</p>
       </div>
 
       <Tabs defaultValue="kanban">
         <TabsList>
-          <TabsTrigger value="kanban" className="gap-2"><Kanban className="w-4 h-4" />Kanban</TabsTrigger>
+          <TabsTrigger value="kanban" className="gap-2"><Kanban className="w-4 h-4" />Board</TabsTrigger>
           <TabsTrigger value="list" className="gap-2"><List className="w-4 h-4" />List</TabsTrigger>
         </TabsList>
 
@@ -170,7 +170,7 @@ export default function Pipeline() {
           <div className="space-y-2 mt-4">
             {apps.map(app => <AppRow key={app.id} app={app} />)}
             {apps.length === 0 && (
-              <p className="text-center py-16 text-slate-400">No grants in the pipeline yet.<br /><span className="text-sm">Move grants here from the Assessment Matrix or add tracks manually.</span></p>
+              <p className="text-center py-16 text-slate-400">Nothing here yet.<br /><span className="text-sm">Add opportunities from the Score Matches page to start tracking them.</span></p>
             )}
           </div>
         </TabsContent>
@@ -199,7 +199,7 @@ function KanbanCard({ app, currentKanban, onMove, onDraft }) {
         onClick={onDraft}
         className="w-full flex items-center justify-center gap-1.5 text-xs text-purple-700 border border-purple-200 rounded-md py-1 hover:bg-purple-50 transition-colors mb-2"
       >
-        <Wand2 className="w-3 h-3" /> Start / Continue Drafting
+        <Wand2 className="w-3 h-3" /> Write with AI
       </button>
       <Select value={currentKanban} onValueChange={v => onMove(app, v)}>
         <SelectTrigger className="h-6 text-xs py-0 px-2">
