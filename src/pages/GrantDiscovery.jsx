@@ -11,6 +11,7 @@ import { Search, Zap, ExternalLink, MapPin, Loader2, Plus, FileText, ShieldCheck
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import UrlImport from "@/components/discovery/UrlImport";
 
 const CLASS_LABELS = {
   health_equity: "Health Equity",
@@ -424,6 +425,12 @@ For each, classify actionability:
             >
               ✏️ Just Type It
             </button>
+            <button
+              onClick={() => setScanTab("url")}
+              className={`px-4 py-1.5 text-xs rounded-md font-medium transition-colors ${scanTab === "url" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+            >
+              🔗 Paste a Link
+            </button>
           </div>
 
           {/* ── GUIDED FILTERS TAB ── */}
@@ -572,6 +579,9 @@ For each, classify actionability:
               </div>
             </div>
           )}
+
+          {/* ── PASTE A LINK TAB ── */}
+          {scanTab === "url" && <UrlImport onSaved={loadGrants} />}
 
         </CardContent>
       </Card>

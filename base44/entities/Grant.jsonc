@@ -33,6 +33,13 @@
       "type": "string",
       "description": "Eligibility criteria"
     },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Application requirements / what must be submitted"
+    },
     "award_amount_min": {
       "type": "number",
       "description": "Minimum award amount"
