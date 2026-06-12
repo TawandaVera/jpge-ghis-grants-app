@@ -168,14 +168,12 @@ export default function Overview() {
       </div>
 
       {/* ROI & Financial Summary */}
-      {(submitted.length > 0 || awarded.length > 0) && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Submitted" value={submitted.length} sub="applications" icon={<ArrowRight className="w-5 h-5" />} color="blue" />
-          <StatCard label="Awarded" value={awarded.length} sub={`${successRate}% success rate`} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
-          <StatCard label="Total Funded" value={`$${(totalAwarded/1000).toFixed(0)}K`} sub="awarded to date" icon={<Target className="w-5 h-5" />} color="amber" />
-          <StatCard label="Needs Review" value={hilItems.length} sub="waiting for you" icon={<AlertTriangle className="w-5 h-5" />} color={hilItems.length > 0 ? "amber" : "slate"} />
-        </div>
-      )}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Submitted" value={submitted.length} sub={submitted.length > 0 ? "applications" : "none sent yet"} icon={<ArrowRight className="w-5 h-5" />} color="blue" />
+        <StatCard label="Awarded" value={awarded.length} sub={submitted.length > 0 ? `${successRate}% success rate` : "track wins here"} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
+        <StatCard label="Total Funded" value={`$${(totalAwarded/1000).toFixed(0)}K`} sub="awarded to date" icon={<Target className="w-5 h-5" />} color="amber" />
+        <StatCard label="Needs Review" value={hilItems.length} sub="waiting for you" icon={<AlertTriangle className="w-5 h-5" />} color={hilItems.length > 0 ? "amber" : "slate"} />
+      </div>
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Grants by Category */}

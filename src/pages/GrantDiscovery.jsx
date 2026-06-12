@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Search, Zap, ExternalLink, MapPin, Loader2, Plus, FileText, ShieldCheck, SlidersHorizontal, Sparkles } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const CLASS_LABELS = {
   health_equity: "Health Equity",
@@ -36,9 +37,12 @@ const PRESETS = [
   { label: "Low-Hanging Fruit — Quick Wins", icon: "🍎", values: { scanClass: "all", scanFunderType: "all", scanApplicantType: "all", scanKeywords: "capacity building technical assistance small grants", scanLowHanging: true } },
   { label: "Health Equity — Foundation Only", icon: "❤️", values: { scanClass: "health_equity", scanFunderType: "private_foundation", scanApplicantType: "all", scanKeywords: "health equity underserved SDOH disparities", scanLowHanging: false } },
   { label: "Workforce Dev — Federal", icon: "👷", values: { scanClass: "workforce_development", scanFunderType: "federal", scanApplicantType: "all", scanKeywords: "workforce training jobs skills development", scanLowHanging: false } },
+  { label: "SBIR/STTR — Innovation Money for LLCs", icon: "💡", values: { scanClass: "all", scanFunderType: "federal", scanApplicantType: "for_profit", scanKeywords: "SBIR STTR small business innovation research health technology telehealth", scanLowHanging: false } },
+  { label: "State Economic Development", icon: "🏗️", values: { scanClass: "all", scanFunderType: "state", scanApplicantType: "for_profit", scanKeywords: "economic development small business growth incentive matching grants", scanLowHanging: true } },
 ];
 
 export default function GrantDiscovery() {
+  const navigate = useNavigate();
   const [grants, setGrants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [discovering, setDiscovering] = useState(false);
@@ -310,7 +314,14 @@ For each, classify actionability:
       for (const r of rejected) log(`REJECTED: ${r.title}: ${r.rejection_reason}`, "error");
 
       log(`Run complete: ${created} new grants added, ${deduped} duplicates blocked`, "success");
-      toast.success(`Discovery complete: ${created} new grants added`);
+      if (created > 0) {
+        toast.success(`Found ${created} new opportunities!`, {
+          action: { label: "Score them →", onClick: () => navigate("/assessment") },
+          duration: 8000,
+        });
+      } else {
+        toast.info("No new opportunities found this time. Try different filters.");
+      }
       await loadGrants();
     } catch (e) {
       log(`ERROR: ${e.message}`, "error");
@@ -703,9 +714,9 @@ For each, classify actionability:
                 <Button
                   variant="outline"
                   className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
-                  onClick={() => window.open(`https://grantedai.com/grants?q=${encodeURIComponent(selected.title)}`, "_blank")}
+                  onClick={() => window.open(`https://www.grants.gov/search-grants?query=${encodeURIComponent(selected.title)}`, "_blank")}
                 >
-                  <ShieldCheck className="w-4 h-4" /> Verify on GrantedAI
+                  <ShieldCheck className="w-4 h-4" /> Verify on Grants.gov
                 </Button>
               </div>
             </div>
