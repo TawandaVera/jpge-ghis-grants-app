@@ -72,8 +72,12 @@ export default function GrantDiscovery() {
 
   const loadGrants = async () => {
     setLoading(true);
-    const data = await base44.entities.Grant.list("-created_date", 200);
-    setGrants(data);
+    try {
+      const data = await base44.entities.Grant.list("-created_date", 200);
+      setGrants(data);
+    } catch (e) {
+      toast.error("Couldn't load grants: " + e.message);
+    }
     setLoading(false);
   };
 
@@ -243,10 +247,10 @@ For each, classify actionability:
       log(`Raw candidates found: ${summary.raw_candidates || grantList.length + rejected.length}`);
       log(`Sources queried: ${summary.sources_queried || "multiple"}`);
 
-      let created = 0;
       let deduped = 0;
       let qualityRejected = 0;
       const today = new Date();
+      const toCreate = [];
 
       for (const g of grantList) {
         const normalizedTitle = g.title?.toLowerCase().trim();
@@ -290,15 +294,17 @@ For each, classify actionability:
           g.actionability = "NEEDS_VERIFICATION";
         }
 
-        await base44.entities.Grant.create({
+        toCreate.push({
           ...g,
           status: "open",
           posted_date: new Date().toISOString().split("T")[0],
           fingerprint,
         });
-        log(`✅ SAVED: ${g.title} | ${g.deadline} | ${g.actionability || "PASS"}`, "success");
-        created++;
+        log(`✅ PASSED: ${g.title} | ${g.deadline} | ${g.actionability || "PASS"}`, "success");
       }
+
+      if (toCreate.length > 0) await base44.entities.Grant.bulkCreate(toCreate);
+      const created = toCreate.length;
 
       if (qualityRejected > 0) log(`🚫 Quality filter blocked ${qualityRejected} grants`, "warn");
       for (const r of rejected) log(`REJECTED: ${r.title}: ${r.rejection_reason}`, "error");
@@ -361,7 +367,7 @@ For each, classify actionability:
           <Button variant="outline" className="gap-2" onClick={() => {
             const rows = [["Title", "Funder", "Category", "Deadline", "Award Min", "Award Max", "Status"]];
             grants.forEach(g => rows.push([g.title, g.funder, g.category || "", g.deadline || "", g.award_amount_min || "", g.award_amount_max || "", g.status]));
-            const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+            const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
             const blob = new Blob([csv], { type: "text/csv" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");

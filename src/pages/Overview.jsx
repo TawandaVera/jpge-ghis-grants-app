@@ -8,6 +8,7 @@ import { Database, Target, CheckCircle2, AlertTriangle, Download, ArrowRight, Sh
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { differenceInDays, format } from "date-fns";
 import { toast } from "sonner";
+import ThisWeekPlan from "@/components/overview/ThisWeekPlan";
 
 export default function Overview() {
   const [grants, setGrants] = useState([]);
@@ -79,7 +80,7 @@ export default function Overview() {
     matches.forEach(m => {
       rows.push([m.grant_title, m.funder, "", m.deadline || "", m.total_score || "", m.recommendation || ""]);
     });
-    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -155,6 +156,8 @@ export default function Overview() {
           ))}
         </div>
       </div>
+
+      <ThisWeekPlan matches={matches} grants={grants} applications={applications} />
 
       {/* Top Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -252,7 +255,7 @@ export default function Overview() {
                   <p className="text-sm text-slate-800 truncate">{g.title}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-slate-400">{g.funder?.split(" ").slice(-1)[0]}</span>
+                  <span className="text-xs text-slate-400 truncate max-w-32" title={g.funder}>{g.funder}</span>
                   {g.source_url && (
                     <button
                       onClick={() => window.open(g.source_url, "_blank")}
