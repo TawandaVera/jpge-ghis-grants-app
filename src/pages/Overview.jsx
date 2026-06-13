@@ -134,25 +134,23 @@ export default function Overview() {
       )}
 
       {/* Step Flow */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Your Steps, Start to Finish</p>
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">How It Works — Follow These Steps</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           {[
-            { label: "Find Funding", to: "/discovery", color: "bg-slate-100 text-slate-700 border-slate-200" },
-            { label: "Score Matches", to: "/assessment", color: "bg-blue-50 text-blue-700 border-blue-200" },
-            { label: "Track Progress", to: "/pipeline", color: "bg-purple-50 text-purple-700 border-purple-200" },
-            { label: "Write with AI", to: "/copilot", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-            { label: "Finish & Download", to: "/pack", color: "bg-amber-50 text-amber-700 border-amber-200" },
-            { label: "Funding Library", to: "/dossier", color: "bg-slate-100 text-slate-700 border-slate-200" },
-          ].map((step, i) => (
-            <div key={step.label} className="flex items-center gap-2">
-              <Link to={step.to}>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer hover:opacity-80 ${step.color}`}>
-                  {step.label}
-                </span>
-              </Link>
-              {i < 5 && <span className="text-slate-300">→</span>}
-            </div>
+            { step: 1, label: "Find Funding", desc: "Search for grants", to: "/discovery", color: "border-slate-300 hover:border-slate-400", num: "bg-slate-200 text-slate-700" },
+            { step: 2, label: "Score Matches", desc: "See how well they fit", to: "/assessment", color: "border-blue-200 hover:border-blue-400", num: "bg-blue-100 text-blue-700" },
+            { step: 3, label: "Track Progress", desc: "Manage your pipeline", to: "/pipeline", color: "border-purple-200 hover:border-purple-400", num: "bg-purple-100 text-purple-700" },
+            { step: 4, label: "Write with AI", desc: "Draft your proposals", to: "/copilot", color: "border-emerald-200 hover:border-emerald-500", num: "bg-emerald-100 text-emerald-700" },
+            { step: 5, label: "Finish & Download", desc: "Export your application", to: "/pack", color: "border-amber-200 hover:border-amber-400", num: "bg-amber-100 text-amber-700" },
+          ].map(s => (
+            <Link key={s.step} to={s.to}>
+              <div className={`border-2 rounded-xl p-3 cursor-pointer transition-all hover:shadow-sm ${s.color} flex flex-col gap-1`}>
+                <span className={`w-7 h-7 rounded-full text-sm font-bold flex items-center justify-center ${s.num}`}>{s.step}</span>
+                <p className="text-sm font-semibold text-slate-800 mt-1">{s.label}</p>
+                <p className="text-xs text-slate-400">{s.desc}</p>
+              </div>
+            </Link>
           ))}
         </div>
       </div>
