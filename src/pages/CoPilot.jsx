@@ -272,54 +272,49 @@ CRITICAL RULES:
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Stage Sidebar */}
-      <div className="w-64 bg-slate-800 text-white flex flex-col shrink-0 overflow-y-auto">
-        <div className="p-4 border-b border-slate-700">
-          <p className="font-semibold text-sm">Write with AI</p>
-          <p className="text-xs text-slate-400 mt-0.5">Step by step</p>
-        </div>
-        <nav className="p-3 space-y-1 flex-1">
-          {STAGES.map(s => (
+    <div className="min-h-screen bg-slate-50">
+      {/* Top Step Navigation */}
+      <div className="bg-slate-800 text-white sticky top-0 z-10 shadow-md">
+        <div className="px-4 py-3 flex items-center gap-3 overflow-x-auto scrollbar-hide">
+          <span className="text-xs text-slate-400 font-semibold shrink-0 hidden sm:block">Write with AI:</span>
+          {STAGES.map((s, idx) => (
             <button
               key={s.id}
               onClick={() => setCurrentStage(s.id)}
-              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${
-                currentStage === s.id ? "bg-emerald-600 text-white" : "text-slate-400 hover:bg-slate-700"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 ${
+                currentStage === s.id
+                  ? "bg-emerald-600 text-white"
+                  : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
               }`}
             >
-              <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center shrink-0 font-bold ${
+              <span className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold shrink-0 ${
                 currentStage === s.id ? "bg-white text-emerald-600" : "bg-slate-700 text-slate-400"
               }`}>{s.id}</span>
-              {s.label}
+              <span className="hidden md:inline">{s.label}</span>
             </button>
           ))}
-        </nav>
-        <div className="p-4 border-t border-slate-700 space-y-3">
-          <button
-            onClick={() => setHighQuality(q => !q)}
-            className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-slate-200 transition-colors"
-            title="High-quality mode uses a premium AI model — better drafts, more integration credits per section"
-          >
-            <span>Best quality writing</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${highQuality ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"}`}>
-              {highQuality ? "ON" : "OFF"}
-            </span>
-          </button>
-          <div>
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
-              <span>Step {currentStage}/8</span>
-              <span>{progress}%</span>
-            </div>
-            <div className="h-1.5 bg-slate-700 rounded-full">
-              <div className="h-1.5 bg-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
-            </div>
+          <div className="ml-auto shrink-0 flex items-center gap-3 pl-3 border-l border-slate-700">
+            <button
+              onClick={() => setHighQuality(q => !q)}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+              title="High-quality mode uses a premium AI model — better drafts, more integration credits per section"
+            >
+              <span className="hidden sm:inline">Best Quality</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${highQuality ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"}`}>
+                {highQuality ? "ON" : "OFF"}
+              </span>
+            </button>
+            <span className="text-xs text-slate-500">{currentStage}/8</span>
           </div>
+        </div>
+        {/* Progress bar */}
+        <div className="h-0.5 bg-slate-700">
+          <div className="h-0.5 bg-emerald-500 transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         {/* Stage 1: Master Narrative */}
         {currentStage === 1 && (
           <div className="p-6 max-w-6xl mx-auto space-y-5">
@@ -689,7 +684,7 @@ CRITICAL RULES:
         </DialogContent>
       </Dialog>
     </div>
-  );
+  );  
 }
 
 function EditGuidance({ sections, grant, orgProfile }) {
