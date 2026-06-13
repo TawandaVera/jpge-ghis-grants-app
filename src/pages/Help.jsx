@@ -15,13 +15,14 @@ const SECTIONS = [
     badge: "Start Here",
     badgeColor: "bg-emerald-100 text-emerald-700",
     title: "Home",
-    summary: "Your home screen — see everything at a glance: what's a great fit, what needs your attention, and what's coming up.",
+    summary: "Your dashboard — see what's urgent, what fits best, and what to do next.",
     steps: [
-      "See all your matches sorted into Great Fit, Worth a Look, Maybe Later, and Skip.",
-      "Spot anything that needs your review before it moves forward.",
-      "Track total money won, how often you win, and upcoming due dates.",
-      "Use the chart to see which topics your opportunities fall under.",
-      "Download your matches as a spreadsheet anytime."
+      "Open the app. Your dashboard loads automatically.",
+      "Look at the 'This Week's Best Moves' card — these are the top opportunities to act on right now.",
+      "Check the colored stat cards to see how many opportunities you've found, scored, and applied for.",
+      "If a yellow alert appears at the top, something needs your attention — click 'Review Now' to handle it.",
+      "Scroll down to see charts showing deadlines and how your matches scored.",
+      "Click any step in the workflow bar (Find Funding → Score Matches → …) to jump to that section."
     ]
   },
   {
@@ -31,14 +32,15 @@ const SECTIONS = [
     badge: "Step 1",
     badgeColor: "bg-blue-100 text-blue-700",
     title: "Find Funding",
-    summary: "Find funding opportunities that fit your work — let the AI search for you, or add one yourself.",
+    summary: "Search for grants that match your work — by keyword, filters, quick presets, or a link you already have.",
     steps: [
-      "Set simple filters: topic, money amount, location, and how soon it's due.",
-      "Or just type what you're looking for in plain words (e.g., 'workforce grants in the Southwest under $500K').",
-      "The AI searches real sources and brings back matching opportunities.",
-      "See a quick log of what was found, skipped, or missed.",
-      "Have one in mind already? Add it yourself with the 'Add' form.",
-      "Click 'Score This' on any opportunity to see how good a fit it is."
+      "Click 'Find Funding' in the left menu.",
+      "Choose a tab: 'Quick Presets' for one-click searches, 'Filter & Search' to set your own criteria, 'Just Type It' to describe what you want in plain English, or 'Paste a Link' if you already have a grant URL.",
+      "For 'Paste a Link': paste the URL and click 'Look It Up'. The AI reads the page and shows you the details and requirements.",
+      "For all other tabs: click the green 'Search' or 'Find Funding' button to start the AI search.",
+      "Watch the Activity Log at the bottom — it shows each opportunity as it's found.",
+      "When the search finishes, a notification appears. Click 'Score them →' to go rate what was found.",
+      "To add a grant manually, click the '+ Add Manually' button and fill in the form."
     ]
   },
   {
@@ -48,14 +50,15 @@ const SECTIONS = [
     badge: "Step 2",
     badgeColor: "bg-violet-100 text-violet-700",
     title: "Score Matches",
-    summary: "The AI gives each opportunity a simple score based on how well it fits your organization.",
+    summary: "Let the AI rate each opportunity so you know which ones are worth your time.",
     steps: [
-      "Pick one or more opportunities and click 'Score' to let the AI rate them.",
-      "Each one gets a score out of 100, based on topic fit, whether you can apply, time left, and location.",
-      "You'll get a clear verdict: Great Fit, Worth a Look, Maybe Later, or Skip.",
-      "See which topics line up best with your work in a simple chart.",
-      "Add your own notes to any match.",
-      "Add the good ones to your list to start working on them."
+      "Click 'Score Matches' in the left menu.",
+      "Click the green 'Score Next 20' button. The AI scores each opportunity out of 100.",
+      "Wait about 30–60 seconds while it works. A summary appears when done.",
+      "Look at the Verdict column: 'Great Fit' = go for it, 'Worth a Look' = consider it, 'Maybe Later' = low priority, 'Skip' = not a match.",
+      "Click any row to open the full score breakdown — see exactly why it scored that way and what to do next.",
+      "Check the box next to one or more 'Great Fit' or 'Worth a Look' rows, then click 'Add to My List' to start working on them.",
+      "Click 'Topic Strength' tab to see which subjects your opportunities align with most."
     ]
   },
   {
@@ -65,13 +68,15 @@ const SECTIONS = [
     badge: "Step 3",
     badgeColor: "bg-amber-100 text-amber-700",
     title: "Track Progress",
-    summary: "A simple board to see where each application stands — and move it along as you go.",
+    summary: "See where every application stands and move each one forward as you go.",
     steps: [
-      "See each application as a card: Working On It → Sent In → Waiting to Hear Back → We Got It! or Not This Time.",
-      "Switch between Board view and List view with the tabs.",
-      "Click a card to move it forward or add notes.",
-      "Anything due soon is highlighted so you don't miss it.",
-      "Click 'Write with AI' on any card to jump straight into writing."
+      "Click 'Track Progress' in the left menu.",
+      "You'll see a board with columns: Working On It → Sent In → Waiting to Hear Back → We Got It! / Not This Time.",
+      "Each application appears as a card showing the grant name, funder, and days until the deadline.",
+      "Cards with a red warning have a deadline under 14 days — act on those first.",
+      "To move a card, use the dropdown at the bottom of the card to change its column.",
+      "Click 'Write with AI' on any card to jump straight into drafting that application.",
+      "Switch to 'List' view using the tabs at the top if you prefer a simple list over the board."
     ]
   },
   {
@@ -81,16 +86,15 @@ const SECTIONS = [
     badge: "Step 4",
     badgeColor: "bg-sky-100 text-sky-700",
     title: "Write with AI",
-    summary: "A step-by-step helper that writes your full application for you, one part at a time.",
+    summary: "The AI writes your full grant application for you, one section at a time.",
     steps: [
-      "Pick the opportunity you want to apply for.",
-      "The helper pulls in your organization's info automatically.",
-      "Add your past write-ups and mission statements so the AI sounds like you.",
-      "Check that the AI understands what the funder is asking for.",
-      "Match your stored content to each part of the application.",
-      "Let the AI write each part (summary, the need, goals, plan, and more). Edit anything you like.",
-      "Run a quick check to catch anything missing.",
-      "Get a final once-over with tips before you finish and download."
+      "Click 'Write with AI' in the left menu (or from any application card).",
+      "Step 1 — Add Your Story: paste or upload any past write-ups or mission statements. Click 'Break It Down'. The AI pulls out reusable content pieces. Review them, then click 'Approve & Continue'.",
+      "Step 2 — Your Org Info: check that your organization's details are filled in. Click 'Open Org Profile' to update if needed, then click 'Looks Good — Next Step'.",
+      "Step 3 — Pick One: select the opportunity you want to apply for from your list. Click 'Start Writing'.",
+      "Step 6 — Let AI Write: click the purple 'Draft' button next to each section. The AI writes it. Read it, edit if needed, then move to the next section.",
+      "Step 7 — Tips to Improve: click 'Get Tips' for the AI's suggestions on making the application stronger.",
+      "Step 8 — Finish Up: click 'AI Review', then 'Download PDF' or 'Download Word' to save your finished application."
     ]
   },
   {
@@ -100,14 +104,14 @@ const SECTIONS = [
     badge: "Step 5",
     badgeColor: "bg-rose-100 text-rose-700",
     title: "Finish & Download",
-    summary: "Put it all together and download a clean, ready-to-send document.",
+    summary: "Review readiness and download a clean document for any application you've started.",
     steps: [
-      "Your best opportunities with started applications show up on the left.",
-      "Click one to see which parts are done and which still need work.",
-      "Use the checklist on the right to make sure everything's ready.",
-      "Click 'Build Document' to put all the parts together.",
-      "Download it as a file — or grab a PDF from the last step of Write with AI.",
-      "Your finished text is saved so the AI can reuse it next time."
+      "Click 'Finish & Download' in the left menu.",
+      "Your in-progress applications appear on the left. Click one to open it.",
+      "A progress bar shows how many sections are complete.",
+      "Use the checklist on the right to confirm all pre-submission items are done.",
+      "Click 'Build & Download Document' to combine all sections into one file.",
+      "Your finished text is also saved automatically so the AI can reference it for future applications."
     ]
   },
   {
@@ -117,12 +121,13 @@ const SECTIONS = [
     badge: "Reference",
     badgeColor: "bg-teal-100 text-teal-700",
     title: "Funding Library",
-    summary: "A searchable library of every opportunity you've found, with all the details in one place.",
+    summary: "Browse and search every grant opportunity you've found or added.",
     steps: [
-      "Browse everything you've found or added, with filters by status, topic, and funder.",
-      "Click any one to see the full details: money amount, who can apply, topics, and due date.",
-      "Look things up quickly while you write or review.",
-      "Mark each as Open, Closed, or Coming Soon to keep your library tidy."
+      "Click 'Funding Library' in the left menu.",
+      "Use the search bar or filter dropdowns to find a specific grant by name, funder, or topic.",
+      "Click any row to see the full details: award amount, eligibility, deadline, requirements, and the source link.",
+      "Click the shield icon on any row to verify the grant at Grants.gov.",
+      "Use the Status filter to show only Open, Closed, or Coming Soon grants."
     ]
   },
   {
@@ -132,13 +137,14 @@ const SECTIONS = [
     badge: "Reference",
     badgeColor: "bg-orange-100 text-orange-700",
     title: "My Applications",
-    summary: "One place to see all your applications, where they stand, and how they turned out.",
+    summary: "A full list of every application you're working on or have completed.",
     steps: [
-      "See every application in one list: title, funder, stage, due date, and who's on it.",
-      "Filter by stage to focus on what needs attention.",
-      "Record how each one ended (Won, Not This Time, Withdrawn) and what you learned.",
-      "See how much you won compared to the time and money you put in.",
-      "Look back at past results to plan your next moves."
+      "Click 'My Applications' in the left menu.",
+      "See every application as a card with its name, funder, deadline, and current status.",
+      "Click the '+' button in any column to add a new application manually.",
+      "Use the dropdown on each card to move it to a new status (e.g., from 'Working On It' to 'Sent In').",
+      "Click the pencil icon to edit a card's details or add notes.",
+      "Click the clipboard icon to log a quick update (e.g., 'Submitted narrative for review')."
     ]
   },
   {
@@ -148,14 +154,15 @@ const SECTIONS = [
     badge: "Setup",
     badgeColor: "bg-indigo-100 text-indigo-700",
     title: "About My Org",
-    summary: "Tell us about your organization once — the AI uses it to score matches and write for you.",
+    summary: "Fill this in once — the AI uses it everywhere to write and score for you.",
     steps: [
-      "Enter your organization's name, mission, tax ID, and website.",
-      "List the topics you work on — this helps the AI find and score the right matches.",
-      "Set the areas you serve so location matters in your scores.",
-      "Add basic numbers: yearly budget, staff size, and your cost rates.",
-      "List any certifications and a short note on your past results.",
-      "Save it — the AI uses this everywhere automatically."
+      "Click 'About My Org' in the left menu.",
+      "Enter your organization's name, mission statement, and website.",
+      "Add your Tax ID (EIN) and SAM.gov UEI number if you have them.",
+      "Select the topics your org works on (e.g., Health Equity, Workforce Development).",
+      "Enter your yearly budget, number of staff, and cost rates (fringe and indirect).",
+      "Add a short note about past grants you've won and any certifications you hold.",
+      "Click 'Save Profile'. The AI will use this info automatically in every search and application."
     ]
   },
   {
@@ -165,13 +172,14 @@ const SECTIONS = [
     badge: "AI Tools",
     badgeColor: "bg-purple-100 text-purple-700",
     title: "Ask AI",
-    summary: "Chat with a helpful AI for advice, writing help, and reviewing items that need a decision.",
+    summary: "Chat directly with an AI that knows your data and can answer questions or give advice.",
     steps: [
-      "Pick a helper: the Advisor (advice, finding funding, writing help) or the Reviewer (helps you decide on items waiting for you).",
-      "Ask the Advisor anything: 'Which ones should we focus on?', 'Help me improve this section.', 'How are we doing overall?'",
-      "Use the Reviewer to go through items waiting for your okay and record your choices.",
-      "Your chats are saved — scroll back anytime.",
-      "The helpers can see and update your opportunities, applications, and notes."
+      "Click 'Ask AI' in the left menu.",
+      "Choose a helper: 'Advisor' for funding strategy and writing advice, or 'Reviewer' for help with decisions.",
+      "Click 'New Chat' to start a fresh conversation.",
+      "Type your question and press Enter. Example: 'Which grants should I focus on this week?' or 'Help me improve my needs statement.'",
+      "The AI can see your opportunities, scores, and applications — so its answers are specific to you.",
+      "Your past chats are saved in the left panel. Click any one to pick up where you left off."
     ]
   },
   {
@@ -181,13 +189,13 @@ const SECTIONS = [
     badge: "Settings",
     badgeColor: "bg-slate-100 text-slate-700",
     title: "My Workspace",
-    summary: "Manage your personal workspace settings, backups, and usage statistics.",
+    summary: "View your account details and back up your data.",
     steps: [
-      "View your workspace details: organization name, owner email, and current status.",
-      "See aggregate counts for grants and applications in your workspace.",
-      "Make a backup of your data anytime.",
-      "Update your workspace notes and status.",
-      "Admins can view and manage everyone's workspaces from Admin → Users."
+      "Click 'My Workspace' in the left menu.",
+      "See your organization name, account email, and workspace status.",
+      "Click 'Create Backup' to download a copy of your data at any time.",
+      "Update your workspace notes or status using the edit options on the page.",
+      "If you're an admin, click 'Admin: Users' in the menu to view and manage all workspaces."
     ]
   }
 ];
@@ -204,9 +212,9 @@ export default function Help() {
           <span className="text-white font-bold text-xl">CIE</span>
           <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 ml-2">User Guide</Badge>
         </div>
-        <h1 className="text-2xl font-bold mb-2">Capital Intelligence Engine — How It Works</h1>
+        <h1 className="text-2xl font-bold mb-2">How to Use This Platform</h1>
         <p className="text-slate-300 text-sm leading-relaxed max-w-2xl">
-          The JPGE Capital Intelligence Engine helps you find the right funding and apply with confidence. It walks you through every step — from finding opportunities to sending in a polished application — and does the heavy lifting for you.
+          Click any section below to see a step-by-step walkthrough. Each guide tells you exactly what to click, what you'll see, and what to do next — no jargon.
         </p>
         <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-400">
           <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Finds and scores funding for you</span>
