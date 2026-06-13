@@ -47,7 +47,7 @@ export default function CoPilot() {
 
   useEffect(() => {
     loadAll();
-    // If arriving from pipeline/assessment with a pre-selected app, auto-advance to drafting
+    // If arriving from tracker/assessment with a pre-selected app, auto-advance to drafting
     const params = new URLSearchParams(window.location.search);
     const appId = params.get("app_id");
     if (appId) {
@@ -74,7 +74,7 @@ export default function CoPilot() {
       setParsedBlocks(blocks);
       setHilPending(false);
     }
-    // Auto-select if coming from pipeline
+    // Auto-select if coming from tracker/assessment
     const params = new URLSearchParams(window.location.search);
     const appId = params.get("app_id");
     if (appId) {
@@ -377,7 +377,7 @@ CRITICAL RULES:
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <p className="font-medium text-sm text-slate-800">{block.section}</p>
                           <div className="flex items-center gap-1 shrink-0">
-                            {block.verified && <Badge className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">VERIFY</Badge>}
+                            {block.verified && <Badge className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">Check This</Badge>}
                             <button
                               onClick={() => { setEditingBlock(i); setEditContent(block.content); }}
                               className="text-xs text-emerald-600 hover:underline"
@@ -461,11 +461,11 @@ CRITICAL RULES:
             </div>
 
             {/* Existing applications in writing stage */}
-            {applications.filter(a => ["writing", "compliance_check", "review", "hil_review"].includes(a.stage)).length > 0 && (
+            {applications.filter(a => ["writing", "compliance_check", "review", "hil_review", "submission_ready"].includes(a.stage)).length > 0 && (
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Already Started</p>
                 <div className="space-y-2">
-                  {applications.filter(a => ["writing", "compliance_check", "review", "hil_review"].includes(a.stage)).map(app => (
+                  {applications.filter(a => ["writing", "compliance_check", "review", "hil_review", "submission_ready"].includes(a.stage)).map(app => (
                     <Card
                       key={app.id}
                       className={`cursor-pointer transition-all border-2 ${selectedApp?.id === app.id ? "border-purple-400 bg-purple-50" : "border-transparent hover:border-purple-200"}`}
@@ -482,7 +482,9 @@ CRITICAL RULES:
                           <p className="text-xs text-slate-500">{app.funder} · {Object.keys(app.sections || {}).length} parts written</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">{app.stage?.replace(/_/g, " ")}</Badge>
+                          <Badge variant="outline" className="text-xs">{
+                            { discovery: "Found", assessment: "Scored", writing: "Writing", compliance_check: "Checking", budget: "Budget", review: "Reviewing", hil_review: "Final Review", submission_ready: "Ready", submitted: "Sent In", awarded: "Won!", declined: "Not This Time" }[app.stage] || app.stage?.replace(/_/g, " ")
+                          }</Badge>
                           {selectedApp?.id === app.id && <CheckCircle2 className="w-5 h-5 text-purple-600" />}
                         </div>
                       </CardContent>
@@ -549,7 +551,7 @@ CRITICAL RULES:
           </div>
         )}
 
-        {/* Stage 4: Pipeline Board — managed in the dedicated Pipeline page */}
+        {/* Stage 4: Application List — managed in the dedicated Track Progress page */}
         {currentStage === 4 && (
           <div className="p-6 max-w-2xl mx-auto space-y-5">
             <StageGuide stageId={4} />
@@ -559,12 +561,14 @@ CRITICAL RULES:
             </div>
             <Card className="border-purple-200 bg-purple-50">
               <CardContent className="p-5 space-y-3">
-                <p className="text-purple-800 font-medium text-sm">You can manage all your applications on the Track Progress page.</p>
+                <p className="text-purple-800 font-medium text-sm">See all your applications and move them along on the Track Progress page.</p>
                 <div className="space-y-2">
                   {applications.filter(a => !["awarded", "declined"].includes(a.stage)).slice(0, 4).map(app => (
                     <div key={app.id} className="flex items-center justify-between bg-white rounded-lg border px-3 py-2 text-sm">
                       <span className="text-slate-700 truncate flex-1 mr-2">{app.grant_title}</span>
-                      <Badge variant="outline" className="text-xs shrink-0">{app.stage?.replace(/_/g, " ")}</Badge>
+                      <Badge variant="outline" className="text-xs shrink-0">{
+                        { discovery: "Found", assessment: "Scored", writing: "Writing", compliance_check: "Checking", budget: "Budget", review: "Reviewing", hil_review: "Final Review", submission_ready: "Ready", submitted: "Sent In", awarded: "Won!", declined: "Not This Time" }[app.stage] || app.stage?.replace(/_/g, " ")
+                      }</Badge>
                     </div>
                   ))}
                   {applications.length === 0 && <p className="text-slate-500 text-sm">Nothing yet. Finish Step 3 to add one.</p>}

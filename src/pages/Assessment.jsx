@@ -191,7 +191,7 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
     }
     setSendingToPipeline(false);
     setChecked({});
-    toast.success(`${added} grant(s) sent to pipeline`);
+    toast.success(`${added} grant(s) added to your list`);
   };
 
   const startDrafting = async (match) => {

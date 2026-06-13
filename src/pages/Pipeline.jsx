@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Kanban, List, Clock, AlertTriangle, Wand2 } from "lucide-react";
 import { differenceInDays } from "date-fns";
 
-// Simplified Kanban stages matching the copy app's working UX
+// Kanban stages for the board view
 const KANBAN_STAGES = [
   { key: "in_progress", label: "Working On It", dot: "bg-blue-500", color: "border-blue-200 bg-blue-50/50" },
   { key: "submitted", label: "Sent In", dot: "bg-purple-500", color: "border-purple-200 bg-purple-50/50" },
@@ -18,7 +18,7 @@ const KANBAN_STAGES = [
   { key: "declined", label: "Not This Time", dot: "bg-red-500", color: "border-red-200 bg-red-50/50" },
 ];
 
-// Full lifecycle stages for list view / backward compat
+// Full lifecycle stages for list view
 const STAGES = [
   { key: "discovery", label: "Found It" },
   { key: "assessment", label: "Scored" },
@@ -27,7 +27,7 @@ const STAGES = [
   { key: "compliance_check", label: "Checking Rules" },
   { key: "budget", label: "Budget" },
   { key: "review", label: "Reviewing" },
-  { key: "hil_review", label: "Final Review" },
+  { key: "hil_review", label: "Ready to Send" },
   { key: "submission_ready", label: "Ready to Send" },
   { key: "submitted", label: "Sent In" },
   { key: "awarded", label: "We Got It!" },
@@ -112,7 +112,7 @@ export default function Pipeline() {
     const stageMap = {
       in_progress: "writing",
       submitted: "submitted",
-      pending_decision: "hil_review",
+      pending_decision: "review",
       awarded: "awarded",
       declined: "declined",
     };
