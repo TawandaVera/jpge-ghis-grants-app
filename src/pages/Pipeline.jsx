@@ -206,11 +206,17 @@ function KanbanCard({ app, currentKanban, onMove, onDraft }) {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {["in_progress", "submitted", "pending_decision", "awarded", "declined"].map(k => (
-            <SelectItem key={k} value={k} className="text-xs">
-              {k.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
-            </SelectItem>
-          ))}
+        {[
+          { key: "in_progress", label: "Working On It" },
+          { key: "submitted", label: "Sent In" },
+          { key: "pending_decision", label: "Waiting to Hear Back" },
+          { key: "awarded", label: "We Got It!" },
+          { key: "declined", label: "Not This Time" },
+        ].map(({ key, label }) => (
+          <SelectItem key={key} value={key} className="text-xs">
+            {label}
+          </SelectItem>
+        ))}
         </SelectContent>
       </Select>
     </div>

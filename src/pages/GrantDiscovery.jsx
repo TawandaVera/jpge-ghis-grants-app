@@ -53,7 +53,7 @@ export default function GrantDiscovery() {
   const [selected, setSelected] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [auditLog, setAuditLog] = useState([]);
-  const [scanTab, setScanTab] = useState("filters");
+  const [scanTab, setScanTab] = useState("presets");
 
   // Scan parameters
   const [scanClass, setScanClass] = useState("all");
@@ -412,12 +412,18 @@ For each, classify actionability:
         <CardContent className="space-y-4">
 
           {/* Tab switcher */}
-          <div className="flex border border-slate-200 rounded-lg p-1 bg-slate-50 w-fit gap-1">
+          <div className="flex flex-wrap border border-slate-200 rounded-lg p-1 bg-slate-50 w-fit gap-1">
+            <button
+              onClick={() => setScanTab("presets")}
+              className={`px-4 py-1.5 text-xs rounded-md font-medium transition-colors ${scanTab === "presets" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+            >
+              ⚡ Quick Presets
+            </button>
             <button
               onClick={() => setScanTab("filters")}
               className={`px-4 py-1.5 text-xs rounded-md font-medium transition-colors ${scanTab === "filters" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
-              🔧 Pick Options
+              🔧 Filter & Search
             </button>
             <button
               onClick={() => setScanTab("freeform")}
@@ -433,26 +439,28 @@ For each, classify actionability:
             </button>
           </div>
 
+          {/* ── QUICK PRESETS TAB ── */}
+          {scanTab === "presets" && (
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500">Choose a preset to instantly configure a search — then hit Search Now.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {PRESETS.map(p => (
+                  <button
+                    key={p.label}
+                    onClick={() => { applyPreset(p); setScanTab("filters"); }}
+                    className="flex items-center gap-3 text-left px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
+                  >
+                    <span className="text-2xl">{p.icon}</span>
+                    <span className="text-sm font-medium">{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── GUIDED FILTERS TAB ── */}
           {scanTab === "filters" && (
             <div className="space-y-4">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Quick Presets
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {PRESETS.map(p => (
-                    <button
-                      key={p.label}
-                      onClick={() => applyPreset(p)}
-                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
-                    >
-                      <span>{p.icon}</span> {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
                   <label className="text-xs text-slate-500 mb-1 block">Class / Topic</label>

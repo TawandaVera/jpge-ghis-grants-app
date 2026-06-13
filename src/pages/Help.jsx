@@ -35,9 +35,11 @@ const SECTIONS = [
     summary: "Search for grants that match your work — by keyword, filters, quick presets, or a link you already have.",
     steps: [
       "Click 'Find Funding' in the left menu.",
-      "Choose a tab: 'Quick Presets' for one-click searches, 'Filter & Search' to set your own criteria, 'Just Type It' to describe what you want in plain English, or 'Paste a Link' if you already have a grant URL.",
-      "For 'Paste a Link': paste the URL and click 'Look It Up'. The AI reads the page and shows you the details and requirements.",
-      "For all other tabs: click the green 'Search' or 'Find Funding' button to start the AI search.",
+      "You'll see four tabs at the top: '⚡ Quick Presets', '🔧 Filter & Search', '✏️ Just Type It', and '🔗 Paste a Link'.",
+      "Quick Presets tab: click any preset card (e.g. 'Health Equity — Foundation Only') to auto-fill the filters, then click 'Search Now'.",
+      "Filter & Search tab: set your own topic, funder type, applicant type, and deadline window. Click 'More Options' to set dollar amounts and geography.",
+      "Just Type It tab: describe exactly what you want in plain English (e.g. 'SBIR grants for telehealth startups in the Southwest'). Click 'Search Now'.",
+      "Paste a Link tab: paste a grant URL and click 'Look It Up'. The AI reads the page and shows you all the details and requirements.",
       "Watch the Activity Log at the bottom — it shows each opportunity as it's found.",
       "When the search finishes, a notification appears. Click 'Score them →' to go rate what was found.",
       "To add a grant manually, click the '+ Add Manually' button and fill in the form."
@@ -89,12 +91,14 @@ const SECTIONS = [
     summary: "The AI writes your full grant application for you, one section at a time.",
     steps: [
       "Click 'Write with AI' in the left menu (or from any application card).",
-      "Step 1 — Add Your Story: paste or upload any past write-ups or mission statements. Click 'Break It Down'. The AI pulls out reusable content pieces. Review them, then click 'Approve & Continue'.",
+      "Step 1 — Your Story: paste or upload any past write-ups or mission statements. Click 'Break It Down'. The AI pulls out reusable content pieces. Review them, then click 'Approve & Continue'.",
       "Step 2 — Your Org Info: check that your organization's details are filled in. Click 'Open Org Profile' to update if needed, then click 'Looks Good — Next Step'.",
-      "Step 3 — Pick One: select the opportunity you want to apply for from your list. Click 'Start Writing'.",
-      "Step 6 — Let AI Write: click the purple 'Draft' button next to each section. The AI writes it. Read it, edit if needed, then move to the next section.",
-      "Step 7 — Tips to Improve: click 'Get Tips' for the AI's suggestions on making the application stronger.",
-      "Step 8 — Finish Up: click 'AI Review', then 'Download PDF' or 'Download Word' to save your finished application."
+      "Step 3 — Pick One: select the opportunity you want to apply for from your list. Click 'Start Writing' (or 'Keep Writing' if you've already started).",
+      "Step 4 — Your List: review where each of your applications stands. Click 'Open Track Progress' to manage them, then click 'Next Step' to continue.",
+      "Step 5 — Match Content: for each section of the application, tap the content pieces from Step 1 that belong there. This helps the AI write a more targeted draft.",
+      "Step 6 — Let AI Write: click the 'Draft' button next to each section (Executive Summary, Needs Statement, Goals, etc.). The AI writes it. Read it, edit if needed.",
+      "Step 7 — Tips to Improve: click 'Get Tips' for the AI's suggestions on making the application stronger. Click 'Regenerate' to get a fresh set of tips.",
+      "Step 8 — Finish Up: click 'Download PDF' or 'Download Word' to save your finished application. Your text is also saved automatically for future use."
     ]
   },
   {
