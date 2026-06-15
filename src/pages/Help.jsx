@@ -278,7 +278,7 @@ export default function Help() {
                   <ol className="space-y-2.5">
                     {section.steps.map((step, i) => (
                       <li key={i} className="flex items-start gap-3 text-sm">
-                        <span className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white ${section.color.replace("text-", "bg-")}`}>
+                        <span className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${section.color} ${section.color.replace("text-", "bg-").replace(/500$/, "100").replace(/400$/, "100")}`}>
                           {i + 1}
                         </span>
                         <span className="text-slate-700 leading-relaxed">{step}</span>
