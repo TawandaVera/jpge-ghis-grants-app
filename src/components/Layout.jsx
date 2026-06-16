@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Search, BarChart3, 
-  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList, FolderOpen, Users, Sparkles, HelpCircle
+  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList, FolderOpen, Users, Sparkles, HelpCircle, Layers
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,7 @@ const TOOLS = [
   { to: "/org-profile", label: "About My Org", icon: Building2 },
   { to: "/ai-assistant", label: "Ask AI", icon: Sparkles },
   { to: "/my-workspace", label: "My Workspace", icon: FolderOpen },
+  { to: "/tracks", label: "Tracks", icon: Layers },
 ];
 
 const ADMIN = [

@@ -90,6 +90,74 @@
     "fingerprint": {
       "type": "string",
       "description": "Deduplication hash"
+    },
+    "outcome_areas": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Health Equity",
+          "Leadership Development",
+          "Veterans",
+          "Workforce Development",
+          "Economic Mobility",
+          "Food Security",
+          "Climate Adaptation",
+          "Digital Equity",
+          "Housing",
+          "Education"
+        ]
+      },
+      "description": "Outcome areas this grant supports"
+    },
+    "populations_served": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Veterans",
+          "Alumni",
+          "Youth",
+          "BIPOC Communities",
+          "Women",
+          "Immigrants",
+          "Rural Communities",
+          "People with Disabilities",
+          "Seniors"
+        ]
+      },
+      "description": "Populations this grant serves"
+    },
+    "geographies": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "National",
+          "Regional",
+          "State-Specific",
+          "International",
+          "Southwest",
+          "Southeast",
+          "Midwest",
+          "Northeast",
+          "West Coast"
+        ]
+      },
+      "description": "Geographic focus of this grant"
+    },
+    "funding_type": {
+      "type": "string",
+      "enum": [
+        "federal_grant",
+        "family_foundation",
+        "private_foundation",
+        "hnwi",
+        "major_gift",
+        "corporate_giving"
+      ],
+      "default": "federal_grant",
+      "description": "Type of funding source"
     }
   },
   "required": [

@@ -1,0 +1,126 @@
+{
+  "name": "Track",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Track name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Track description"
+    },
+    "outcome_area_filters": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Health Equity",
+          "Leadership Development",
+          "Veterans",
+          "Workforce Development",
+          "Economic Mobility",
+          "Food Security",
+          "Climate Adaptation",
+          "Digital Equity",
+          "Housing",
+          "Education"
+        ]
+      },
+      "description": "Filter by outcome areas"
+    },
+    "population_filters": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Veterans",
+          "Alumni",
+          "Youth",
+          "BIPOC Communities",
+          "Women",
+          "Immigrants",
+          "Rural Communities",
+          "People with Disabilities",
+          "Seniors"
+        ]
+      },
+      "description": "Filter by populations served"
+    },
+    "geography_filters": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "National",
+          "Regional",
+          "State-Specific",
+          "International",
+          "Southwest",
+          "Southeast",
+          "Midwest",
+          "Northeast",
+          "West Coast"
+        ]
+      },
+      "description": "Filter by geographies"
+    },
+    "funding_type_filters": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "federal_grant",
+          "family_foundation",
+          "private_foundation",
+          "hnwi",
+          "major_gift",
+          "corporate_giving"
+        ]
+      },
+      "description": "Filter by funding types"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

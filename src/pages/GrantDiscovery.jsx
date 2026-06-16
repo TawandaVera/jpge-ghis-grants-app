@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search, Zap, ExternalLink, MapPin, Loader2, Plus, FileText, ShieldCheck, SlidersHorizontal, Sparkles } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
+import ChipSelector from "@/components/grants/ChipSelector";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import UrlImport from "@/components/discovery/UrlImport";
@@ -352,7 +353,7 @@ For each, classify actionability:
     });
     toast.success("Grant added");
     setShowAddForm(false);
-    setNewGrant({ title: "", funder: "", deadline: "", award_amount_min: "", award_amount_max: "", category: "health_equity", status: "open", description: "", eligibility: "", source_url: "" });
+    setNewGrant({ title: "", funder: "", deadline: "", award_amount_min: "", award_amount_max: "", status: "open", description: "", eligibility: "", source_url: "", outcome_areas: [], populations_served: [], geographies: [], funding_type: null });
     await loadGrants();
   };
 
@@ -720,6 +721,12 @@ For each, classify actionability:
               {selected.description && <div><p className="text-xs text-slate-500 mb-1">Description</p><p className="text-sm text-slate-700">{selected.description}</p></div>}
               {selected.eligibility && <div><p className="text-xs text-slate-500 mb-1">Eligibility</p><p className="text-sm text-slate-700">{selected.eligibility}</p></div>}
               {selected.geographic_scope && <div className="flex items-center gap-2 text-sm text-slate-600"><MapPin className="w-4 h-4" />{selected.geographic_scope}</div>}
+              <div className="border-t border-slate-100 pt-3 space-y-3">
+                <ChipSelector label="Outcome Areas" options={["Health Equity","Leadership Development","Veterans","Workforce Development","Economic Mobility","Food Security","Climate Adaptation","Digital Equity","Housing","Education"]} value={selected.outcome_areas || []} onChange={async v => { await base44.entities.Grant.update(selected.id, { outcome_areas: v }); setSelected(s => ({...s, outcome_areas: v})); }} />
+                <ChipSelector label="Populations Served" options={["Veterans","Alumni","Youth","BIPOC Communities","Women","Immigrants","Rural Communities","People with Disabilities","Seniors"]} value={selected.populations_served || []} onChange={async v => { await base44.entities.Grant.update(selected.id, { populations_served: v }); setSelected(s => ({...s, populations_served: v})); }} />
+                <ChipSelector label="Geographies" options={["National","Regional","State-Specific","International","Southwest","Southeast","Midwest","Northeast","West Coast"]} value={selected.geographies || []} onChange={async v => { await base44.entities.Grant.update(selected.id, { geographies: v }); setSelected(s => ({...s, geographies: v})); }} />
+                <ChipSelector label="Funding Type" options={["federal_grant","family_foundation","private_foundation","hnwi","major_gift","corporate_giving"]} value={selected.funding_type ? [selected.funding_type] : []} onChange={async v => { const val = v[v.length - 1] || null; await base44.entities.Grant.update(selected.id, { funding_type: val }); setSelected(s => ({...s, funding_type: val})); }} single />
+              </div>
               <div className="flex gap-3 pt-2 flex-wrap">
                 <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => addToApplication(selected)}>
                   Add to My List
@@ -754,17 +761,10 @@ For each, classify actionability:
               <Input placeholder="Max award $" type="number" value={newGrant.award_amount_max} onChange={e => setNewGrant(p => ({...p, award_amount_max: e.target.value}))} />
             </div>
             <Input type="date" value={newGrant.deadline} onChange={e => setNewGrant(p => ({...p, deadline: e.target.value}))} />
-            <Select value={newGrant.category} onValueChange={v => setNewGrant(p => ({...p, category: v}))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="health_equity">Health Equity</SelectItem>
-                <SelectItem value="digital_health">Digital Health</SelectItem>
-                <SelectItem value="workforce_development">Workforce Dev</SelectItem>
-                <SelectItem value="community_engagement">Community</SelectItem>
-                <SelectItem value="research">Research</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+            <ChipSelector label="Outcome Areas" options={["Health Equity","Leadership Development","Veterans","Workforce Development","Economic Mobility","Food Security","Climate Adaptation","Digital Equity","Housing","Education"]} value={newGrant.outcome_areas || []} onChange={v => setNewGrant(p => ({...p, outcome_areas: v}))} />
+            <ChipSelector label="Populations Served" options={["Veterans","Alumni","Youth","BIPOC Communities","Women","Immigrants","Rural Communities","People with Disabilities","Seniors"]} value={newGrant.populations_served || []} onChange={v => setNewGrant(p => ({...p, populations_served: v}))} />
+            <ChipSelector label="Geographies" options={["National","Regional","State-Specific","International","Southwest","Southeast","Midwest","Northeast","West Coast"]} value={newGrant.geographies || []} onChange={v => setNewGrant(p => ({...p, geographies: v}))} />
+            <ChipSelector label="Funding Type" options={["federal_grant","family_foundation","private_foundation","hnwi","major_gift","corporate_giving"]} value={newGrant.funding_type ? [newGrant.funding_type] : []} onChange={v => setNewGrant(p => ({...p, funding_type: v[v.length - 1] || null}))} single />
             <Input placeholder="Source URL (direct application link)" value={newGrant.source_url} onChange={e => setNewGrant(p => ({...p, source_url: e.target.value}))} />
             <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={saveNewGrant} disabled={!newGrant.title || !newGrant.funder}>Add It</Button>
           </div>
