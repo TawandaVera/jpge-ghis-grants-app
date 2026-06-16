@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Users, Search, ShieldCheck, AlertTriangle, ChevronRight, X } from "lucide-react";
+import { Loader2, Users, Search, AlertTriangle, ChevronRight, X, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -15,7 +15,7 @@ const CONFIDENCE_COLORS = {
 
 const PRIVATE_TYPES = ["family_foundation", "private_foundation", "hnwi"];
 
-function RunDetailPanel({ run, onClose }) {
+function RunDetailPanel({ run, onClose, onExport, exporting }) {
   const [tab, setTab] = useState("people");
   const individuals = run.linked_individuals || [];
   const causes = run.cause_signals || [];
@@ -48,7 +48,18 @@ function RunDetailPanel({ run, onClose }) {
               </span>
             </p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onExport}
+              disabled={exporting}
+              title="Export to Google Doc"
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium transition-colors disabled:opacity-50"
+            >
+              {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+              Export to Doc
+            </button>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -144,6 +155,7 @@ export default function DonorResearchPanel({ grant, currentUser }) {
   const [loading, setLoading] = useState(true);
   const [triggering, setTriggering] = useState(false);
   const [selectedRun, setSelectedRun] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const isPrivate = PRIVATE_TYPES.includes(grant?.funding_type);
 
@@ -153,6 +165,22 @@ export default function DonorResearchPanel({ grant, currentUser }) {
       .then(r => { setRuns(r); setLoading(false); })
       .catch(() => setLoading(false));
   }, [grant?.id]);
+
+  const exportToDoc = async (run) => {
+    setExporting(true);
+    try {
+      const res = await base44.functions.invoke("exportResearchRunToDoc", { run_id: run.id });
+      if (res.data?.doc_url) {
+        window.open(res.data.doc_url, "_blank");
+        toast.success("Google Doc created successfully!");
+      } else {
+        toast.error("Export failed — no doc URL returned.");
+      }
+    } catch (e) {
+      toast.error("Export failed: " + e.message);
+    }
+    setExporting(false);
+  };
 
   const triggerResearch = async () => {
     setTriggering(true);
@@ -248,7 +276,19 @@ export default function DonorResearchPanel({ grant, currentUser }) {
                 {run.linked_individuals?.length || 0} individual{(run.linked_individuals?.length || 0) !== 1 ? "s" : ""} found
               </p>
             </div>
-            {run.status === "complete" && <ChevronRight className="w-4 h-4 text-slate-400" />}
+            {run.status === "complete" && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); exportToDoc(run); }}
+                  disabled={exporting}
+                  title="Export to Google Doc"
+                  className="p-1 rounded hover:bg-purple-100 text-slate-400 hover:text-purple-600 transition-colors"
+                >
+                  {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                </button>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </div>
+            )}
             {run.status === "running" && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
             {run.status === "failed" && <AlertTriangle className="w-4 h-4 text-red-400" />}
           </div>
@@ -257,7 +297,12 @@ export default function DonorResearchPanel({ grant, currentUser }) {
 
       {/* Detail Side Panel */}
       {selectedRun && (
-        <RunDetailPanel run={selectedRun} onClose={() => setSelectedRun(null)} />
+        <RunDetailPanel
+          run={selectedRun}
+          onClose={() => setSelectedRun(null)}
+          onExport={() => exportToDoc(selectedRun)}
+          exporting={exporting}
+        />
       )}
     </div>
   );
