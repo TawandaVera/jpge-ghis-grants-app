@@ -1,0 +1,34 @@
+{
+  "name": "AppGuide",
+  "type": "object",
+  "properties": {
+    "doc_url": {
+      "type": "string",
+      "description": "Google Docs URL for the live app guide"
+    },
+    "doc_id": {
+      "type": "string",
+      "description": "Google Docs document ID"
+    },
+    "version": {
+      "type": "string",
+      "description": "Version label when this doc was generated"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the doc was last generated/updated"
+    }
+  },
+  "required": [],
+  "rls": {
+    "create": {},
+    "read": {},
+    "update": {},
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard, Search, BarChart3, Kanban, Bot, Package,
   BookOpen, ClipboardList, Building2, Sparkles, FolderOpen,
-  ChevronDown, ChevronRight, CheckCircle2, ArrowRight
+  ChevronDown, ChevronRight, CheckCircle2, ArrowRight, ExternalLink, FileText, RefreshCw
 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 const SECTIONS = [
   {
@@ -226,6 +227,32 @@ const SECTIONS = [
 
 export default function Help() {
   const [expanded, setExpanded] = useState(null);
+  const [guideUrl, setGuideUrl] = useState(null);
+  const [guideLoading, setGuideLoading] = useState(false);
+  const [guideDate, setGuideDate] = useState(null);
+
+  useEffect(() => {
+    base44.entities.AppGuide.list().then(records => {
+      if (records.length > 0 && records[0].doc_url) {
+        setGuideUrl(records[0].doc_url);
+        setGuideDate(records[0].generated_at);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const generateGuide = async () => {
+    setGuideLoading(true);
+    try {
+      const res = await base44.functions.invoke('generateAppGuideDoc', {});
+      if (res.data?.doc_url) {
+        setGuideUrl(res.data.doc_url);
+        setGuideDate(new Date().toISOString());
+      }
+    } catch (e) {
+      // silently fail — user will see the button again
+    }
+    setGuideLoading(false);
+  };
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -257,6 +284,53 @@ export default function Help() {
           </div>
         ))}
         <span className="text-xs text-slate-400 ml-1">+ supporting tools</span>
+      </div>
+
+      {/* Full Guide Link */}
+      <div className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div className="p-2.5 bg-blue-50 rounded-lg shrink-0">
+          <FileText className="w-5 h-5 text-blue-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-slate-800">Complete User Guide & Function Reference</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {guideDate
+              ? `Auto-updated Google Doc · Last generated ${new Date(guideDate).toLocaleDateString()}`
+              : "Exhaustive documentation for every feature — hosted as a Google Doc, auto-updated weekly."}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {guideUrl ? (
+            <>
+              <a
+                href={guideUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Open Guide
+              </a>
+              <button
+                onClick={generateGuide}
+                disabled={guideLoading}
+                title="Regenerate the guide now"
+                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${guideLoading ? "animate-spin" : ""}`} />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={generateGuide}
+              disabled={guideLoading}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50"
+            >
+              {guideLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+              {guideLoading ? "Generating…" : "Generate Guide Doc"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Sections */}
