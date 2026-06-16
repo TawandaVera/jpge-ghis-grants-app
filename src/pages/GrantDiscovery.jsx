@@ -180,7 +180,13 @@ Return 5–8 confirmed real opportunities. Return fewer if you cannot find enoug
 For each, classify actionability:
 - PASS: Real grant, direct URL confirmed, deadline future-dated
 - NEEDS_VERIFICATION: Real grant found but URL or eligibility needs manual confirmation
-- REJECTED: Cannot confirm real source — DO NOT include these in output`;
+- REJECTED: Cannot confirm real source — DO NOT include these in output
+
+Also for each grant, populate these CIE classification fields using ONLY values from these exact lists:
+- outcome_areas: pick all that apply from ["Health Equity","Leadership Development","Veterans","Workforce Development","Economic Mobility","Food Security","Climate Adaptation","Digital Equity","Housing","Education"]
+- populations_served: pick all that apply from ["Veterans","Alumni","Youth","BIPOC Communities","Women","Immigrants","Rural Communities","People with Disabilities","Seniors"]
+- geographies: pick all that apply from ["National","Regional","State-Specific","International","Southwest","Southeast","Midwest","Northeast","West Coast"]
+- funding_type: pick ONE from ["federal_grant","family_foundation","private_foundation","hnwi","major_gift","corporate_giving"]`;
       } else {
         log(`Scan: class=${scanClass}, funder=${scanFunderType}, applicant=${scanApplicantType}, deadline=${scanDeadlineDays}d${scanLowHanging ? ", LOW-HANGING" : ""}${scanKeywords ? `, kw="${scanKeywords}"` : ""}`);
 
@@ -235,7 +241,13 @@ Return 5–8 confirmed real opportunities. Return fewer if you cannot find enoug
 For each, classify actionability:
 - PASS: Real grant, direct URL confirmed, deadline within window
 - NEEDS_VERIFICATION: Real grant found but URL or eligibility needs manual confirmation
-- REJECTED: Cannot confirm real source — DO NOT include these in the output`;
+- REJECTED: Cannot confirm real source — DO NOT include these in the output
+
+Also for each grant, populate these CIE classification fields using ONLY values from these exact lists:
+- outcome_areas: pick all that apply from ["Health Equity","Leadership Development","Veterans","Workforce Development","Economic Mobility","Food Security","Climate Adaptation","Digital Equity","Housing","Education"]
+- populations_served: pick all that apply from ["Veterans","Alumni","Youth","BIPOC Communities","Women","Immigrants","Rural Communities","People with Disabilities","Seniors"]
+- geographies: pick all that apply from ["National","Regional","State-Specific","International","Southwest","Southeast","Midwest","Northeast","West Coast"]
+- funding_type: pick ONE from ["federal_grant","family_foundation","private_foundation","hnwi","major_gift","corporate_giving"]`;
       }
 
       const result = await base44.integrations.Core.InvokeLLM({
@@ -264,7 +276,11 @@ For each, classify actionability:
                   source_url: { type: "string" },
                   actionability: { type: "string" },
                   why_actionable: { type: "string" },
-                  needs_verification: { type: "array", items: { type: "string" } }
+                  needs_verification: { type: "array", items: { type: "string" } },
+                  outcome_areas: { type: "array", items: { type: "string" } },
+                  populations_served: { type: "array", items: { type: "string" } },
+                  geographies: { type: "array", items: { type: "string" } },
+                  funding_type: { type: "string" }
                 }
               }
             },
@@ -375,6 +391,64 @@ For each, classify actionability:
       toast.error("Discovery failed: " + e.message);
     }
     setDiscovering(false);
+  };
+
+  const autoTagGrant = async (grant) => {
+    // Skip if already tagged
+    const hasAnyTags = (grant.outcome_areas?.length > 0) || (grant.populations_served?.length > 0) || (grant.geographies?.length > 0) || grant.funding_type;
+    if (hasAnyTags) return grant;
+
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a grant classification assistant. Based on the grant details below, classify it using ONLY the exact values from the enums provided.
+
+Grant Title: ${grant.title}
+Funder: ${grant.funder}
+Description: ${grant.description || ""}
+Eligibility: ${grant.eligibility || ""}
+Focus Areas: ${(grant.focus_areas || []).join(", ")}
+Geographic Scope: ${grant.geographic_scope || ""}
+Category: ${grant.category || ""}
+
+Classify into:
+- outcome_areas: array from ["Health Equity","Leadership Development","Veterans","Workforce Development","Economic Mobility","Food Security","Climate Adaptation","Digital Equity","Housing","Education"]
+- populations_served: array from ["Veterans","Alumni","Youth","BIPOC Communities","Women","Immigrants","Rural Communities","People with Disabilities","Seniors"]
+- geographies: array from ["National","Regional","State-Specific","International","Southwest","Southeast","Midwest","Northeast","West Coast"]
+- funding_type: one of ["federal_grant","family_foundation","private_foundation","hnwi","major_gift","corporate_giving"] — infer from funder name
+
+Only include values that clearly apply. Return empty arrays if uncertain.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            outcome_areas: { type: "array", items: { type: "string" } },
+            populations_served: { type: "array", items: { type: "string" } },
+            geographies: { type: "array", items: { type: "string" } },
+            funding_type: { type: "string" }
+          }
+        }
+      });
+
+      const tags = {
+        outcome_areas: result.outcome_areas || [],
+        populations_served: result.populations_served || [],
+        geographies: result.geographies || [],
+        funding_type: result.funding_type || null
+      };
+
+      await base44.entities.Grant.update(grant.id, tags);
+      // Update local grants list too
+      setGrants(prev => prev.map(g => g.id === grant.id ? { ...g, ...tags } : g));
+      return { ...grant, ...tags };
+    } catch (e) {
+      // Tagging failed silently — don't block the dialog
+      return grant;
+    }
+  };
+
+  const openGrantDetail = async (grant) => {
+    setSelected(grant); // show immediately
+    const tagged = await autoTagGrant(grant);
+    if (tagged !== grant) setSelected(tagged); // update with tags if changed
   };
 
   const addToApplication = async (grant) => {
@@ -803,7 +877,7 @@ For each, classify actionability:
                 const days = grant.deadline ? differenceInDays(new Date(grant.deadline), new Date()) : null;
                 const isUrgent = days !== null && days >= 0 && days < 30;
                 return (
-                  <tr key={grant.id} className="hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => setSelected(grant)}>
+                  <tr key={grant.id} className="hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => openGrantDetail(grant)}>
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-800 truncate max-w-52">{grant.title}</p>
                       {((grant.outcome_areas?.length > 0) || (grant.populations_served?.length > 0) || (grant.geographies?.length > 0)) && (
