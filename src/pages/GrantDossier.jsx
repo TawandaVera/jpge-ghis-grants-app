@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Search, ExternalLink, ShieldCheck, Loader2, TrendingUp, Calendar, DollarSign, CheckCircle2, AlertTriangle, ClipboardList } from "lucide-react";
+import { BookOpen, Search, ExternalLink, ShieldCheck, Loader2, TrendingUp, Calendar, DollarSign, CheckCircle2, AlertTriangle, ClipboardList, Users } from "lucide-react";
 import DonorResearchPanel from "@/components/dossier/DonorResearchPanel";
 import { useNavigate } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
@@ -421,7 +421,9 @@ Generate a strategic dossier that includes:
               )}
 
               {/* Donor Intelligence */}
-              <DonorResearchPanel grant={selected?.grant} currentUser={currentUser} />
+              <div id="donor-research-panel">
+                <DonorResearchPanel grant={selected?.grant} currentUser={currentUser} />
+              </div>
 
               {/* Action buttons */}
               <div className="flex gap-3 flex-wrap pt-1">
@@ -437,6 +439,15 @@ Generate a strategic dossier that includes:
                 >
                   <ShieldCheck className="w-4 h-4" /> Verify on GrantedAI
                 </Button>
+                {["family_foundation", "private_foundation", "hnwi"].includes(selected.grant.funding_type) && (
+                  <Button
+                    variant="outline"
+                    className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+                    onClick={() => document.getElementById("donor-research-panel")?.scrollIntoView({ behavior: "smooth" })}
+                  >
+                    <Users className="w-4 h-4" /> Donor Research
+                  </Button>
+                )}
               </div>
             </div>
           )}
