@@ -125,13 +125,17 @@ const SECTIONS = [
     badge: "Reference",
     badgeColor: "bg-teal-100 text-teal-700",
     title: "Funding Library",
-    summary: "Browse and search every grant opportunity you've found or added.",
+    summary: "Deep-dive into scored opportunities — get AI game plans, verify sources, and research the people behind foundations.",
     steps: [
       "Click 'Funding Library' in the left menu.",
-      "Use the search bar or filter dropdowns to find a specific grant by name, funder, or topic.",
-      "Click any row to see the full details: award amount, eligibility, deadline, requirements, and the source link.",
-      "Click the shield icon on any row to verify the grant at Grants.gov.",
-      "Use the Status filter to show only Open, Closed, or Coming Soon grants."
+      "Use the search bar or the 'Show all / Great Fit / Worth a Look' filter to find specific grants.",
+      "Click any grant card to open the full detail dialog.",
+      "In the dialog, click 'Build a Game Plan' — the AI generates an executive brief, fit reasons, risks, and a step-by-step application strategy.",
+      "Click 'Verify on GrantedAI' to cross-check the opportunity against GrantedAI's grant database in a new tab.",
+      "For family foundations, private foundations, and HNWI funders, a purple 'Donor Research' button appears — click it to scroll down to the Donor Intelligence panel.",
+      "In the Donor Intelligence panel, click 'Investigate people behind this grant' to identify board members, trustees, and principals and map their cause affinities.",
+      "Once research completes, click the document icon (or 'Export to Doc' in the detail view) to generate a formatted Google Doc your team can review together.",
+      "Past research runs are saved — click any run in the history list to review individuals, cause signals, evidence trail, and outreach angles."
     ]
   },
   {
@@ -184,6 +188,22 @@ const SECTIONS = [
       "Type your question and press Enter. Example: 'Which grants should I focus on this week?' or 'Help me improve my needs statement.'",
       "The AI can see your opportunities, scores, and applications — so its answers are specific to you.",
       "Your past chats are saved in the left panel. Click any one to pick up where you left off."
+    ]
+  },
+  {
+    icon: Sparkles,
+    color: "text-violet-500",
+    bg: "bg-violet-50 border-violet-200",
+    badge: "Filters",
+    badgeColor: "bg-violet-100 text-violet-700",
+    title: "Tracks",
+    summary: "Create saved filter sets that auto-focus your grant discovery on a specific mission area, population, or funding type.",
+    steps: [
+      "Click 'Tracks' in the left menu.",
+      "Click 'New Track' to create a track — give it a name and select your filters: outcome areas, populations served, geographies, and funding types.",
+      "Save the track. It appears in your tracks list.",
+      "In 'Find Funding', click the Tracks tab to load a saved track — it pre-fills all the filters for you so you can search instantly.",
+      "Tracks are especially useful when you manage multiple program areas with different funding needs."
     ]
   },
   {
