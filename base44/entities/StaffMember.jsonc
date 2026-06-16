@@ -1,0 +1,166 @@
+{
+  "name": "StaffMember",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Staff member's full name"
+    },
+    "title": {
+      "type": "string",
+      "description": "Job title / role"
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "Leadership",
+        "Programs",
+        "Finance",
+        "Research",
+        "Communications",
+        "Operations",
+        "Clinical",
+        "Technology",
+        "Other"
+      ],
+      "default": "Programs"
+    },
+    "employment_type": {
+      "type": "string",
+      "enum": [
+        "Full-time",
+        "Part-time",
+        "Contractor",
+        "Volunteer"
+      ],
+      "default": "Full-time"
+    },
+    "fte": {
+      "type": "number",
+      "description": "FTE allocation (0.0 \u2013 1.0)",
+      "default": 1.0
+    },
+    "education": {
+      "type": "string",
+      "description": "Highest degree / credential (e.g. MPH, MBA, PhD)"
+    },
+    "years_experience": {
+      "type": "number",
+      "description": "Years of relevant experience"
+    },
+    "core_competencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Key skills and competencies (e.g. Grant Writing, Data Analysis, Community Outreach)"
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Professional certifications held"
+    },
+    "focus_areas": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Health Equity",
+          "Digital Health",
+          "Workforce Development",
+          "Community Engagement",
+          "Research",
+          "Finance & Compliance",
+          "Leadership",
+          "Clinical Services",
+          "Policy & Advocacy",
+          "Technology & Data"
+        ]
+      },
+      "description": "Domain focus areas this staff member covers"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Languages spoken (e.g. English, Spanish)"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Short professional bio for use in proposals"
+    },
+    "grant_roles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Principal Investigator",
+          "Co-Investigator",
+          "Project Director",
+          "Program Manager",
+          "Evaluator",
+          "Budget Manager",
+          "Community Liaison",
+          "Subject Matter Expert",
+          "Support Staff"
+        ]
+      },
+      "description": "Roles this person can fill on a grant project"
+    },
+    "availability_note": {
+      "type": "string",
+      "description": "Current availability or constraints for new projects"
+    },
+    "is_key_personnel": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag as key personnel for proposals"
+    }
+  },
+  "required": [
+    "full_name",
+    "title"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

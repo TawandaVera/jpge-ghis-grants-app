@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Save, Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
+import StaffCapacitySection from "@/components/org/StaffCapacitySection";
 
 const GHIS_DEFAULTS = {
   org_name: "GHIS LLC",
@@ -164,6 +165,9 @@ export default function OrgProfile() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Staff & HR Capacity */}
+        <StaffCapacitySection />
 
         {/* Past Performance */}
         <Card>
