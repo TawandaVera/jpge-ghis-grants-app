@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, Search, ExternalLink, ShieldCheck, Loader2, TrendingUp, Calendar, DollarSign, CheckCircle2, AlertTriangle, ClipboardList } from "lucide-react";
+import DonorResearchPanel from "@/components/dossier/DonorResearchPanel";
 import { useNavigate } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
 import { format, differenceInDays } from "date-fns";
@@ -26,6 +27,7 @@ export default function GrantDossier() {
   const [matches, setMatches] = useState([]);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
   const [search, setSearch] = useState("");
   const [recFilter, setRecFilter] = useState("all");
   const [selected, setSelected] = useState(null);
@@ -46,7 +48,10 @@ export default function GrantDossier() {
       setLoading(false);
     });
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    base44.auth.me().then(u => setCurrentUser(u)).catch(() => {});
+  }, []);
 
   const getMatch = (grantId) => matches.find(m => m.grant_id === grantId);
 
@@ -414,6 +419,9 @@ Generate a strategic dossier that includes:
                   </Button>
                 </div>
               )}
+
+              {/* Donor Intelligence */}
+              <DonorResearchPanel grant={selected?.grant} currentUser={currentUser} />
 
               {/* Action buttons */}
               <div className="flex gap-3 flex-wrap pt-1">

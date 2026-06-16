@@ -1,0 +1,98 @@
+{
+  "name": "ResearchRun",
+  "type": "object",
+  "properties": {
+    "grant_id": {
+      "type": "string",
+      "description": "Reference to Grant entity"
+    },
+    "triggered_by": {
+      "type": "string",
+      "description": "User name or ID who triggered this run"
+    },
+    "run_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this run was created"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "running",
+        "complete",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "linked_individuals": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Array of person objects found"
+    },
+    "cause_signals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Recurring cause theme strings"
+    },
+    "evidence_trail": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Array of evidence objects with source, type, date, summary"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "Overall confidence score 0\u2013100"
+    },
+    "raw_output": {
+      "type": "string",
+      "description": "Raw LLM/API output"
+    }
+  },
+  "required": [
+    "grant_id",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
