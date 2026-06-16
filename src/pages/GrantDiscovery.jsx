@@ -69,6 +69,11 @@ export default function GrantDiscovery() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [customSearchText, setCustomSearchText] = useState("");
 
+  // CIE scan dimensions
+  const [scanOutcomeAreas, setScanOutcomeAreas] = useState([]);
+  const [scanPopulations, setScanPopulations] = useState([]);
+  const [scanGeographies, setScanGeographies] = useState([]);
+
   const [newGrant, setNewGrant] = useState({
     title: "", funder: "", deadline: "", award_amount_min: "", award_amount_max: "",
     category: "health_equity", status: "open", description: "", eligibility: "", source_url: ""
@@ -197,6 +202,9 @@ For each, classify actionability:
 
         const keywordFilter = scanKeywords ? `\nKEYWORD FOCUS: Prioritize grants specifically related to: ${scanKeywords}` : "";
         const geoFilter = scanGeo ? `\nGEOGRAPHIC SCOPE: Focus on grants available in or targeting: ${scanGeo}` : "";
+        const outcomeFilter = scanOutcomeAreas.length > 0 ? `\nOUTCOME AREAS: Prioritize grants that align with these outcome areas: ${scanOutcomeAreas.join(", ")}` : "";
+        const populationFilter = scanPopulations.length > 0 ? `\nPOPULATIONS SERVED: Prioritize grants targeting these populations: ${scanPopulations.join(", ")}` : "";
+        const geographyFilter = scanGeographies.length > 0 ? `\nGEOGRAPHIC FOCUS AREAS: Prioritize grants targeting these regions: ${scanGeographies.join(", ")}` : "";
 
         prompt = `You are the Grant Discovery Agent for GHIS LLC (Global Health Innovation Solutions), a health innovation consultancy serving 14 states.
 
@@ -210,7 +218,7 @@ SCAN PARAMETERS:
 - APPLICANT TYPE: ${applicantFilter}
 - Award range: $${scanMinAmount}–$${scanMaxAmount}
 - Deadline: MUST be between ${new Date().toISOString().split("T")[0]} and ${new Date(Date.now() + Number(scanDeadlineDays) * 86400000).toISOString().split("T")[0]} (within ${scanDeadlineDays} days)
-${keywordFilter}${geoFilter}${lowHangingFilter}
+${keywordFilter}${geoFilter}${outcomeFilter}${populationFilter}${geographyFilter}${lowHangingFilter}
 
 CRITICAL RULES:
 1. REAL GRANTS ONLY — Search grants.gov, HRSA.gov, CDC.gov, SAMHSA.gov, RWJF.org, foundation directories, etc. right now.
@@ -549,6 +557,28 @@ For each, classify actionability:
                 </div>
               </div>
 
+              {/* CIE Dimensions — always visible */}
+              <div className="space-y-3 pt-2 border-t border-slate-100">
+                <ChipSelector
+                  label="Outcome Areas"
+                  options={["Health Equity","Leadership Development","Veterans","Workforce Development","Economic Mobility","Food Security","Climate Adaptation","Digital Equity","Housing","Education"]}
+                  value={scanOutcomeAreas}
+                  onChange={setScanOutcomeAreas}
+                />
+                <ChipSelector
+                  label="Populations Served"
+                  options={["Veterans","Alumni","Youth","BIPOC Communities","Women","Immigrants","Rural Communities","People with Disabilities","Seniors"]}
+                  value={scanPopulations}
+                  onChange={setScanPopulations}
+                />
+                <ChipSelector
+                  label="Geographies"
+                  options={["National","Regional","State-Specific","International","Southwest","Southeast","Midwest","Northeast","West Coast"]}
+                  value={scanGeographies}
+                  onChange={setScanGeographies}
+                />
+              </div>
+
               {showAdvanced && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
                   <div>
@@ -560,7 +590,7 @@ For each, classify actionability:
                     <Input value={scanMaxAmount} onChange={e => setScanMaxAmount(e.target.value)} type="number" />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Geographic Focus</label>
+                    <label className="text-xs text-slate-500 mb-1 block">Additional Geographic Notes</label>
                     <Input value={scanGeo} onChange={e => setScanGeo(e.target.value)} placeholder="e.g. Southeast US, Texas, rural..." />
                   </div>
                   <div className="md:col-span-3">
