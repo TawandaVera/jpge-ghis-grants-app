@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload, CheckCircle2, AlertTriangle, Loader2, Wand2, RefreshCw, Save, ChevronRight, ExternalLink } from "lucide-react";
 import FinalPackStage from "@/components/copilot/FinalPackStage";
+import ContentQAPanel from "@/components/copilot/ContentQAPanel";
 import Stage6Draft from "@/components/copilot/Stage6Draft";
 import StageGuide from "@/components/copilot/StageGuide";
 import { toast } from "sonner";
@@ -361,10 +362,7 @@ CRITICAL RULES:
 
               {/* Parsed Blocks */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-slate-800">Your Content, Sorted</h3>
-                  {parsedBlocks.length > 0 && <Badge variant="outline">{parsedBlocks.length} pieces</Badge>}
-                </div>
+                <ContentQAPanel parsedBlocks={parsedBlocks} onUpdateBlocks={setParsedBlocks} />
                 <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
                   {parsedBlocks.map((block, i) => (
                     <Card key={i} className="border-slate-200">
