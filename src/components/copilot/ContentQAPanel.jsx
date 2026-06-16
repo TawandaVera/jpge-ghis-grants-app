@@ -127,14 +127,18 @@ Return only real issues, not style preferences. Be concise.`,
   const mergeBlocks = (idxA, idxB) => {
     const a = parsedBlocks[idxA];
     const b = parsedBlocks[idxB];
+    if (!a || !b) return;
     const merged = {
       ...a,
-      content: `${a.content?.trim()}\n\n${b.content?.trim()}`,
+      content: `${a.content?.trim() || ""}\n\n${b.content?.trim() || ""}`.trim(),
     };
-    const updated = parsedBlocks.filter((_, i) => i !== idxA && i !== idxB);
-    updated.splice(Math.min(idxA, idxB), 0, merged);
+    const minIdx = Math.min(idxA, idxB);
+    const maxIdx = Math.max(idxA, idxB);
+    const updated = parsedBlocks.filter((_, i) => i !== minIdx && i !== maxIdx);
+    updated.splice(minIdx, 0, merged);
     onUpdateBlocks(updated);
-    setIssues(prev => prev.filter(iss => !(iss.indices.includes(idxA) && iss.indices.includes(idxB))));
+    setIssues([]);
+    setAiFlags([]);
     toast.success(`Merged into "${merged.section}"`);
   };
 
