@@ -31,6 +31,7 @@ export default function CoPilot() {
   const [editingBlock, setEditingBlock] = useState(null);
   const [editContent, setEditContent] = useState("");
   const [savedNarratives, setSavedNarratives] = useState([]);
+  const [staffMembers, setStaffMembers] = useState([]);
   const [sectionMap, setSectionMap] = useState({});
   const [highQuality, setHighQuality] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -58,18 +59,20 @@ export default function CoPilot() {
 
   const loadAll = async () => {
     setLoading(true);
-    const [profiles, g, m, a, narratives] = await Promise.all([
+    const [profiles, g, m, a, narratives, staff] = await Promise.all([
       base44.entities.OrgProfile.list(),
       base44.entities.Grant.list("-created_date", 100),
       base44.entities.GrantMatch.list("-total_score", 200),
       base44.entities.GrantApplication.list("-created_date", 100),
       base44.entities.MasterNarrative.list(),
+      base44.entities.StaffMember.list(),
     ]);
     setOrgProfile(profiles[0] || null);
     setGrants(g);
     setMatches(m.filter(mm => ["GO", "PREP"].includes(mm.recommendation)));
     setApplications(a);
     setSavedNarratives(narratives);
+    setStaffMembers(staff);
     if (narratives.length > 0) {
       const blocks = narratives.map(n => ({ section: n.section, content: n.content, approved: n.approved }));
       setParsedBlocks(blocks);
@@ -197,6 +200,19 @@ CERTIFICATIONS: ${(orgProfile.compliance_certifications || []).join(", ") || "N/
 CAPACITY NOTES: ${orgProfile.capacity_notes || "N/A"}`.trim()
         : "JPGE — health grant management organization.";
 
+      // Staff / HR capacity context
+      const keyPersonnel = staffMembers.filter(s => s.is_key_personnel);
+      const staffCtx = staffMembers.length > 0 ? `
+TOTAL STAFF: ${staffMembers.length} (Key Personnel: ${keyPersonnel.length})
+${keyPersonnel.slice(0, 6).map(s =>
+  `- ${s.full_name}, ${s.title} (${s.department}) | FTE: ${s.fte || 1.0} | Education: ${s.education || "N/A"} | Experience: ${s.years_experience || "N/A"} yrs | Competencies: ${(s.core_competencies || []).join(", ") || "N/A"} | Grant Roles: ${(s.grant_roles || []).join(", ") || "N/A"}${s.bio ? `\n  Bio: ${s.bio.substring(0, 200)}` : ""}`
+).join("\n")}
+${staffMembers.filter(s => !s.is_key_personnel).length > 0 ? `SUPPORTING STAFF DEPARTMENTS: ${[...new Set(staffMembers.filter(s => !s.is_key_personnel).map(s => s.department))].join(", ")}` : ""}
+FOCUS AREAS COVERED: ${[...new Set(staffMembers.flatMap(s => s.focus_areas || []))].join(", ")}
+LANGUAGES: ${[...new Set(staffMembers.flatMap(s => s.languages || []))].join(", ") || "English"}
+CERTIFICATIONS HELD BY STAFF: ${[...new Set(staffMembers.flatMap(s => s.certifications || []))].join(", ") || "N/A"}`.trim()
+        : "No staff records on file — use org profile capacity notes.";
+
       // Match/assessment rationale if available
       const matchData = matches.find(mm => mm.grant_id === selectedGrant.id);
       const matchCtx = matchData ? `
@@ -237,6 +253,9 @@ DEADLINE: ${selectedGrant.deadline || "N/A"}
 
 ═══ ORGANIZATION PROFILE (DO NOT ASK USER TO FILL THIS IN — DRAW FROM THIS DATA) ═══
 ${orgCtx}
+
+═══ STAFF & HR CAPACITY (USE FOR ORGANIZATIONAL CAPACITY, METHODOLOGY, PERSONNEL SECTIONS) ═══
+${staffCtx}
 
 ${matchCtx ? `═══ ASSESSMENT INTELLIGENCE ═══\n${matchCtx}\n` : ""}
 ═══ MASTER NARRATIVE LIBRARY (DRAW FROM THESE BLOCKS) ═══
@@ -665,6 +684,7 @@ CRITICAL RULES:
             orgProfile={orgProfile}
             parsedBlocks={parsedBlocks}
             matches={matches}
+            staffMembers={staffMembers}
             onSaveAndContinue={async () => {
               await base44.entities.GrantApplication.update(selectedApp.id, { sections });
               toast.success("All parts saved");

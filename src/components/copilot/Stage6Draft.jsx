@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertTriangle, Loader2, Wand2, Save, ChevronRight, Database, BookOpen, BarChart2, FileText } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Loader2, Wand2, Save, ChevronRight, Database, BookOpen, BarChart2, FileText, Users } from "lucide-react";
 import { toast } from "sonner";
 import { SECTION_KEYS } from "@/lib/grantConstants";
 import StageGuide from "@/components/copilot/StageGuide";
@@ -12,7 +12,7 @@ import StageGuide from "@/components/copilot/StageGuide";
 export default function Stage6Draft({
   selectedGrant, selectedApp, sections, setSections,
   drafting, setDrafting, draftSection,
-  orgProfile, parsedBlocks, matches,
+  orgProfile, parsedBlocks, matches, staffMembers = [],
   onSaveAndContinue
 }) {
   const [draftingAll, setDraftingAll] = useState(false);
@@ -46,6 +46,14 @@ export default function Stage6Draft({
       available: completedCount > 0,
       detail: completedCount > 0 ? `${completedCount}/${SECTION_KEYS.length} sections already drafted` : "No drafts yet",
       icon: FileText,
+    },
+    {
+      label: "Staff & HR",
+      available: staffMembers.length > 0,
+      detail: staffMembers.length > 0
+        ? `${staffMembers.length} staff · ${staffMembers.filter(s => s.is_key_personnel).length} key personnel`
+        : "No staff records — add them in Org Profile",
+      icon: Users,
     },
   ];
 
@@ -162,7 +170,7 @@ export default function Stage6Draft({
             </div>
             <p className="text-xs text-emerald-700 mt-1">
               Writing: <span className="font-medium">{draftAllProgress.currentKey?.replace(/_/g, " ")}</span>
-              {" "}— Using org profile, {parsedBlocks.length} narrative blocks{matchData ? ", assessment intelligence" : ""}
+              {" "}— Using org profile, {parsedBlocks.length} narrative blocks{staffMembers.length > 0 ? `, ${staffMembers.length} staff records` : ""}{matchData ? ", assessment intelligence" : ""}
             </p>
           </div>
         </div>
