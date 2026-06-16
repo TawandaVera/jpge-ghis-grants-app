@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recha
 import { differenceInDays, format } from "date-fns";
 import { toast } from "sonner";
 import ThisWeekPlan from "@/components/overview/ThisWeekPlan";
+import RecentResearchRuns from "@/components/overview/RecentResearchRuns";
 
 export default function Overview() {
   const [grants, setGrants] = useState([]);
@@ -16,6 +17,7 @@ export default function Overview() {
   const [applications, setApplications] = useState([]);
   const [hilItems, setHilItems] = useState([]);
   const [outcomes, setOutcomes] = useState([]);
+  const [researchRuns, setResearchRuns] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [loadError, setLoadError] = useState(false);
@@ -27,12 +29,14 @@ export default function Overview() {
       base44.entities.GrantApplication.list("-created_date", 100),
       base44.entities.HILCheckpoint.filter({ decision: "pending" }),
       base44.entities.GrantOutcome.list("-created_date", 50),
-    ]).then(([g, m, a, h, o]) => {
+      base44.entities.ResearchRun.list("-run_date", 10),
+    ]).then(([g, m, a, h, o, r]) => {
       setGrants(g);
       setMatches(m);
       setApplications(a);
       setHilItems(h);
       setOutcomes(o);
+      setResearchRuns(r);
       setLoading(false);
     }).catch((e) => {
       setLoadError(true);
@@ -235,6 +239,9 @@ export default function Overview() {
             ))}
           </CardContent>
         </Card>
+
+        {/* Donor Intelligence */}
+        <RecentResearchRuns runs={researchRuns} grants={grants} />
 
         {/* Recent Activity */}
         <Card>
