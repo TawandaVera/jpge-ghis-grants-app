@@ -158,6 +158,25 @@
       ],
       "default": "federal_grant",
       "description": "Type of funding source"
+    },
+    "application_form_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Key application form questions/sections extracted from the grant's official application form"
+    },
+    "form_sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Standardized form section categories mapped to narrative content types"
+    },
+    "form_fetched_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the form questions were last fetched"
     }
   },
   "required": [

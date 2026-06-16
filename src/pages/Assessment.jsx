@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Zap, ThumbsUp, AlertCircle, Download, BarChart3, Send, Wand2 } from "lucide-react";
+import { Loader2, Zap, ThumbsUp, AlertCircle, Download, BarChart3, Send, Wand2, FileQuestion } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { recLabel } from "@/lib/friendlyLabels";
@@ -38,6 +38,7 @@ export default function Assessment() {
   const [scoring, setScoring] = useState(false);
   const [stateFilter, setStateFilter] = useState("all");
   const [selected, setSelected] = useState(null);
+  const [selectedGrant, setSelectedGrant] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [checked, setChecked] = useState({});
   const [batchReport, setBatchReport] = useState(null);
@@ -337,7 +338,7 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                   <tr
                     key={grant.id}
                     className="hover:bg-slate-50 cursor-pointer transition-colors"
-                    onClick={() => match && (setSelected(match), setFeedback(match.human_feedback || ""))}
+                    onClick={() => { if (match) { setSelected(match); setFeedback(match.human_feedback || ""); setSelectedGrant(grant); } }}
                   >
                     <td className="px-4 py-3">
                       <Checkbox checked={!!checked[grant.id]} onCheckedChange={v => setChecked(p => ({...p, [grant.id]: v}))} onClick={e => e.stopPropagation()} />
@@ -365,7 +366,11 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                     <td className="px-4 py-3 hidden lg:table-cell">
                       <p className="text-slate-500 text-xs line-clamp-2 max-w-xs">{match?.rationale || "—"}</p>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400 hidden md:table-cell">0 forms</td>
+                    <td className="px-4 py-3 text-xs hidden md:table-cell">
+                      {grant.application_form_questions?.length > 0
+                        ? <span className="text-emerald-600 font-medium">{grant.application_form_questions.length} questions</span>
+                        : <span className="text-slate-300">—</span>}
+                    </td>
                     <td className="px-4 py-3 text-slate-500 whitespace-nowrap text-xs">
                       {grant.deadline ? format(new Date(grant.deadline), "MMM d") : "—"}
                     </td>
@@ -483,6 +488,36 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                 <span className="font-medium">Next step: </span>
                 {selected.total_score >= 80 ? "Looks strong — give it a quick look when you can." : selected.total_score >= 60 ? "Please take a look before moving ahead." : "No action needed — we'll keep it on the list for later."}
               </div>
+
+              {/* Application Form Questions */}
+              {selectedGrant?.application_form_questions?.length > 0 && (
+                <div className="border border-blue-200 rounded-lg p-4 bg-blue-50/50">
+                  <p className="text-sm font-medium text-blue-800 mb-2 flex items-center gap-2">
+                    <FileQuestion className="w-4 h-4" /> Application Form Questions ({selectedGrant.application_form_questions.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedGrant.application_form_questions.map((q, i) => (
+                      <span key={i} className="text-xs px-2 py-1 bg-white border border-blue-200 text-blue-700 rounded-md">{q}</span>
+                    ))}
+                  </div>
+                  {selectedGrant.form_sections?.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <p className="text-xs text-blue-600 font-medium mb-1">Mapped to writing sections:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedGrant.form_sections.map((s, i) => (
+                          <span key={i} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-medium">{s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {selectedGrant && !selectedGrant.application_form_questions?.length && ["GO", "PREP"].includes(selected?.recommendation) && (
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 text-xs text-slate-500 flex items-center gap-2">
+                  <FileQuestion className="w-4 h-4 text-slate-400 shrink-0" />
+                  Form questions are being fetched in the background — check back soon.
+                </div>
+              )}
 
               <div>
                 <p className="text-sm font-medium text-slate-700 mb-1">Your Notes</p>

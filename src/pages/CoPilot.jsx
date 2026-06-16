@@ -594,35 +594,60 @@ CRITICAL RULES:
             ) : (
               <div className="space-y-3">
                 <p className="text-xs text-slate-500">Tap your content pieces to match them to each part — this helps the AI write better.</p>
-                {SECTION_KEYS.map(key => (
-                  <div key={key} className="bg-white rounded-lg border p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-medium text-slate-800">{key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</p>
-                      {(sectionMap[key]?.length || 0) > 0 && (
-                        <Badge variant="outline" className="text-xs">{sectionMap[key].length} mapped</Badge>
-                      )}
+
+                {/* Form questions from the selected grant */}
+                {selectedGrant && (() => {
+                  const fullGrant = grants.find(g => g.id === selectedGrant.id);
+                  const formQs = fullGrant?.application_form_questions || [];
+                  if (!formQs.length) return null;
+                  return (
+                    <div className="border border-blue-200 rounded-lg p-3 bg-blue-50/50">
+                      <p className="text-xs font-semibold text-blue-700 mb-2">📋 Official Form Questions for: {selectedGrant.title}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formQs.map((q, i) => (
+                          <span key={i} className="text-xs px-2 py-1 bg-white border border-blue-200 text-blue-700 rounded-md">{q}</span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {parsedBlocks.map((b, i) => {
-                        const isMapped = (sectionMap[key] || []).includes(b.section);
-                        return (
-                          <button
-                            key={i}
-                            onClick={() => toggleMapping(key, b.section)}
-                            className={`text-xs px-2 py-1 rounded border transition-colors ${
-                              isMapped
-                                ? "border-emerald-400 bg-emerald-50 text-emerald-700 font-medium"
-                                : "border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-600"
-                            }`}
-                          >
-                            {isMapped && <CheckCircle2 className="w-3 h-3 inline mr-1" />}
-                            {b.section}
-                          </button>
-                        );
-                      })}
+                  );
+                })()}
+
+                {SECTION_KEYS.map(key => {
+                  const fullGrant = selectedGrant ? grants.find(g => g.id === selectedGrant.id) : null;
+                  const isRequiredByForm = fullGrant?.form_sections?.includes(key);
+                  return (
+                    <div key={key} className={`bg-white rounded-lg border p-4 ${isRequiredByForm ? "border-blue-300 ring-1 ring-blue-100" : ""}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-slate-800">{key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</p>
+                          {isRequiredByForm && <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-semibold">Required by form</span>}
+                        </div>
+                        {(sectionMap[key]?.length || 0) > 0 && (
+                          <Badge variant="outline" className="text-xs">{sectionMap[key].length} mapped</Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {parsedBlocks.map((b, i) => {
+                          const isMapped = (sectionMap[key] || []).includes(b.section);
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => toggleMapping(key, b.section)}
+                              className={`text-xs px-2 py-1 rounded border transition-colors ${
+                                isMapped
+                                  ? "border-emerald-400 bg-emerald-50 text-emerald-700 font-medium"
+                                  : "border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-600"
+                              }`}
+                            >
+                              {isMapped && <CheckCircle2 className="w-3 h-3 inline mr-1" />}
+                              {b.section}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCurrentStage(6)}>Let AI Write <ChevronRight className="w-4 h-4 ml-1" /></Button>
