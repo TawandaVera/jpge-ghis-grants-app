@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Zap, ExternalLink, MapPin, Loader2, Plus, FileText, ShieldCheck, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Search, Zap, ExternalLink, MapPin, Loader2, Plus, FileText, ShieldCheck, SlidersHorizontal, Sparkles, Filter, X, Layers } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import ChipSelector from "@/components/grants/ChipSelector";
 import { toast } from "sonner";
@@ -74,7 +74,44 @@ export default function GrantDiscovery() {
     category: "health_equity", status: "open", description: "", eligibility: "", source_url: ""
   });
 
-  useEffect(() => { loadGrants(); }, []);
+  // Tag filters (Step 1)
+  const [filterOutcomeAreas, setFilterOutcomeAreas] = useState([]);
+  const [filterPopulations, setFilterPopulations] = useState([]);
+  const [filterGeographies, setFilterGeographies] = useState([]);
+  const [filterFundingTypes, setFilterFundingTypes] = useState([]);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+
+  // Track View (Step 3)
+  const [trackViewOn, setTrackViewOn] = useState(false);
+  const [tracks, setTracks] = useState([]);
+  const [selectedTrackId, setSelectedTrackId] = useState("");
+
+  useEffect(() => { loadGrants(); loadTracks(); }, []);
+
+  const loadTracks = async () => {
+    const data = await base44.entities.Track.list("-created_date");
+    setTracks(data);
+  };
+
+  const applyTrack = (trackId) => {
+    setSelectedTrackId(trackId);
+    const t = tracks.find(t => t.id === trackId);
+    if (!t) return;
+    setFilterOutcomeAreas(t.outcome_area_filters || []);
+    setFilterPopulations(t.population_filters || []);
+    setFilterGeographies(t.geography_filters || []);
+    setFilterFundingTypes(t.funding_type_filters || []);
+  };
+
+  const clearAllFilters = () => {
+    setFilterOutcomeAreas([]);
+    setFilterPopulations([]);
+    setFilterGeographies([]);
+    setFilterFundingTypes([]);
+    setSelectedTrackId("");
+  };
+
+  const hasTagFilters = filterOutcomeAreas.length > 0 || filterPopulations.length > 0 || filterGeographies.length > 0 || filterFundingTypes.length > 0;
 
   const loadGrants = async () => {
     setLoading(true);
@@ -361,7 +398,12 @@ For each, classify actionability:
     const matchSearch = !search || g.title?.toLowerCase().includes(search.toLowerCase()) || g.funder?.toLowerCase().includes(search.toLowerCase());
     const matchCat = categoryFilter === "all" || g.category === categoryFilter;
     const matchStatus = statusFilter === "all" || g.status === statusFilter;
-    return matchSearch && matchCat && matchStatus;
+    // AND across dimensions, OR within dimension
+    const matchOutcome = filterOutcomeAreas.length === 0 || (g.outcome_areas || []).some(v => filterOutcomeAreas.includes(v));
+    const matchPop = filterPopulations.length === 0 || (g.populations_served || []).some(v => filterPopulations.includes(v));
+    const matchGeo = filterGeographies.length === 0 || (g.geographies || []).some(v => filterGeographies.includes(v));
+    const matchFunding = filterFundingTypes.length === 0 || filterFundingTypes.includes(g.funding_type);
+    return matchSearch && matchCat && matchStatus && matchOutcome && matchPop && matchGeo && matchFunding;
   });
 
   const logColors = { info: "text-slate-500", success: "text-emerald-600", warn: "text-amber-600", error: "text-red-600" };
@@ -615,6 +657,27 @@ For each, classify actionability:
         </Card>
       )}
 
+      {/* Track View Toggle */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <button
+          onClick={() => { setTrackViewOn(v => !v); if (trackViewOn) { setSelectedTrackId(""); clearAllFilters(); } }}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${trackViewOn ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-600 border-slate-200 hover:border-emerald-400"}`}
+        >
+          <Layers className="w-4 h-4" /> Track View
+        </button>
+        {trackViewOn && (
+          <Select value={selectedTrackId} onValueChange={applyTrack}>
+            <SelectTrigger className="w-56 bg-white"><SelectValue placeholder="Select a Track…" /></SelectTrigger>
+            <SelectContent>
+              {tracks.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+        {trackViewOn && selectedTrackId && (
+          <span className="text-xs text-slate-500">Filters pre-loaded from track — refine below if needed.</span>
+        )}
+      </div>
+
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
@@ -641,8 +704,52 @@ For each, classify actionability:
             <SelectItem value="closed">Closed</SelectItem>
           </SelectContent>
         </Select>
-        <p className="self-center text-sm text-slate-500">{filtered.length} grants</p>
+        <button
+          onClick={() => setShowFilterPanel(v => !v)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors ${showFilterPanel || hasTagFilters ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"}`}
+        >
+          <Filter className="w-3.5 h-3.5" />
+          Filters {hasTagFilters && `(${filterOutcomeAreas.length + filterPopulations.length + filterGeographies.length + filterFundingTypes.length})`}
+        </button>
+        {hasTagFilters && (
+          <button onClick={clearAllFilters} className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600">
+            <X className="w-3 h-3" /> Clear All
+          </button>
+        )}
+        <p className="self-center text-sm text-slate-500 ml-auto">{filtered.length} grants</p>
       </div>
+
+      {/* Collapsible Filter Panel */}
+      {showFilterPanel && (
+        <Card className="border-emerald-200 bg-emerald-50/30">
+          <CardContent className="pt-4 space-y-4">
+            <ChipSelector
+              label="Outcome Areas"
+              options={["Health Equity","Leadership Development","Veterans","Workforce Development","Economic Mobility","Food Security","Climate Adaptation","Digital Equity","Housing","Education"]}
+              value={filterOutcomeAreas}
+              onChange={setFilterOutcomeAreas}
+            />
+            <ChipSelector
+              label="Populations Served"
+              options={["Veterans","Alumni","Youth","BIPOC Communities","Women","Immigrants","Rural Communities","People with Disabilities","Seniors"]}
+              value={filterPopulations}
+              onChange={setFilterPopulations}
+            />
+            <ChipSelector
+              label="Geographies"
+              options={["National","Regional","State-Specific","International","Southwest","Southeast","Midwest","Northeast","West Coast"]}
+              value={filterGeographies}
+              onChange={setFilterGeographies}
+            />
+            <ChipSelector
+              label="Funding Type"
+              options={["federal_grant","family_foundation","private_foundation","hnwi","major_gift","corporate_giving"]}
+              value={filterFundingTypes}
+              onChange={setFilterFundingTypes}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Grant Table */}
       {loading ? (
@@ -669,6 +776,13 @@ For each, classify actionability:
                   <tr key={grant.id} className="hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => setSelected(grant)}>
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-800 truncate max-w-52">{grant.title}</p>
+                      {((grant.outcome_areas?.length > 0) || (grant.populations_served?.length > 0) || (grant.geographies?.length > 0)) && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {(grant.outcome_areas || []).slice(0, 2).map(t => <span key={t} className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-100">{t}</span>)}
+                          {(grant.populations_served || []).slice(0, 1).map(t => <span key={t} className="px-1.5 py-0.5 rounded text-[10px] bg-blue-50 text-blue-700 border border-blue-100">{t}</span>)}
+                          {(grant.geographies || []).slice(0, 1).map(t => <span key={t} className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 border border-slate-200">{t}</span>)}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{grant.funder}</td>
                     <td className="px-4 py-3">
