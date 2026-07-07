@@ -1,0 +1,23 @@
+# Documentation index
+
+- `assessment-date-fix.md`: runtime assessment date fix.
+- `auth-hardening-plan.md`: authentication and access control plan.
+- `branch-summary.md`: branch scope and changed files.
+- `document-extraction-plan.md`: PDF/DOCX extraction path.
+- `evidence-model.md`: grant source evidence model.
+- `follow-up-tasks.md`: prioritized next tasks.
+- `governance-review.md`: workflow governance checks.
+- `hardening-checklist.md`: full hardening checklist.
+- `implementation-log.md`: implementation notes for this pass.
+- `llm-data-boundaries.md`: LLM prompt data boundaries.
+- `manual-qa-checklist.md`: manual QA steps.
+- `page-wiring-patches.md`: exact page wiring edits.
+- `pr-3-split-plan.md`: large agent PR split plan.
+- `production-readiness-review.md`: production readiness summary.
+- `release-gates.md`: release gates before publish.
+- `review-notes.md`: PR review focus.
+- `safe-merge-summary.md`: safe merge notes.
+- `security-notes.md`: security review notes.
+- `testing-strategy.md`: testing plan.
+- `upload-guard-fix.md`: narrative upload guard details.
+- `workspace-roles.md`: recommended roles and route guidance.
