@@ -1,0 +1,34 @@
+{
+  "name": "New Workspace Welcome Email",
+  "description": "Sends a welcome email when a new user workspace is created for the first time",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "Workspace"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "new_workspace_welcome_email",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "onWorkspaceSync",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}

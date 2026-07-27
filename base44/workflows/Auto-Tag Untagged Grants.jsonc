@@ -1,0 +1,41 @@
+{
+  "name": "Auto-Tag Untagged Grants",
+  "description": "Scans all grants in the database missing CIE tags (outcome areas, populations, geographies, funding type) and auto-classifies them using AI.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 1,
+      "interval_unit": "hours",
+      "interval_anchor": "2026-06-16T19:17:40.873000",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "auto_tag_untagged_grants",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autoTagGrants",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}

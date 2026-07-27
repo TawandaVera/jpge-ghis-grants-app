@@ -1,0 +1,41 @@
+{
+  "name": "Fetch Application Form Questions",
+  "description": "For every GO/PREP grant, searches the web to extract the actual application form questions and maps them to narrative writing sections.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 2,
+      "interval_unit": "hours",
+      "interval_anchor": "2026-06-16T19:24:26.905000",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "fetch_application_form_questions",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "fetchGrantForms",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}
