@@ -10,23 +10,29 @@ import { Building2, Save, Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import StaffCapacitySection from "@/components/org/StaffCapacitySection";
 
-const GHIS_DEFAULTS = {
-  org_name: "GHIS LLC",
-  mission: "Global Health Innovation Solutions — advancing health equity, digital health innovation, workforce development, and community engagement across underserved communities.",
-  focus_areas: ["health_equity", "digital_health", "workforce_development", "community_engagement"],
-  geographic_coverage: ["Alabama", "California", "Florida", "Georgia", "Illinois", "Maryland", "Michigan", "New York", "North Carolina", "Ohio", "Pennsylvania", "Texas", "Virginia", "Washington"],
-  annual_budget: 3200000,
-  indirect_cost_rate: 26,
-  fringe_rate: 30,
-  compliance_certifications: ["SAM.gov Registered", "Nonprofit 501(c)(3)", "HHS Audit Compliant"],
-  contact_name: "GHIS Leadership",
-  contact_email: "grants@ghisllc.org",
-  website: "https://ghisllc.org"
+const JPGE_DEFAULTS = {
+  org_name: "JPGE Consulting LLC",
+  mission: "JPG Enterprises (JPGE) is a multi-dimensional strategic growth ecosystem operating at the forefront of executive advisory, capital strategy, leadership development, global health impact, and enterprise innovation.\n\nDesigned to advance leadership, capital, and enterprise growth at scale, JPGE partners with organizations, institutions, and high-potential leaders navigating transformation, expansion, and increasingly complex economic environments.",
+  address: "1001 Wilshire Blvd., Suite 2134, Los Angeles, CA, 90017",
+  focus_areas: ["AI Integration", "Leadership Development", "Capacity Building", "Economic Mobility", "Women in Leadership", "Workforce Development", "Workforce Innovation", "Future of Work", "Professional Development", "Economic Development", "Small Business Growth", "Business Consulting", "Business Expansion", "Economic Opportunity", "Community Health", "Health Equity", "Digital Health", "Community Engagement", "Preventative Health", "Health Education", "Public Health", "Health Access", "Healthcare Workforce", "Social Determinants of Health", "Veteran Employment", "Military Transition", "Veteran Economic Mobility", "Veteran Career Readiness", "Veteran Entrepreneurship", "Workplace Wellness", "Emotional Wellness", "Stress Reduction", "Burnout Prevention", "Male Loneliness", "Loneliness Epidemic", "Trauma-Informed Leadership", "Resilience", "Mental Health Awareness", "Behavioral Health", "Executive Wellness", "Career Advancement", "Career Acceleration", "Post Secondary Success", "Lifelong Learning"],
+  geographic_coverage: ["California", "Florida", "Georgia", "Illinois", "Maryland", "New York", "North Carolina", "Ohio", "Pennsylvania", "Texas", "Virginia", "Washington", "Arizona", "Washington DC", "New Jersey", "Michigan", "Minnesota", "Hawaii", "United States"],
+  annual_budget: 745000,
+  indirect_cost_rate: 25,
+  fringe_rate: 10,
+  compliance_certifications: ["SAM.gov Registered", "Nonprofit 501(c)(3)", "HHS Audit Compliant", "DUNS Registered"],
+  ein: "39-4356090",
+  duns_uei: "1223456789",
+  staff_count: 10,
+  contact_name: "Janaya Patton",
+  contact_email: "info@jpgeconsulting.com",
+  website: "https://jpgeconsulting.com",
+  past_performance: "JPGE Consulting LLC has implemented strategic growth, capital strategy, and health innovation projects across 19 states, including federal grants from HHS, HRSA, SAMHSA, and CDC. Key outcomes include training community health workers, deploying telehealth platforms in rural counties, and reducing care gaps in target populations.",
+  capacity_notes: "Currently managing active federal grants. Bandwidth available for additional projects. Strong capacity in digital health, workforce development, and leadership programming."
 };
 
 export default function OrgProfile() {
   const [profile, setProfile] = useState(null);
-  const [form, setForm] = useState(GHIS_DEFAULTS);
+  const [form, setForm] = useState(JPGE_DEFAULTS);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [newFocus, setNewFocus] = useState("");
@@ -87,6 +93,7 @@ export default function OrgProfile() {
             <div className="grid md:grid-cols-2 gap-4">
               <div><Label>Organization Name</Label><Input value={form.org_name || ""} onChange={e => setForm(p => ({...p, org_name: e.target.value}))} className="mt-1" /></div>
               <div><Label>Website</Label><Input value={form.website || ""} onChange={e => setForm(p => ({...p, website: e.target.value}))} className="mt-1" /></div>
+              <div><Label>Address</Label><Input value={form.address || ""} onChange={e => setForm(p => ({...p, address: e.target.value}))} className="mt-1" /></div>
               <div><Label>Contact Name</Label><Input value={form.contact_name || ""} onChange={e => setForm(p => ({...p, contact_name: e.target.value}))} className="mt-1" /></div>
               <div><Label>Contact Email</Label><Input value={form.contact_email || ""} onChange={e => setForm(p => ({...p, contact_email: e.target.value}))} className="mt-1" /></div>
               <div><Label>EIN / Tax ID</Label><Input value={form.ein || ""} onChange={e => setForm(p => ({...p, ein: e.target.value}))} className="mt-1" /></div>

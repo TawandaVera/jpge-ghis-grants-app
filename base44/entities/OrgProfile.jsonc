@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Mission statement"
     },
+    "address": {
+      "type": "string",
+      "description": "Organization street address"
+    },
     "focus_areas": {
       "type": "array",
       "items": {
