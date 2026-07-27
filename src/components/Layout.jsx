@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Search, BarChart3, 
-  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList, FolderOpen, Users, Sparkles, HelpCircle, Layers
+  Kanban, Bot, Package, LogOut, Menu, X, BookOpen, Building2, ClipboardList, FolderOpen, Users, Sparkles, HelpCircle, Layers, Mail
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ const TOOLS = [
 
 const ADMIN = [
   { to: "/admin/workspaces", label: "Admin: Users", icon: Users, adminOnly: true },
+  { to: "/weekly-report", label: "Weekly HQ Report", icon: Mail, adminOnly: true },
 ];
 
 const BOTTOM = [

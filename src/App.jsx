@@ -20,6 +20,7 @@ import AdminWorkspaces from '@/pages/AdminWorkspaces';
 import AIAssistant from '@/pages/AIAssistant';
 import Help from '@/pages/Help';
 import Tracks from '@/pages/Tracks';
+import WeeklyReport from '@/pages/WeeklyReport';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
         <Route path="/ai-assistant" element={<AIAssistant />} />
         <Route path="/help" element={<Help />} />
         <Route path="/tracks" element={<Tracks />} />
+        <Route path="/weekly-report" element={<WeeklyReport />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

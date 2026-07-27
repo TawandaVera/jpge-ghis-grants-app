@@ -1,0 +1,57 @@
+{
+  "name": "WeeklyReportWorkspace",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Reference to Workspace entity"
+    },
+    "owner_id": {
+      "type": "string",
+      "description": "User ID of workspace owner (for filtering created_by_id)"
+    },
+    "owner_name": {
+      "type": "string",
+      "description": "Display name of workspace owner"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of workspace owner"
+    },
+    "org_name": {
+      "type": "string",
+      "description": "Organization name for this workspace"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this workspace is included in the weekly report"
+    }
+  },
+  "required": [
+    "owner_name",
+    "owner_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
