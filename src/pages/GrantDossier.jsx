@@ -82,7 +82,7 @@ export default function GrantDossier() {
       const orgProfile = await base44.entities.OrgProfile.list().then(p => p[0] || null);
       const orgDesc = orgProfile
         ? `${orgProfile.org_name}: ${orgProfile.mission}. Focus: ${(orgProfile.focus_areas || []).join(", ")}.`
-        : "GHIS LLC — health innovation consultancy serving 14 states. Focus: health equity, workforce, SDOH.";
+        : "JPGE Consulting LLC — strategic growth & capital advisory firm serving 19 states. Focus: health equity, workforce, SDOH.";
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a senior grant strategist. Generate a comprehensive Grant Dossier for the following opportunity.
@@ -103,7 +103,7 @@ CONCERNS: ${(match.concerns || []).join("; ")}
 
 Generate a strategic dossier that includes:
 1. Executive brief (3 sentences max) 
-2. Why this grant fits GHIS (3 bullet points)
+2. Why this grant fits JPGE Consulting LLC (3 bullet points)
 3. Key competitive differentiators for this application
 4. Top 3 risks and mitigations
 5. Application strategy (timeline, key contacts to find, partnerships to consider)

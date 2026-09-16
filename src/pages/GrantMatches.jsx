@@ -38,7 +38,7 @@ export default function GrantMatches() {
     if (!grants.length) { toast.error("No grants in database. Run discovery first."); return; }
     setScoring(true);
     try {
-      let orgProfile = "GHIS LLC — health innovation consultancy, $3.2M deployed across 14 states. Focus: health equity, digital health, workforce development, community engagement.";
+      let orgProfile = "JPGE Consulting LLC — strategic growth & capital advisory firm serving 19 states. Focus: health equity, digital health, workforce development, community engagement.";
       try {
         const profiles = await base44.entities.OrgProfile.list();
         if (profiles.length) orgProfile = `${profiles[0].org_name}: ${profiles[0].mission}. Focus: ${(profiles[0].focus_areas||[]).join(", ")}. States: ${(profiles[0].geographic_coverage||[]).join(", ")}.`;

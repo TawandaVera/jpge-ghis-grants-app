@@ -64,14 +64,14 @@ export default function Applications() {
     setDrafting(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an expert grant writer for GHIS LLC (Global Health Innovation Solutions), a health innovation consultancy.
+        prompt: `You are an expert grant writer for JPGE Consulting LLC, a strategic growth and capital advisory firm.
 
 Write the "${activeSection.replace(/_/g, " ").toUpperCase()}" section for this grant application:
 
 GRANT: ${selected.grant_title}
 FUNDER: ${selected.funder}
 
-ORG: GHIS LLC — health innovation consultancy that has implemented $3.2M in health innovation projects across 14 states since 2020. Focus areas: health equity, digital health, workforce development, community engagement.
+ORG: JPGE Consulting LLC — strategic growth and capital advisory firm that has implemented projects across 19 states. Focus areas: health equity, digital health, workforce development, community engagement.
 
 EXISTING CONTENT (if any): ${sections[activeSection] || "None — generate fresh content"}
 

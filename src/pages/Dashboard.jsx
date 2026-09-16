@@ -70,7 +70,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">GrantPath AI</h1>
-          <p className="text-slate-500 text-sm">Multi-agent grant discovery & management — GHIS LLC</p>
+          <p className="text-slate-500 text-sm">Multi-agent grant discovery & management — JPGE Capital Intelligence Engine</p>
         </div>
         <Link to="/discovery">
           <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2">

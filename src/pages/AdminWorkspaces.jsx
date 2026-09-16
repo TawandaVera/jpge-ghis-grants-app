@@ -49,7 +49,7 @@ export default function AdminWorkspaces() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ghis-full-backup-${new Date().toISOString().split("T")[0]}.json`;
+    a.download = `jpge-full-backup-${new Date().toISOString().split("T")[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Full backup downloaded");

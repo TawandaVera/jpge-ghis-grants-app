@@ -156,7 +156,7 @@ export default function GrantDiscovery() {
       if (scanTab === "freeform") {
         log(`Mode: Custom Search — "${customSearchText.substring(0, 80)}..."`);
         const lowHangingNote = scanLowHanging ? "\n\nLOW-HANGING FRUIT MODE: Prioritize simple applications, smaller awards (under $150K), rolling deadlines, local/regional funders, and first-time grantee-friendly foundations." : "";
-        prompt = `You are the Grant Discovery Agent for GHIS LLC (Global Health Innovation Solutions), a health innovation consultancy serving 14 states.
+        prompt = `You are the Grant Discovery Agent for JPGE Consulting LLC, a strategic growth and capital advisory firm serving 19 states.
 
 TODAY'S DATE: ${new Date().toISOString().split("T")[0]}
 
@@ -212,7 +212,7 @@ Also for each grant, populate these CIE classification fields using ONLY values 
         const populationFilter = scanPopulations.length > 0 ? `\nPOPULATIONS SERVED: Prioritize grants targeting these populations: ${scanPopulations.join(", ")}` : "";
         const geographyFilter = scanGeographies.length > 0 ? `\nGEOGRAPHIC FOCUS AREAS: Prioritize grants targeting these regions: ${scanGeographies.join(", ")}` : "";
 
-        prompt = `You are the Grant Discovery Agent for GHIS LLC (Global Health Innovation Solutions), a health innovation consultancy serving 14 states.
+        prompt = `You are the Grant Discovery Agent for JPGE Consulting LLC, a strategic growth and capital advisory firm serving 19 states.
 
 TODAY'S DATE: ${new Date().toISOString().split("T")[0]}
 

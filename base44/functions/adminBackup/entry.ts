@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Content-Disposition': `attachment; filename="ghis-backup-${new Date().toISOString().split('T')[0]}.json"`
+        'Content-Disposition': `attachment; filename="jpge-backup-${new Date().toISOString().split('T')[0]}.json"`
       }
     });
   } catch (error) {

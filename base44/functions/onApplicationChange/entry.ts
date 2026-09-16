@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       for (const admin of admins) {
         await base44.asServiceRole.integrations.Core.SendEmail({
           to: admin.email,
-          from_name: "GHIS Grants",
+          from_name: "JPGE Capital Intelligence Engine",
           subject: `✅ Application Submitted: ${data.grant_title}`,
           body: `An application has been marked as submitted.\n\nGrant: ${data.grant_title}\nFunder: ${data.funder}\nDeadline: ${data.deadline}\n\nLog in to track the outcome.`
         });
