@@ -41,8 +41,9 @@ Deno.serve(async (req) => {
 
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: email,
-        subject: `⚠️ JPGE Grant Deadline Alert — ${urgent.length} application(s) need attention`,
-        body: `Grant Deadline Alert — ${today.toDateString()}\n\n${lines.join("\n")}\n\nLog in to the JPGE Capital Intelligence Engine to take action.`
+        from_name: "JPGE CIE",
+        subject: `⚠️ JPGE CIE Grant Deadline Alert — ${urgent.length} application(s) need attention`,
+        body: `Grant Deadline Alert — ${today.toDateString()}\n\n${lines.join("\n")}\n\nLog in to JPGE CIE to take action.`
       });
       sent++;
     }
