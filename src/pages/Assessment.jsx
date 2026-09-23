@@ -9,10 +9,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Zap, ThumbsUp, AlertCircle, Download, BarChart3, Send, Wand2, FileQuestion } from "lucide-react";
+import { Loader2, Zap, ThumbsUp, AlertCircle, Download, BarChart3, Send, Wand2, FileQuestion, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { recLabel } from "@/lib/friendlyLabels";
+import BlockedAlternatives, { isBlockedMatch } from "@/components/assessment/BlockedAlternatives";
 
 const REC_BADGE = {
   GO: "bg-emerald-100 text-emerald-800 border-emerald-300",
@@ -108,7 +109,8 @@ SOP4 SCORING (0-100 total):
 
 AUTO-DECLINE if LLC not eligible.
 AUTO-DEF if <30 days to deadline.
-State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
+State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.
+BLOCKED: Set is_blocked=true if the org cannot submit directly — e.g. invitation-only, requires a referral/nomination, limited or restricted submission, or eligibility rules prohibit JPGE from applying. Explain the specific blocker in blocked_reason. Otherwise set is_blocked=false.`,
           response_json_schema: {
             type: "object",
             properties: {
@@ -133,7 +135,9 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
               concerns: { type: "array", items: { type: "string" } },
               gap_analysis: { type: "array", items: { type: "string" } },
               recommended_actions: { type: "array", items: { type: "string" } },
-              estimated_prep_days: { type: "number" }
+              estimated_prep_days: { type: "number" },
+              is_blocked: { type: "boolean" },
+              blocked_reason: { type: "string" }
             }
           }
         });
@@ -432,6 +436,22 @@ State: GO>=80, PREP>=60, DEF>=40, DECLINE<40.`,
                   </div>
                 ))}
               </div>
+
+              {isBlockedMatch(selected) && (
+                <>
+                  <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+                    <p className="flex items-center gap-2 font-medium">
+                      <Ban className="w-4 h-4 shrink-0" /> Can't submit directly — {selected.blocked_reason || "this opportunity requires a referral or invitation to apply."}
+                    </p>
+                  </div>
+                  <BlockedAlternatives
+                    blockedGrant={selectedGrant}
+                    grants={grants}
+                    matches={matches}
+                    onSelect={(g, m) => { setSelected(m); setSelectedGrant(g); setFeedback(m.human_feedback || ""); }}
+                  />
+                </>
+              )}
 
               {/* Mandate Area Scores */}
               {selected.mandate_scores && (

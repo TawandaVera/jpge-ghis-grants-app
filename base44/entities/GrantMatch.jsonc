@@ -75,6 +75,15 @@
         "watchlist"
       ],
       "default": "pending_review"
+    },
+    "is_blocked": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when the org cannot submit directly (invitation-only, referral/nomination required, limited/restricted submission, or eligibility prohibits applying)"
+    },
+    "blocked_reason": {
+      "type": "string",
+      "description": "Why this grant is blocked from direct submission"
     }
   },
   "required": [
