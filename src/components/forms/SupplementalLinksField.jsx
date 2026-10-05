@@ -5,7 +5,7 @@ import { Plus, X } from "lucide-react";
 
 const KINDS = [
   { value: "portal", label: "Application portal" },
-  { value: "documentation", label: "Documentation" },
+  { value: "documentation", label: "Help / tutorial" },
   { value: "requirements", label: "Requirements page" },
   { value: "document", label: "Form / document" },
   { value: "page", label: "Other page" },

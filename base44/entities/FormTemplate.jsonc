@@ -40,7 +40,7 @@
     },
     "supplemental_links": {
       "type": "array",
-      "description": "Additional official links used for research: documentation pages, requirements pages, application portals, or direct form downloads",
+      "description": "Additional official links used for research: portal documentation and tutorials, requirements pages, application portals, or direct form downloads",
       "items": {
         "type": "object",
         "properties": {
@@ -183,9 +183,10 @@
             "type": "string",
             "enum": [
               "grant_specific",
+              "documented",
               "standard"
             ],
-            "description": "grant_specific: taken from this funder's own application materials. standard: platform-standard guidance used where this opportunity requires a section but does not spell it out."
+            "description": "grant_specific: taken from this funder's own application materials. documented: taken from the application portal's own public documentation or applicant tutorial, where the funder itself says nothing. standard: platform-standard guidance used where this opportunity requires a section but does not spell it out."
           }
         }
       }

@@ -8,7 +8,7 @@ import {
 
 const VALID_STATUS = new Set(['validated', 'unverified', 'conflict', 'missing']);
 const VALID_ACCESS = new Set(['public', 'signin_required', 'unknown']);
-const VALID_PROVENANCE = new Set(['grant_specific', 'standard']);
+const VALID_PROVENANCE = new Set(['grant_specific', 'documented', 'standard']);
 const DOC_KINDS = new Set(['application_form', 'budget_template', 'guidelines', 'checklist', 'portal', 'other']);
 const LINK_KINDS = new Set(['portal', 'documentation', 'requirements', 'document', 'page', 'other']);
 
@@ -102,7 +102,10 @@ export default async function (req) {
     } catch (e) { library = []; }
 
     const supplementText = supplements.length
-      ? supplements.map((l: any, i: number) => `${i + 1}. ${l.url}${l.label ? ` — ${l.label}` : ''}${l.kind ? ` [${l.kind}]` : ''}`).join('\n')
+      ? supplements.map((l: any, i: number) => {
+        const tag = l.kind === 'documentation' ? 'documentation: public portal help article / tutorial' : l.kind;
+        return `${i + 1}. ${l.url}${l.label ? ` — ${l.label}` : ''}${tag ? ` [${tag}]` : ''}`;
+      }).join('\n')
       : 'None provided';
 
     const standardText = standard
@@ -134,6 +137,13 @@ Known form questions already captured: ${knownQuestions || 'None'}
 ADDITIONAL OFFICIAL SOURCES (supplied by the applicant — research ALL of them)
 ${supplementText}
 
+PUBLIC PORTAL DOCUMENTATION BEHIND A REGISTRATION WALL
+An application portal (Foundant, Submittable, Fluxx, SmartSimple and the like) keeps the real form behind a sign-in. The portal vendor usually publishes public help articles and step-by-step applicant tutorials that describe that form, and the applicant may have supplied one above as documentation. Those articles are public, so they are legitimate evidence:
+- A question, required field, character or word limit, or submission step stated in such an article is "validated", with evidence_source set to that article's URL and evidence_excerpt quoting it.
+- Give every prompt you take from that documentation provenance "documented", and set requirement_link to the portal step or requirement it comes from.
+- Return the article in source_links with kind "documentation" and access "public".
+Documentation DESCRIBES the portal; it is not the portal. Reading a public help article is allowed. Registering, signing in, or trying to reach anything the article gates is not.
+
 PLATFORM STANDARD TEMPLATE (the reusable base — tailor it to this opportunity)
 ${standardText}
 
@@ -148,7 +158,7 @@ TASK
 2. Extract the ACTUAL questions and prompts an applicant must answer. Capture stated word or page limits.
 3. Locate the fillable and supporting documents themselves: application forms, budget spreadsheets/templates, guidelines, checklists. Report each one at its direct URL (e.g. a .pdf or .xlsx link), not just the page that links to it.
 4. For the fillable documents, capture the fields they ask for: named budget lines, columns, tables, and any required attachments.
-5. REGISTRATION WALLS: a source may lead to a sign-in or registration page (an online application portal). You cannot see behind it, and you must NOT claim or imply that you did. Mark that source "signin_required" and record, from what the public pages state, what the applicant will need once inside. Never invent portal contents.
+5. REGISTRATION WALLS: a source may lead to a sign-in or registration page (an online application portal). You cannot see behind it, and you must NOT claim or imply that you did. Mark that source "signin_required" and record, from the public pages AND from any public documentation or tutorial supplied for that portal, what the applicant will need once registered. Never invent portal contents.
 6. For EACH prompt, return:
    - section: the proposal section it belongs to (Executive Summary, Needs Statement, Goals & Objectives, Methodology, Evaluation Plan, Organizational Capacity, Budget Narrative, or Other).
    - prompt: the exact question or instruction, phrased as an actionable writing prompt.
@@ -158,7 +168,7 @@ TASK
    - evidence_excerpt: a short verbatim quote from that source proving the prompt exists.
    - validation_status: "validated" (found in official materials), "unverified" (inferred from funder type or category, not confirmed), "conflict" (official materials disagree with each other or with the stated eligibility), or "missing" (a required item you could not locate).
    - validation_note: one sentence explaining the status.
-   - provenance: "grant_specific" when the prompt comes from this funder's own explicit application materials; "standard" when this opportunity requires a section but does not spell it out and you are supplying the platform standard prompt as reusable guidance. The funder's own materials always win — never restate a standard prompt as if the funder required it.
+   - provenance: "grant_specific" when the prompt comes from this funder's own explicit application materials; "documented" when it comes from that portal's public documentation or applicant tutorial; "standard" when this opportunity requires a section but does not spell it out and you are supplying the platform standard prompt as reusable guidance. Priority: the funder's own materials win, then the portal documentation, then the standard prompt — never restate a lower source as if the funder required it.
 7. eligibility_summary: applicant eligibility in plain language.
 8. requirements: the concrete submission requirements (documents, registrations, formats, letters of support, etc.).
 9. source_links: one entry per source you were given (the primary link and each additional source) with url, label, kind, access ("public", "signin_required" or "unknown") and a one-sentence note on what it offers or what it withholds.
@@ -398,7 +408,7 @@ Return 8-15 prompts. Never fabricate requirements — mark them unverified or mi
         kind: l.kind,
         access: accessFor(l.url),
         prompts: promptFor(l.url),
-        tags: ['supplemental-source'],
+        tags: ['supplemental-source', l.kind],
       });
     }
 

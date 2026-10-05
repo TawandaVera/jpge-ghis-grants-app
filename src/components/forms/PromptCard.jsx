@@ -9,8 +9,9 @@ const STATUS = {
 };
 
 export const PROVENANCE = {
-  grant_specific: { label: "Grant-specific", cls: "bg-blue-100 text-blue-800 border-blue-300" },
-  standard: { label: "Standard guidance", cls: "bg-indigo-100 text-indigo-800 border-indigo-300" },
+  grant_specific: { label: "Grant-specific", summary: "from funder's materials", cls: "bg-blue-100 text-blue-800 border-blue-300" },
+  documented: { label: "Portal documentation", summary: "from portal documentation", cls: "bg-teal-100 text-teal-800 border-teal-300" },
+  standard: { label: "Standard guidance", summary: "standard guidance", cls: "bg-indigo-100 text-indigo-800 border-indigo-300" },
 };
 
 export default function PromptCard({ prompt }) {

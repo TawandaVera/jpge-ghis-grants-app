@@ -170,7 +170,7 @@ export default function TemplateGeneratorDialog({ open, onOpenChange, grant, app
             <div>
               <label className="text-xs text-slate-500 font-medium">Additional official links</label>
               <p className="text-xs text-slate-400">
-                Add the pages behind an Apply Now button: documentation, requirements, or the application portal itself.
+                Add the pages behind an Apply Now button: the funder's requirements, the application portal itself, or any public help article or applicant tutorial for that portal (for example a Foundant or Submittable support page). Public documentation is read and cited; nothing behind a sign-in is ever accessed.
               </p>
             </div>
             <SupplementalLinksField links={extraLinks} onChange={setExtraLinks} />
@@ -237,7 +237,7 @@ export default function TemplateGeneratorDialog({ open, onOpenChange, grant, app
           {!template && !loading && (
             <p className="text-xs text-slate-500 flex items-start gap-1.5">
               <Link2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
-              We research the funder's official materials, follow the links you add to the fillable forms themselves, and check every prompt against the stated eligibility and requirements. Anything behind a registration wall is flagged, never guessed at.
+              We research the funder's official materials, follow the links you add to the fillable forms themselves, and check every prompt against the stated eligibility and requirements. Public tutorials for a portal fill in what its registration wall hides; anything still behind the wall is flagged, never guessed at.
             </p>
           )}
         </div>

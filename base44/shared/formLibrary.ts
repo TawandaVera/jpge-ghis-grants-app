@@ -72,7 +72,7 @@ export function normalizeKind(value: any, fallback = 'other'): string {
   if (/checklist|check_list/.test(k)) return 'checklist';
   if (/guide|instruction|manual/.test(k)) return 'guidelines';
   if (/portal|logon|login/.test(k)) return 'portal';
-  if (/documentation|resource/.test(k)) return 'documentation';
+  if (/documentation|resource|tutorial|help|support|article|faq|knowledge/.test(k)) return 'documentation';
   if (/requirement|criteria|eligib/.test(k)) return 'requirements';
   if (/form|proposal|narrative|application/.test(k)) return 'application_form';
   if (/page|site|website/.test(k)) return 'page';

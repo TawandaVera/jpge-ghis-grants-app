@@ -34,6 +34,7 @@ const ACCESS_LABEL: Record<string, string> = {
 
 const PROVENANCE_LABEL: Record<string, string> = {
   grant_specific: 'Grant-specific',
+  documented: 'From portal documentation',
   standard: 'Standard guidance',
 };
 

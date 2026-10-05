@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, ExternalLink, Globe, HelpCircle, Lock, ListChecks, Paperclip, ShieldAlert } from "lucide-react";
-import PromptCard from "@/components/forms/PromptCard";
+import PromptCard, { PROVENANCE } from "@/components/forms/PromptCard";
 
 const CHIPS = [
   { key: "validated", label: "validated", cls: "bg-emerald-100 text-emerald-800 border-emerald-300" },
@@ -21,7 +21,7 @@ const KIND_LABEL = {
   guidelines: "Guidelines",
   checklist: "Checklist",
   portal: "Portal",
-  documentation: "Documentation",
+  documentation: "Documentation / tutorial",
   requirements: "Requirements",
   document: "Document",
   page: "Page",
@@ -43,6 +43,11 @@ export default function TemplateReview({ template }) {
   const prompts = template.prompts || [];
   const links = template.supplemental_links || [];
   const documents = template.documents || [];
+
+  const provCounts = { grant_specific: 0, documented: 0, standard: 0 };
+  for (const p of prompts) {
+    if (provCounts[p.provenance] !== undefined) provCounts[p.provenance]++;
+  }
 
   return (
     <div className="space-y-4">
@@ -103,6 +108,16 @@ export default function TemplateReview({ template }) {
           </Badge>
         ))}
       </div>
+
+      {prompts.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {["grant_specific", "documented", "standard"].map(key => (
+            <Badge key={key} className={`text-xs border ${PROVENANCE[key].cls}`}>
+              {provCounts[key]} {PROVENANCE[key].summary}
+            </Badge>
+          ))}
+        </div>
+      )}
 
       {template.eligibility_summary && (
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
