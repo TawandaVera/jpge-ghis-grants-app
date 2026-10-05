@@ -26,6 +26,17 @@ const STATUS_LABEL: Record<string, string> = {
   missing: 'Missing',
 };
 
+const ACCESS_LABEL: Record<string, string> = {
+  public: 'publicly available',
+  signin_required: 'sign-in required',
+  unknown: 'access unconfirmed',
+};
+
+const PROVENANCE_LABEL: Record<string, string> = {
+  grant_specific: 'Grant-specific',
+  standard: 'Standard guidance',
+};
+
 function buildPdf(template: any): Uint8Array {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const M = 48;
@@ -71,12 +82,38 @@ function buildPdf(template: any): Uint8Array {
     y += 8;
   }
 
+  if (template.supplemental_links?.length) {
+    write('Official Sources', { size: 13, bold: true, gap: 2 });
+    template.supplemental_links.forEach((l: any) => {
+      write(`• ${l.label || l.kind || 'Source'} — ${ACCESS_LABEL[l.access] || 'access unconfirmed'}`, { indent: 12, gap: 2 });
+      if (l.url) write(l.url, { size: 9, indent: 24, gap: 2 });
+      if (l.note) write(l.note, { size: 9, indent: 24, gap: 2 });
+    });
+    y += 8;
+  }
+
+  if (template.documents?.length) {
+    write('Captured Forms & Documents', { size: 13, bold: true, gap: 2 });
+    template.documents.forEach((d: any) => {
+      write(`• ${d.title} — ${ACCESS_LABEL[d.access] || 'access unconfirmed'}${d.file_uri ? ' · copy stored' : ''}`, { indent: 12, gap: 2 });
+      if (d.url) write(d.url, { size: 9, indent: 24, gap: 2 });
+      if (d.extracted_fields?.length) write(`Fields: ${d.extracted_fields.join(', ')}`, { size: 9, indent: 24, gap: 2 });
+      if (d.note) write(d.note, { size: 9, indent: 24, gap: 2 });
+    });
+    y += 8;
+  }
+
+  if (template.access_notes) {
+    write('Behind the Registration Wall', { size: 13, bold: true, gap: 2 });
+    write(template.access_notes, { size: 10, gap: 10 });
+  }
+
   const prompts = template.prompts || [];
   write(`Application Prompts (${prompts.length})`, { size: 13, bold: true, gap: 6 });
   prompts.forEach((p: any, i: number) => {
     write(`${i + 1}. ${p.section || 'Other'}`, { size: 11, bold: true, gap: 2 });
     write(p.prompt || '', { gap: 2 });
-    const meta = [`Status: ${STATUS_LABEL[p.validation_status] || 'Unverified'}`];
+    const meta = [`Status: ${STATUS_LABEL[p.validation_status] || 'Unverified'}`, PROVENANCE_LABEL[p.provenance] || PROVENANCE_LABEL.grant_specific];
     if (p.word_limit) meta.push(`Limit: ${p.word_limit}`);
     write(meta.join('  ·  '), { size: 9, gap: 2 });
     if (p.requirement_link) write(`Meets: ${p.requirement_link}`, { size: 9, indent: 12, gap: 2 });
@@ -126,12 +163,39 @@ function buildDocxBlocks(template: any) {
     blocks.push({});
   }
 
+  if (template.supplemental_links?.length) {
+    blocks.push({ text: 'Official Sources', bold: true, size: 26 });
+    template.supplemental_links.forEach((l: any) => {
+      blocks.push({ text: `• ${l.label || l.kind || 'Source'} — ${ACCESS_LABEL[l.access] || 'access unconfirmed'}`, size: 20 });
+      if (l.url) blocks.push({ text: l.url, size: 18 });
+      if (l.note) blocks.push({ text: l.note, size: 18 });
+    });
+    blocks.push({});
+  }
+
+  if (template.documents?.length) {
+    blocks.push({ text: 'Captured Forms & Documents', bold: true, size: 26 });
+    template.documents.forEach((d: any) => {
+      blocks.push({ text: `• ${d.title} — ${ACCESS_LABEL[d.access] || 'access unconfirmed'}${d.file_uri ? ' · copy stored' : ''}`, size: 20 });
+      if (d.url) blocks.push({ text: d.url, size: 18 });
+      if (d.extracted_fields?.length) blocks.push({ text: `Fields: ${d.extracted_fields.join(', ')}`, size: 18 });
+      if (d.note) blocks.push({ text: d.note, size: 18 });
+    });
+    blocks.push({});
+  }
+
+  if (template.access_notes) {
+    blocks.push({ text: 'Behind the Registration Wall', bold: true, size: 26 });
+    blocks.push({ text: template.access_notes });
+    blocks.push({});
+  }
+
   const prompts = template.prompts || [];
   blocks.push({ text: `Application Prompts (${prompts.length})`, bold: true, size: 26 });
   prompts.forEach((p: any, i: number) => {
     blocks.push({ text: `${i + 1}. ${p.section || 'Other'}`, bold: true, size: 22 });
     blocks.push({ text: p.prompt || '' });
-    const meta = [`Status: ${STATUS_LABEL[p.validation_status] || 'Unverified'}`];
+    const meta = [`Status: ${STATUS_LABEL[p.validation_status] || 'Unverified'}`, PROVENANCE_LABEL[p.provenance] || PROVENANCE_LABEL.grant_specific];
     if (p.word_limit) meta.push(`Limit: ${p.word_limit}`);
     blocks.push({ text: meta.join('  ·  '), size: 18 });
     if (p.requirement_link) blocks.push({ text: `Meets: ${p.requirement_link}`, size: 18 });

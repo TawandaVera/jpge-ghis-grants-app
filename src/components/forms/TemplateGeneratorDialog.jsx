@@ -3,14 +3,16 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Loader2, Wand2, FileJson, FileText, FileDown, Save, Link2, CheckCircle2 } from "lucide-react";
+import { Loader2, Wand2, FileJson, FileText, FileDown, Save, Link2, CheckCircle2, Info } from "lucide-react";
 import { toast } from "sonner";
 import TemplateReview from "@/components/forms/TemplateReview";
+import SupplementalLinksField from "@/components/forms/SupplementalLinksField";
 
 const STEPS = [
   "Searching official application materials...",
+  "Following documentation and portal links...",
   "Extracting required prompts...",
-  "Checking eligibility and requirements...",
+  "Capturing forms and checking access...",
   "Validating sources...",
 ];
 
@@ -18,6 +20,7 @@ export default function TemplateGeneratorDialog({ open, onOpenChange, grant, app
   const [link, setLink] = useState("");
   const [title, setTitle] = useState("");
   const [funder, setFunder] = useState("");
+  const [extraLinks, setExtraLinks] = useState([]);
   const [template, setTemplate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
@@ -30,6 +33,7 @@ export default function TemplateGeneratorDialog({ open, onOpenChange, grant, app
     setTemplate(null);
     setStep(0);
     setLoading(false);
+    setExtraLinks([]);
     setLink(g.source_url || defaultLink || "");
     setTitle(g.title || "");
     setFunder(g.funder || "");
@@ -39,7 +43,12 @@ export default function TemplateGeneratorDialog({ open, onOpenChange, grant, app
       base44.entities.FormTemplate.filter(query, { sort: "-created_date", limit: 1 })
         .then(page => {
           const items = page?.items || page;
-          if (items?.length) setTemplate(items[0]);
+          if (items?.length) {
+            const existing = items[0];
+            setTemplate(existing);
+            // keep the links that produced this template so a rebuild starts from them
+            setExtraLinks((existing.supplemental_links || []).map(l => ({ url: l.url, kind: l.kind || "page" })));
+          }
         })
         .catch(() => {});
     }
@@ -64,10 +73,15 @@ export default function TemplateGeneratorDialog({ open, onOpenChange, grant, app
         program_name: title.trim(),
         funder: funder.trim(),
         grant_title: title.trim(),
+        supplemental_links: extraLinks
+          .filter(l => l.url && l.url.trim())
+          .map(l => ({ url: l.url.trim(), kind: l.kind || "page" })),
       });
       if (res.data?.error) throw new Error(res.data.error);
       setTemplate(res.data.template);
-      toast.success("Form template built");
+      const saved = (res.data.library?.created || 0) + (res.data.library?.updated || 0);
+      const captions = res.data.copies ? ` · ${res.data.copies} document copy${res.data.copies === 1 ? "" : "ies"} stored` : "";
+      toast.success(saved ? `Template built · ${saved} form${saved === 1 ? "" : "s"} in your library${captions}` : "Form template built");
     } catch (e) {
       toast.error("Couldn't build the template: " + e.message);
     }
@@ -152,6 +166,16 @@ export default function TemplateGeneratorDialog({ open, onOpenChange, grant, app
             </div>
           </div>
 
+          <div className="space-y-2">
+            <div>
+              <label className="text-xs text-slate-500 font-medium">Additional official links</label>
+              <p className="text-xs text-slate-400">
+                Add the pages behind an Apply Now button: documentation, requirements, or the application portal itself.
+              </p>
+            </div>
+            <SupplementalLinksField links={extraLinks} onChange={setExtraLinks} />
+          </div>
+
           <Button className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={generate} disabled={loading}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
             {loading ? "Researching and building..." : template ? "Rebuild Form Template" : "Build Form Template"}
@@ -174,6 +198,13 @@ export default function TemplateGeneratorDialog({ open, onOpenChange, grant, app
 
           {template && !loading && (
             <>
+              <p className={`text-xs flex items-start gap-1.5 rounded-lg p-2.5 border ${template.standard_template_id ? "text-slate-600 bg-slate-50 border-slate-200" : "text-amber-700 bg-amber-50 border-amber-200"}`}>
+                <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                {template.standard_template_id
+                  ? "Tailored from your platform standard template. Prompts the funder does not spell out carry standard guidance."
+                  : "No platform standard template yet. Build one from your Form Library so sections this funder leaves open are filled with standard guidance."}
+              </p>
+
               <TemplateReview template={template} />
 
               <div className="border-t border-slate-100 pt-3 space-y-2">
@@ -206,7 +237,7 @@ export default function TemplateGeneratorDialog({ open, onOpenChange, grant, app
           {!template && !loading && (
             <p className="text-xs text-slate-500 flex items-start gap-1.5">
               <Link2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
-              We research the funder's official application materials, extract the required prompts, and check each one against the stated eligibility and requirements before you export.
+              We research the funder's official materials, follow the links you add to the fillable forms themselves, and check every prompt against the stated eligibility and requirements. Anything behind a registration wall is flagged, never guessed at.
             </p>
           )}
         </div>

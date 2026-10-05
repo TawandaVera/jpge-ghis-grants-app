@@ -8,15 +8,22 @@ const STATUS = {
   missing: { label: "Missing", cls: "bg-slate-100 text-slate-600 border-slate-300", Icon: XCircle },
 };
 
+export const PROVENANCE = {
+  grant_specific: { label: "Grant-specific", cls: "bg-blue-100 text-blue-800 border-blue-300" },
+  standard: { label: "Standard guidance", cls: "bg-indigo-100 text-indigo-800 border-indigo-300" },
+};
+
 export default function PromptCard({ prompt }) {
   const s = STATUS[prompt.validation_status] || STATUS.unverified;
   const Icon = s.Icon;
+  const prov = PROVENANCE[prompt.provenance];
 
   return (
     <div className="border border-slate-200 rounded-lg p-3 space-y-2 bg-white">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{prompt.section}</span>
         <div className="flex items-center gap-2">
+          {prov && <Badge className={`text-xs border ${prov.cls}`}>{prov.label}</Badge>}
           {prompt.word_limit && <span className="text-xs text-slate-500">{prompt.word_limit}</span>}
           <Badge className={`text-xs border gap-1 ${s.cls}`}>
             <Icon className="w-3 h-3" /> {s.label}

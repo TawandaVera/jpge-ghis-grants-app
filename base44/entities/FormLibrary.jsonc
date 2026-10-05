@@ -1,0 +1,158 @@
+{
+  "name": "FormLibrary",
+  "type": "object",
+  "properties": {
+    "form_title": {
+      "type": "string",
+      "description": "Name of the captured form, document or source page"
+    },
+    "funder": {
+      "type": "string"
+    },
+    "program_name": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Stable URL of the form or page. Normalized and used to deduplicate library entries."
+    },
+    "source_page": {
+      "type": "string",
+      "description": "The grant or opportunity page this was discovered on"
+    },
+    "grant_id": {
+      "type": "string"
+    },
+    "grant_title": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "application_form",
+        "budget_template",
+        "guidelines",
+        "checklist",
+        "portal",
+        "documentation",
+        "requirements",
+        "page",
+        "other"
+      ],
+      "default": "other",
+      "description": "What kind of material this is"
+    },
+    "doc_type": {
+      "type": "string",
+      "enum": [
+        "pdf",
+        "docx",
+        "xlsx",
+        "image",
+        "webpage",
+        "portal",
+        "other"
+      ],
+      "default": "other"
+    },
+    "access": {
+      "type": "string",
+      "enum": [
+        "public",
+        "signin_required",
+        "unknown"
+      ],
+      "default": "unknown",
+      "description": "public: openly reachable. signin_required: behind a registration or sign-in wall and not accessed."
+    },
+    "file_uri": {
+      "type": "string",
+      "description": "Private storage copy of the document, captured only when it was publicly downloadable"
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fillable fields, columns or line items the form asks for"
+    },
+    "prompts": {
+      "type": "array",
+      "description": "Reusable application prompts extracted from this source",
+      "items": {
+        "type": "object",
+        "properties": {
+          "section": {
+            "type": "string"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "word_limit": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "form_title",
+    "source_url"
+  ],
+  "rls": {
+    "create": {},
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

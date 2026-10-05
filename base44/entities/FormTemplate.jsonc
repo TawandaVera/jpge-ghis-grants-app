@@ -10,10 +10,11 @@
       "type": "string",
       "enum": [
         "pipeline",
-        "donor"
+        "donor",
+        "standard"
       ],
       "default": "pipeline",
-      "description": "Where the template was generated from"
+      "description": "Where the template came from. 'standard' is the platform-standard template built from the central form library."
     },
     "grant_id": {
       "type": "string",
@@ -31,11 +32,105 @@
     },
     "application_link": {
       "type": "string",
-      "description": "Official application page / portal URL"
+      "description": "Official application page / portal URL (the primary source)"
     },
     "application_id": {
       "type": "string",
       "description": "Linked GrantApplication id once saved to the pipeline"
+    },
+    "supplemental_links": {
+      "type": "array",
+      "description": "Additional official links used for research: documentation pages, requirements pages, application portals, or direct form downloads",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "portal",
+              "documentation",
+              "requirements",
+              "document",
+              "page",
+              "other"
+            ]
+          },
+          "access": {
+            "type": "string",
+            "enum": [
+              "public",
+              "signin_required",
+              "unknown"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "documents": {
+      "type": "array",
+      "description": "Fillable or supporting documents located from the sources (application forms, budget spreadsheets, guidelines, checklists)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "description": "Direct URL of the document"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "application_form",
+              "budget_template",
+              "guidelines",
+              "checklist",
+              "portal",
+              "other"
+            ]
+          },
+          "access": {
+            "type": "string",
+            "enum": [
+              "public",
+              "signin_required",
+              "unknown"
+            ]
+          },
+          "file_uri": {
+            "type": "string",
+            "description": "Private storage copy captured when the document was publicly downloadable"
+          },
+          "extracted_fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Fillable fields, columns or line items the document asks for"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "access_notes": {
+      "type": "string",
+      "description": "What remains inaccessible behind a registration or sign-in wall, and what the public pages say an applicant needs once registered"
+    },
+    "standard_template_id": {
+      "type": "string",
+      "description": "Platform-standard template this was tailored from"
     },
     "eligibility_summary": {
       "type": "string",
@@ -83,6 +178,14 @@
           },
           "validation_note": {
             "type": "string"
+          },
+          "provenance": {
+            "type": "string",
+            "enum": [
+              "grant_specific",
+              "standard"
+            ],
+            "description": "grant_specific: taken from this funder's own application materials. standard: platform-standard guidance used where this opportunity requires a section but does not spell it out."
           }
         }
       }
@@ -123,6 +226,14 @@
           },
           "url": {
             "type": "string"
+          },
+          "access": {
+            "type": "string",
+            "enum": [
+              "public",
+              "signin_required",
+              "unknown"
+            ]
           }
         }
       }
