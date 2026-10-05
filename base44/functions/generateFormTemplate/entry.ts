@@ -5,6 +5,8 @@ import {
   capturePrivateCopy,
   upsertLibraryItems,
 } from '../../shared/formLibrary.ts';
+import { integrateLibraryItems } from '../../shared/masterApplication.ts';
+import { buildStandardTemplateFromLibrary } from '../../shared/standardTemplate.ts';
 
 const VALID_STATUS = new Set(['validated', 'unverified', 'conflict', 'missing']);
 const VALID_ACCESS = new Set(['public', 'signin_required', 'unknown']);
@@ -355,9 +357,21 @@ Return 8-15 prompts. Never fabricate requirements — mark them unverified or mi
     });
 
     // Feed the central library so the same form is reused instead of re-researched.
+    // Each library prompt keeps its provenance and evidence, so the master
+    // application can carry them into later drafts intact.
     const promptFor = (url: string) => prompts
       .filter(p => normalizeUrl(p.evidence_source) === normalizeUrl(url))
-      .map(p => ({ section: p.section, prompt: p.prompt, word_limit: p.word_limit }));
+      .map(p => ({
+        section: p.section,
+        prompt: p.prompt,
+        word_limit: p.word_limit,
+        requirement_link: p.requirement_link,
+        evidence_source: p.evidence_source,
+        evidence_excerpt: p.evidence_excerpt,
+        validation_status: p.validation_status,
+        validation_note: p.validation_note,
+        provenance: p.provenance,
+      }));
 
     const common = {
       funder: funderName,
@@ -414,9 +428,32 @@ Return 8-15 prompts. Never fabricate requirements — mark them unverified or mi
 
     const libraryResult = await upsertLibraryItems(base44, libraryItems);
 
+    // Everything captured so far is folded into the master application, so the
+    // next application starts from all accumulated context instead of a blank page.
+    let master = null;
+    let standardRefreshed = false;
+    let integrationError = '';
+    try {
+      const libraryPage = await base44.entities.FormLibrary.filter(
+        { status: 'active' },
+        { sort: '-last_seen_at', limit: 200 },
+      );
+      master = await integrateLibraryItems(base44, libraryPage?.items || []);
+
+      // The standard template is rebuilt from the same library. A failure here
+      // must not lose the capture that has just succeeded.
+      const built = await buildStandardTemplateFromLibrary(base44);
+      standardRefreshed = !!built?.template;
+    } catch (e) {
+      integrationError = e.message;
+    }
+
     return Response.json({
       template,
       library: libraryResult,
+      master,
+      standard_refreshed: standardRefreshed,
+      integration_error: integrationError,
       copies,
       standard_applied: !!standard,
       access_summary: {

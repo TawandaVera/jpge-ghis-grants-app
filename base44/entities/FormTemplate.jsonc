@@ -132,6 +132,52 @@
       "type": "string",
       "description": "Platform-standard template this was tailored from"
     },
+    "tailored_from_master": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when this draft was filtered from the master application against one opportunity's requirements"
+    },
+    "included_sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Master sections this opportunity matched, and which are therefore in this draft"
+    },
+    "excluded_sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Master sections this opportunity does not call for. Left out of this draft, kept in the master."
+    },
+    "section_matches": {
+      "type": "array",
+      "description": "Why each section was included or excluded",
+      "items": {
+        "type": "object",
+        "properties": {
+          "section": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          },
+          "matched_terms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "prompt_count": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "eligibility_summary": {
       "type": "string",
       "description": "Applicant eligibility in plain language"

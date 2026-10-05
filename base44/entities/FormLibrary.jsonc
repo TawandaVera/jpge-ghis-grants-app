@@ -78,7 +78,7 @@
     },
     "prompts": {
       "type": "array",
-      "description": "Reusable application prompts extracted from this source",
+      "description": "Reusable application prompts extracted from this source, with their evidence, so the master application can trace every prompt back",
       "items": {
         "type": "object",
         "properties": {
@@ -90,6 +90,35 @@
           },
           "word_limit": {
             "type": "string"
+          },
+          "requirement_link": {
+            "type": "string"
+          },
+          "evidence_source": {
+            "type": "string"
+          },
+          "evidence_excerpt": {
+            "type": "string"
+          },
+          "validation_status": {
+            "type": "string",
+            "enum": [
+              "validated",
+              "unverified",
+              "conflict",
+              "missing"
+            ]
+          },
+          "validation_note": {
+            "type": "string"
+          },
+          "provenance": {
+            "type": "string",
+            "enum": [
+              "grant_specific",
+              "documented",
+              "standard"
+            ]
           }
         }
       }

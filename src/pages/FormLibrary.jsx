@@ -7,6 +7,7 @@ import { Globe, Library, Lock, Search } from "lucide-react";
 import LibraryItemCard from "@/components/forms/LibraryItemCard";
 import LibraryItemDialog from "@/components/forms/LibraryItemDialog";
 import StandardTemplatePanel from "@/components/forms/StandardTemplatePanel";
+import MasterApplicationPanel from "@/components/forms/MasterApplicationPanel";
 import { toast } from "sonner";
 
 const KINDS = [
@@ -105,6 +106,8 @@ export default function FormLibrary() {
           </p>
         </div>
       </div>
+
+      <MasterApplicationPanel refreshKey={refreshKey} onIntegrated={() => setRefreshKey(k => k + 1)} />
 
       <StandardTemplatePanel template={standard} onBuild={buildStandard} building={building} />
 

@@ -22,6 +22,7 @@ import Help from '@/pages/Help';
 import Tracks from '@/pages/Tracks';
 import WeeklyReport from '@/pages/WeeklyReport';
 import FormLibrary from '@/pages/FormLibrary';
+import MasterApplication from '@/pages/MasterApplication';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
         <Route path="/tracks" element={<Tracks />} />
         <Route path="/weekly-report" element={<WeeklyReport />} />
         <Route path="/form-library" element={<FormLibrary />} />
+        <Route path="/master-application" element={<MasterApplication />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

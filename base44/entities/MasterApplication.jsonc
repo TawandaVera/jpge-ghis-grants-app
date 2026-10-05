@@ -1,0 +1,229 @@
+{
+  "name": "MasterApplication",
+  "type": "object",
+  "properties": {
+    "section": {
+      "type": "string",
+      "description": "Canonical application section name (Executive Summary, Needs Statement, Goals & Objectives, Methodology, Evaluation Plan, Organizational Capacity, Budget Narrative, Sustainability, Attachments & Other Requirements)"
+    },
+    "section_key": {
+      "type": "string",
+      "description": "Stable key for this section. Every integrated form merges into its section record by this key."
+    },
+    "description": {
+      "type": "string",
+      "description": "What this section asks for"
+    },
+    "prompts": {
+      "type": "array",
+      "description": "Every prompt accumulated for this section, deduplicated with all source evidence kept",
+      "items": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string"
+          },
+          "prompt_key": {
+            "type": "string",
+            "description": "Normalized prompt text used to deduplicate repeats across forms"
+          },
+          "section": {
+            "type": "string"
+          },
+          "word_limit": {
+            "type": "string"
+          },
+          "requirement_link": {
+            "type": "string"
+          },
+          "validation_status": {
+            "type": "string",
+            "enum": [
+              "validated",
+              "unverified",
+              "conflict",
+              "missing"
+            ]
+          },
+          "validation_note": {
+            "type": "string"
+          },
+          "provenance": {
+            "type": "string",
+            "enum": [
+              "grant_specific",
+              "documented",
+              "standard"
+            ]
+          },
+          "evidence_source": {
+            "type": "string",
+            "description": "Primary source URL supporting this prompt"
+          },
+          "evidence_excerpt": {
+            "type": "string"
+          },
+          "occurrences": {
+            "type": "number",
+            "description": "How many captured forms ask this question"
+          },
+          "first_seen_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_seen_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evidence": {
+            "type": "array",
+            "description": "Every captured source for this prompt, kept side by side when they disagree",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source_title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "funder": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "access": {
+                  "type": "string"
+                },
+                "library_item_id": {
+                  "type": "string"
+                },
+                "validation_status": {
+                  "type": "string"
+                },
+                "word_limit": {
+                  "type": "string"
+                },
+                "excerpt": {
+                  "type": "string"
+                },
+                "seen_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Submission requirements accumulated for this section"
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fillable fields, columns and line items accumulated for this section"
+    },
+    "sources": {
+      "type": "array",
+      "description": "Library sources that contributed to this section",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "access": {
+            "type": "string"
+          },
+          "funder": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "relevance_terms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Terms that tie an opportunity's requirements to this section. Grows as new forms are integrated, so future matching improves."
+    },
+    "prompt_count": {
+      "type": "number",
+      "default": 0
+    },
+    "source_count": {
+      "type": "number",
+      "default": 0
+    },
+    "conflict_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Prompts where captured sources disagree"
+    },
+    "reusable": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when this section holds reusable content for future applications"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "last_integrated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "section",
+    "section_key"
+  ],
+  "rls": {
+    "create": {},
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
