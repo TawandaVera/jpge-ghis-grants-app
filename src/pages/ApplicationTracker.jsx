@@ -6,9 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ClipboardList, Plus, Clock, AlertTriangle, DollarSign, Pencil, X } from "lucide-react";
+import { ClipboardList, Plus, Clock, AlertTriangle, DollarSign, Pencil, X, FileText } from "lucide-react";
 import { differenceInDays } from "date-fns";
 import { toast } from "sonner";
+import TemplateGeneratorDialog from "@/components/forms/TemplateGeneratorDialog";
 
 const COLUMNS = [
   { key: "draft",     label: "Working On It",        dot: "bg-slate-400",   color: "border-slate-200 bg-slate-50/60" },
@@ -43,6 +44,7 @@ export default function ApplicationTracker() {
   const [isNew, setIsNew]     = useState(false);
   const [logApp, setLogApp]   = useState(null);   // app for status log
   const [logNote, setLogNote] = useState("");
+  const [templateApp, setTemplateApp] = useState(null);
 
   const load = () =>
     base44.entities.GrantApplication.list("-created_date", 200).then(d => {
@@ -151,6 +153,7 @@ export default function ApplicationTracker() {
                       onMove={moveColumn}
                       onEdit={() => { setEditApp({ ...app }); setIsNew(false); }}
                       onLog={() => { setLogApp(app); setLogNote(""); }}
+                      onTemplate={() => setTemplateApp(app)}
                     />
                   ))}
                   {colApps.length === 0 && (
@@ -241,11 +244,17 @@ export default function ApplicationTracker() {
           )}
         </DialogContent>
       </Dialog>
+
+      <TemplateGeneratorDialog
+        open={!!templateApp}
+        onOpenChange={(v) => { if (!v) setTemplateApp(null); }}
+        application={templateApp}
+      />
     </div>
   );
 }
 
-function AppCard({ app, currentCol, onMove, onEdit, onLog }) {
+function AppCard({ app, currentCol, onMove, onEdit, onLog, onTemplate }) {
   const days = app.deadline ? differenceInDays(new Date(app.deadline), new Date()) : null;
   const isUrgent = days !== null && days >= 0 && days <= 14;
 
@@ -254,6 +263,9 @@ function AppCard({ app, currentCol, onMove, onEdit, onLog }) {
       <div className="flex items-start justify-between gap-1 mb-1">
         <p className="font-medium text-sm text-slate-900 line-clamp-2 leading-tight flex-1">{app.grant_title}</p>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <button onClick={onTemplate} title="Build application form" className="text-slate-400 hover:text-purple-600 transition-colors">
+            <FileText className="w-3.5 h-3.5" />
+          </button>
           <button onClick={onLog} title="Log status" className="text-slate-400 hover:text-emerald-600 transition-colors">
             <ClipboardList className="w-3.5 h-3.5" />
           </button>

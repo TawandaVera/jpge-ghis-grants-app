@@ -1,0 +1,190 @@
+{
+  "name": "FormTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Template name"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "pipeline",
+        "donor"
+      ],
+      "default": "pipeline",
+      "description": "Where the template was generated from"
+    },
+    "grant_id": {
+      "type": "string",
+      "description": "Reference to Grant entity, when known"
+    },
+    "grant_title": {
+      "type": "string"
+    },
+    "funder": {
+      "type": "string"
+    },
+    "program_name": {
+      "type": "string",
+      "description": "Program or opportunity name (donor listings)"
+    },
+    "application_link": {
+      "type": "string",
+      "description": "Official application page / portal URL"
+    },
+    "application_id": {
+      "type": "string",
+      "description": "Linked GrantApplication id once saved to the pipeline"
+    },
+    "eligibility_summary": {
+      "type": "string",
+      "description": "Applicant eligibility in plain language"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Concrete submission requirements"
+    },
+    "prompts": {
+      "type": "array",
+      "description": "Validated application form prompts",
+      "items": {
+        "type": "object",
+        "properties": {
+          "section": {
+            "type": "string"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "word_limit": {
+            "type": "string"
+          },
+          "requirement_link": {
+            "type": "string"
+          },
+          "evidence_source": {
+            "type": "string"
+          },
+          "evidence_excerpt": {
+            "type": "string"
+          },
+          "validation_status": {
+            "type": "string",
+            "enum": [
+              "validated",
+              "unverified",
+              "conflict",
+              "missing"
+            ]
+          },
+          "validation_note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "validation_summary": {
+      "type": "object",
+      "description": "Counts of prompts by validation status",
+      "properties": {
+        "validated": {
+          "type": "number"
+        },
+        "unverified": {
+          "type": "number"
+        },
+        "conflicts": {
+          "type": "number"
+        },
+        "missing": {
+          "type": "number"
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Items that could not be verified from official sources"
+    },
+    "sources": {
+      "type": "array",
+      "description": "Official sources used",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "official_documentation_found": {
+      "type": "boolean",
+      "default": false,
+      "description": "True only when the funder's own application materials were located"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "saved"
+      ],
+      "default": "draft"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

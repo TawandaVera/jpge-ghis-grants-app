@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Search, ExternalLink, ShieldCheck, Loader2, TrendingUp, Calendar, DollarSign, CheckCircle2, AlertTriangle, ClipboardList, Users } from "lucide-react";
+import { BookOpen, Search, ExternalLink, ShieldCheck, Loader2, TrendingUp, Calendar, DollarSign, CheckCircle2, AlertTriangle, ClipboardList, Users, FileText } from "lucide-react";
 import DonorResearchPanel from "@/components/dossier/DonorResearchPanel";
+import TemplateGeneratorDialog from "@/components/forms/TemplateGeneratorDialog";
 import { useNavigate } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
 import { format, differenceInDays } from "date-fns";
@@ -35,6 +36,8 @@ export default function GrantDossier() {
   const [dossier, setDossier] = useState(null);
   const [logNote, setLogNote] = useState("");
   const [loggingStatus, setLoggingStatus] = useState(false);
+  const [templateGrant, setTemplateGrant] = useState(null);
+  const [linkMode, setLinkMode] = useState(false);
 
   const loadData = () =>
     Promise.all([
@@ -171,13 +174,22 @@ Generate a strategic dossier that includes:
           </h1>
           <p className="text-slate-500 text-sm">Full details and game plans for opportunities you've scored · {combined.length} scored</p>
         </div>
-        <Button
-          variant="outline"
-          className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
-          onClick={() => window.open("https://grantedai.com/grants", "_blank")}
-        >
-          <ShieldCheck className="w-4 h-4" /> Browse GrantedAI
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            className="gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+            onClick={() => setLinkMode(true)}
+          >
+            <FileText className="w-4 h-4" /> Build Form from Link
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
+            onClick={() => window.open("https://grantedai.com/grants", "_blank")}
+          >
+            <ShieldCheck className="w-4 h-4" /> Browse GrantedAI
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -427,6 +439,12 @@ Generate a strategic dossier that includes:
 
               {/* Action buttons */}
               <div className="flex gap-3 flex-wrap pt-1">
+                <Button
+                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => { const g = selected.grant; setSelected(null); setDossier(null); setTemplateGrant(g); }}
+                >
+                  <FileText className="w-4 h-4" /> Build Application Form
+                </Button>
                 {selected.grant.source_url && (
                   <Button variant="outline" className="gap-2" onClick={() => window.open(selected.grant.source_url, "_blank")}>
                     <ExternalLink className="w-4 h-4" /> View Source
@@ -453,6 +471,12 @@ Generate a strategic dossier that includes:
           )}
         </DialogContent>
       </Dialog>
+
+      <TemplateGeneratorDialog
+        open={!!templateGrant || linkMode}
+        onOpenChange={(v) => { if (!v) { setTemplateGrant(null); setLinkMode(false); } }}
+        grant={templateGrant || undefined}
+      />
     </div>
   );
 }
